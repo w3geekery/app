@@ -116,11 +116,12 @@ Error toward acting-on-request. Retreating to the rule when explicitly asked is 
 | 24 | Demo Data Visibility Gate | ✅ **CLOSED 2026-05-05** — 22 services wired with Option X client-side post-filter. SUMMARY at `640db03`. UAT-deployed via PR #54 (merged 2026-05-06). |
 | 25 | Platform Data Audit | ✅ COMPLETE 2026-04-27 |
 | 26 | Seed ZB-as-provider + ratify `company_info` convention | ✅ COMPLETE 2026-04-28; UAT-deployed 2026-04-29 |
-| 27 | Auth gate + onboarding routing + lazy-on-load default-engagement guard | ✅ COMPLETE 2026-04-30 (verifier 14/14, commits `5b594c6..43f8d1c`); **architectural rework 2026-05-06** (uncommitted) — guard now read-only; auto-bootstrap removed; provisioning admin-only. See "Phase 27 architectural rework" section below. |
+| 27 | Auth gate + onboarding routing + lazy-on-load default-engagement guard | ✅ COMPLETE 2026-04-30 + ✅ architectural rework SHIPPED 2026-05-08 (commit `74ed63e`, PR #55 merged + UAT-deployed) |
 | 27.5 | Modernization rule enforcement (ESLint + pre-commit + CI gate) | ✅ COMPLETE 2026-05-01 — verifier 8/8 ENF-*; closure commit `08cc25a` |
 | 28 | Company profile review/confirm form | ✅ COMPLETE 2026-04-30 |
-| 30 | Default Project board + "Coming Soon" placeholder surfaces | brief refreshed `b7f9b80`; plan PAUSED awaiting Phase 24 closure (now unblocked) |
-| 31 | W3Geekery as first customer + production smoke test | not started; depends on 30 |
+| **29.5** | **Platform Model Migration (NEW 2026-05-08)** | **brief drafted at `.planning/director/phase-29.5-brief.md`; awaiting MCP-describe to resolve open questions, then `/gsd-insert-phase 29.5`** |
+| 30 | Default Project board + "Coming Soon" placeholder surfaces | brief at `b7f9b80` — **needs substantial rewrite after 29.5 closes** (now uses real platform.Project + platform.Board) |
+| 31 | W3Geekery as first customer + production smoke test | not started; depends on 30 (which depends on 29.5) |
 | ~~29~~ | DEFERRED to v1.5 | tier display / ToS / branding |
 
 **ServiceOffering scope:** REMOVED from v1.4 per DECISIONS.md "ServiceOfferings Defer With Brian" (2026-04-24).
@@ -148,6 +149,142 @@ Error toward acting-on-request. Retreating to the rule when explicitly asked is 
 - GLOBAL_DEMO `81053c14-a8e5-4939-b538-c122c7d0eb1a`
 - LEGACY_W3GEEKERY `d618b602-21cc-40a1-a9fa-534b7bc1672c`
 - W3Geekery marketplace (kept visible, NOT a demo tag) `a81cd320-243e-44eb-bdd9-9824019ef3dd`
+
+---
+
+## 2026-05-08 session — All Phase 27 work shipped + PR #55 deployed to UAT + Phase 29.5 brief drafted (Nic's new platform Project/Board SDKs)
+
+**TL;DR:** The big uncommitted pile from 2026-05-06 + 2026-05-07 sessions landed in 5 clean commits (+ 1 test fix + 1 deps bump). PR #55 cross-fork to `zerobias-org/app:uat` opened, CI passed first run, merged, deployed. Demo happened Friday 2026-05-08 successfully (Clark live-clicked Provision for Brian's org during call). Then Nic announced new platform SDKs — real `platform.Project` / `platform.Board` / scoped `hydra.Role` primitives. Drafted Phase 29.5 brief to reconcile SmeMart GraphQL classes against the new platform models. Session ends pre-quit/restart so a fresh session can pick up latest MCP (`zerobias-mcp@1.0.43`) and resolve open questions via describe.
+
+### What committed (8 new commits since `7efbdd8`)
+
+```
+c550743 chore(deps): bump zb-family deps within caret ranges
+9b8837d fix(test): provide ZerobiasClientSessionId in 2 dependent specs
+fb471b9 docs(director): tag-naming convention + permissions/task notes + Resume
+b6da9ac style(org-detail, vendor-profile): flat panels + theme-aware welcome card
+b0c6fb0 fix(my-engagements): scope listing to current org
+f6e40ca fix(demo-toggle): pkColumn + neonQuery shape normalization
+74ed63e feat(phase-27): provisioning admin-only architectural rework
+c976ff2 docs(director): backlog 028-030 + .ORG research note + 020/021 updates
+56481c6 chore(scripts): suppress NEON_DATABASE_URL warning in CI builds
+08770cf fix(hub-auth, gql): wire session header for Hub + expand tag subfields
+```
+
+(Top 7 are this session's; bottom 3 were committed 2026-05-06 unpushed at last parkit.)
+
+Pre-push hook ran full suite on every push: **1757/1757 green**. tsc clean (app + spec configs).
+
+### PR #55 lifecycle
+
+- Opened from `w3geekery:poc/sme-mart` → `zerobias-org/app:uat` with full Phase 27 architectural rework + 2026-05-07 EVE bug fixes.
+- CI passed FIRST run (lint diff-based, unit tests, build) — no fix-up commits needed unlike PR #54.
+- Merged. Auto-deploy ran. Clark confirmed deployed during demo.
+- CloudFront invalidation executed by Clark (per `.planning/docs/UAT_CLOUDFRONT_CACHE_INVALIDATION.md`).
+
+### Demo outcome (Friday 2026-05-08)
+
+Brian's org live-provisioned during the call. Provisioning tab → Dry Run → Provision → snackbar success. Switch to Brian Hierholzer Inc. → My Engagements scoped correctly → engagement renders with locked verbiage. Demo flow worked end-to-end as planned. Brian's org now has real provisioned data on UAT (no longer clean).
+
+### Test-spec fallout fix (commit 9b8837d)
+
+Pre-push hook caught 15 failures across 2 files on first push attempt — fallout from the 2026-05-06 commit `08770cf` that added `ZerobiasClientSessionId` injection to `SmeMartDbService`. Two specs that transitively depend on `SmeMartDbService` weren't updated:
+- `my-invitations.component.spec.ts` (via `SmeMartProjectService` -> `SmeMartResourceService` -> `SmeMartDbService`)
+- `rfp-dialog.component.spec.ts` (via `CategoriesService` -> `SmeMartDbService`)
+
+Both got a `{ provide: ZerobiasClientSessionId, useValue: { getCurrentSessionId: () => null } }` stub. Touch-It-Fix-It cleaned 3 `any` types + 1 unused import in my-invitations spec.
+
+This was a pre-existing breakage that the prior parkit didn't catch because targeted tests skipped these specs. Worth a note: pre-push full-suite gate is exactly what surfaces this kind of cross-cut.
+
+### Nic's new platform SDKs (announced 2026-05-08)
+
+Published batch (ZB clients @ `1.1.16` family):
+- `@zerobias-com/zerobias-mcp@1.0.43`
+- `@zerobias-com/platform-sdk@1.1.16` — **NEW** Board + Project APIs
+- `@zerobias-com/portal-sdk@1.1.16` — **NEW** Board / Project search
+- `@zerobias-com/hydra-sdk@1.0.7` — **NEW** scoped role grants
+- `@zerobias-com/zerobias-angular-client@1.1.39` (transitive bumps for all the above)
+- ... 13 more SDKs all on `1.1.16`
+
+**New endpoints** (from `.planning/notes/projects-boards-models.md` quick-ref Nic dropped into the notes dir):
+
+| Surface | New methods | New fields |
+|---|---|---|
+| Platform BoardApi | create, get, list, update, delete, listTasks | — |
+| Platform ProjectApi | create, get, list, update, delete, listMembers, addMember, removeMember | — |
+| Platform TaskApi | listSubtasks | NewTask.{boardId, projectId, parentId} |
+| Portal BoardApi | search, searchOptions, get, searchTasks, taskSearchOptions | — |
+| Portal ProjectApi | search, searchOptions, get, listMembers, searchTasks, taskSearchOptions | — |
+| Portal TaskApi | — | SearchTaskBody.{boardIds, projectIds} |
+| Hydra RoleApi | listRoleMemberScopes, addRoleMemberScope, removeRoleMemberScope | AddRoleMember.{scopeType, scopeId} |
+| ResourceTypeEnum | — | + `board`, + `project` |
+
+### npm update (commit c550743)
+
+Lockfile-only delta — package.json caret ranges already covered the bumps. Verified clean: tsc clean, 1757/1757 tests green.
+
+| Package | Was | Now |
+|---|---|---|
+| `@zerobias-com/zerobias-angular-client` | 1.1.38 | 1.1.39 |
+| `@zerobias-com/zerobias-client` | 1.1.39 | 1.1.40 |
+| `@zerobias-com/zerobias-sdk` | 1.1.25 | 1.1.26 |
+| `@zerobias-com/dana-sdk` | 1.1.16 | 1.1.17 |
+| `@zerobias-com/hydra-sdk` | 1.0.6 | 1.0.7 |
+| `@zerobias-com/platform-sdk` | 1.1.15 | 1.1.16 |
+| `@zerobias-com/portal-sdk` | 1.1.15 | 1.1.16 |
+| `@zerobias-org/data-utils` | 2.1.3 | 2.1.4 |
+
+### Phase 29.5 brief drafted — `.planning/director/phase-29.5-brief.md`
+
+**Goal:** reconcile SmeMart's GraphQL data model with the new platform primitives. Retire SmeMart classes that now have first-class platform analogs. Refactor app code to consume new models.
+
+**Why now (not v1.5):** Phase 30 (Default Project board) was paused waiting for these primitives. Building Phase 30 on SmeMart-side analogs and retiring later = double the work. Phase 30 brief at `b7f9b80` should be substantially rewritten downstream of 29.5.
+
+**Locked decisions in brief:**
+1. Phase number 29.5 — decimal insertion between deferred 29 and active 30. Matches 27.5 pattern.
+2. Single phase, with 29.5a / 29.5b split as discuss-phase escape hatch if scope creeps.
+3. Provisioning recipe gets flipped: Step D `Pipeline.receive SmeMartProject` -> `platform.Project.create({tagId, status, visibility, membershipPolicy, parentId?})`. New Step F `platform.Board.create({projectId, boardType: kanban, isDefault: true})`. Engagement stays Pipeline.receive (no platform analog).
+4. Engagement->Project link: `Engagement.projectId` stores `platform.Project.id` UUID (same UUID typing, different resource class).
+5. Schema retirement happens IN this phase (zerobias-org/schema PR via Daniel Rojas).
+6. Existing demo data: leave in place (dual-read path, no one-shot backfill).
+7. Touch-It-Fix-It modernization rule applies on touched files.
+
+**Open questions** — REQUIRE MCP describe AFTER session restart:
+1. `membershipPolicy` accepted enum values.
+2. **HIGH-RISK:** Does `platform.Task.create` server-default `boardId`, or does the caller need to provide one? If caller-required, provisioning recipe Step B is broken on next live run. MUST verify before any code change.
+3. Default `Project.parentId` for our use case (top-level orphan vs nested under ZB-org parent).
+4. Existing SmeMartProject record behavior post-schema-retirement.
+5. Phase 30 + 31 dependency confirmation.
+6. Naming: keep `SmeMartProjectService` as wrapper, or rename to `ProjectService`?
+
+**Out of scope:** new features, PERMS-AUDIT-1 implementation (separate phase), Engagement entity refactor (no platform analog), hub-side data migration, UI redesigns.
+
+**Estimate:** 8-15 hrs. Heavy on inventory + service refactor + schema PR coordination. Single-phase default; split escape hatch in brief.
+
+### Next-action sequence (post-quit/restart/clear/parks-load)
+
+1. **Verify ZB MCP updated to 1.0.43.** Test via `mcp__zerobias__zerobias_describe('platform.Board.create')` — should return new schema. If stale, restart MCP server / re-auth.
+2. **Resolve open questions via MCP describe** (BEFORE inserting phase):
+   - `zerobias_describe('platform.Project.create')` -> get `membershipPolicy` enum.
+   - `zerobias_describe('platform.Task.create')` -> verify `boardId` requirement and server-default behavior.
+   - `zerobias_describe('platform.Board.create')` -> confirm `boardType` enum + `ownerId` semantics.
+   - `zerobias_describe('hydra.Role.addRoleMemberScope')` -> for PERMS-AUDIT-1 backlog update.
+3. **Update phase 29.5 brief** with the resolved values (locks open questions before discuss-phase).
+4. `/gsd-insert-phase 29.5 .planning/director/phase-29.5-brief.md` — adds Phase 29.5 to v1.4 ROADMAP.
+5. `/gsd-discuss-phase 29.5` — resolve any remaining gray areas (split decision, inventory deliverable shape).
+6. `/gsd-plan-phase 29.5` — produce PLAN.md.
+7. Execute (gsd-executor or fresh session).
+8. **Post-29.5 closure:** Phase 30 brief substantially rewritten (now uses real platform.Project + platform.Board); Phase 31 (W3Geekery first customer + smoke test) follows.
+9. **PERMS-AUDIT-1 backlog** — update entry to note hydra Role scoped-grant primitives now exist (was waiting on this).
+
+### Side-quest cleanup pending
+
+- **Phase 30 brief refresh** — likely substantial. After 29.5 closes, brief at `b7f9b80` is no longer accurate (was built on SmeMart-side analogs).
+- **PERMS-AUDIT-1 backlog update** — note hydra Role scoped-grant primitives exist now.
+- **Schema retirement coordination with Daniel Rojas** — discuss-phase artifact (29.5).
+- **My-Engagements empty-state copy is RFP-framed** — post-demo cleanup.
+- **Audit other list pages for unscoped-by-org bug pattern** (My Projects, vendor browse, RFP list).
+- **My Tasks "Accountable" sub-filter** broken on platform — file with Kevin (still pending).
 
 ---
 
@@ -530,11 +667,13 @@ Read paths validated:
 
 | Item | Owner | Status |
 |---|---|---|
-| **Phase 24 closed + UAT-deployed** | DONE | ✅ 2026-05-06. PR #54 merged to `zerobias-org/app:uat`; CloudFront invalidation pending. |
-| **Phase 27 architectural rework — UNCOMMITTED** | Director | **In flight at parkit time.** Working tree has 7 workstreams of changes (guard rewire to read-only, naming rename, holding-page rebuild, admin Provisioning tab, BACKLOG entries, org-detail + vendor-profile polish). 14 modified files + 4 new files (admin tabs dir + 2026-05-06 research note). Tests pass + lint clean + tsc clean. **Awaiting Clark's go-ahead before commit.** Two prior commits (`08770cf` Hub auth + GQL tag fix; `56481c6` gen-neon-env CI noise) on top of `origin/poc/sme-mart` HEAD `7efbdd8`, ALSO unpushed pending Clark's "before next UAT deploy" gate. |
+| **Phase 24 closed + UAT-deployed** | DONE | ✅ 2026-05-06. PR #54 merged to `zerobias-org/app:uat`. |
+| **Phase 27 architectural rework — SHIPPED** | DONE | ✅ 2026-05-08. All work committed (5 groups + test fix + deps bump = 7 new commits on top of `7efbdd8`). PR #55 merged to `zerobias-org/app:uat`, CI passed first run, UAT-deployed. CloudFront invalidated. Demo (Friday 2026-05-08) ran successfully. |
+| **Phase 29.5 brief drafted** | Director | NEW 2026-05-08. Brief at `.planning/director/phase-29.5-brief.md`. Open questions queued for MCP describe (post-session-restart). Then `/gsd-insert-phase 29.5`. |
+| **MCP update verification (post-restart)** | Clark + Director | Run `mcp__zerobias__zerobias_describe('platform.Board.create')` to confirm `zerobias-mcp@1.0.43` is loaded. If stale, restart MCP server. |
 | **Dana branded-login subdomain bug — sent to Chris** | Chris (platform) | NOT a sme-mart fix. Dana `MeProducerImpl.login()` uses `request.headers.host` + emits relative `/login/` URL; doesn't consult `app.custom_login` or `app_instance.hostname`. Report sent today. |
 | **Demo toggle gate uses email allowlist (not admin signal)** | Backlog candidate | `DemoModeService.isAuthorized` checks hardcoded `clark@w3geekery.com` + `zerobias.com` domain, independent of platform admin signal. Should align with `ProjectContextService.isAdmin()`. NOT filed yet. |
-| **Phase 30 plan UNBLOCKED** | Director-decided | Phase 24 closure unblocks resume. Brief at `b7f9b80` (route slot `/projects` pinned). Resuming: `/gsd-plan-phase 30` reads existing CONTEXT.md (pre-paused). |
+| **Phase 30 plan BLOCKED on 29.5** | Director-decided | Phase 30 brief at `b7f9b80` (route slot `/projects` pinned) is now stale — was built on SmeMart-side analogs that 29.5 retires. After 29.5 closes, refresh brief, then `/gsd-plan-phase 30`. |
 | **CI-LINT-INSTALL-1 backlog filed** | DONE | ✅ 2026-05-01 commit `515adc9`. |
 | **Director briefs committed** | DONE | ✅ 2026-05-01 commit `5f7c527`. |
 | **Retroactive demo-tag re-push manual walkthrough** | Director-led | Brief at `.planning/director/retroactive-demo-tag-repush.md`. 51-record inventory pinned. Required before Phase 31 (production cutover). |
@@ -549,11 +688,20 @@ Read paths validated:
 
 ---
 
-## Recent commits (key 2026-05-06/07 deltas — top of stack)
+## Recent commits (top of stack — all PUSHED + UAT-DEPLOYED via PR #55)
 
-Phase 27 architectural rework session (2026-05-06; uncommitted at parkit time covers the 7 workstreams listed in "Phase 27 architectural rework" section). 2026-05-07 session added MORE uncommitted work to the same Workstream E surface (Provisioning tab).
+2026-05-08 session shipped 7 new commits on top of `7efbdd8`. Plus the 3 prior unpushed commits (08770cf, 56481c6, c976ff2) all rolled into PR #55:
 
-Already-committed at last parkit (2026-05-06), still unpushed at top of `poc/sme-mart`:
+**This session (2026-05-08):**
+- `c550743` chore(deps): bump zb-family deps within caret ranges (lockfile-only)
+- `9b8837d` fix(test): provide ZerobiasClientSessionId in 2 dependent specs
+- `fb471b9` docs(director): tag-naming convention + permissions/task notes + Resume
+- `b6da9ac` style(org-detail, vendor-profile): flat panels + theme-aware welcome card
+- `b0c6fb0` fix(my-engagements): scope listing to current org
+- `f6e40ca` fix(demo-toggle): pkColumn + neonQuery shape normalization
+- `74ed63e` feat(phase-27): provisioning admin-only architectural rework
+
+**Prior parkit (2026-05-06), shipped via PR #55:**
 - `c976ff2` docs(director): backlog 028-030 + .ORG research note + 020/021 from Brian's 2026-05-06 Slack clarification
 - `56481c6` chore(scripts): suppress NEON_DATABASE_URL warning in CI builds (when CI=true)
 - `08770cf` fix(hub-auth, gql): wire session header for Hub + expand tag subfields (dep bumps; mirror zb/ui PR #140; central tag→tag{value} expansion in GraphqlReadService.buildQuery)
@@ -592,32 +740,36 @@ PR #54 cycle (2026-05-05/06):
 
 ---
 
-## Next-action sequence (when Director Parks resumes)
+## Next-action sequence (when Director Parks resumes — post-quit/restart/clear/parks-load)
 
-1. **Decide on uncommitted work.** Working tree at parkit time has 7 workstreams of Phase 27 architectural rework + side-quest fixes. Tests + lint + tsc all clean. Two prior commits (`08770cf` + `56481c6`) on top of pushed HEAD also waiting. **Ask Clark before pushing anything** — earlier directive was "wait to push there are some other fixes I want to go in before next deploy to uat." Possible commit groupings:
-   - **Group 1** (already committed, just push when authorized): Hub auth + GQL tag fix + gen-neon-env CI noise (commits `08770cf` + `56481c6`).
-   - **Group 2** (commit + push together): Phase 27 architectural rework — guard rewire + isOrgProvisioned + holding-page rebuild + admin Provisioning tab + naming rename + BACKLOG entries.
-   - **Group 3** (commit + push together): Page polish — org-detail panels (mode="header-only" + Touch-It-Fix-It) + vendor-profile-tab Welcome card theme + section labels.
-   - Suggest one combined commit for Group 2 (architectural change is one logical unit) and a separate commit for Group 3 (page polish unrelated).
-2. **Once committed**, refresh local dev to verify:
-   - Admin reload stays where you are (no force-redirect to `/admin`).
-   - `/admin` Provisioning tab renders with org list + status per row.
-   - Unprovisioned non-admin users hit holding page (theme-aware).
-   - Org-detail page renders flat panels.
-   - Vendor-profile-tab Welcome card readable in dark mode; section labels Title-Cased with spaces.
-3. **Clark's UAT smoke test (Plan 24-03 Task 3)** — still pending against the deployed `uat.zerobias.com/sme-mart/`. Verification matrix in `24-03-WAVE-2-SUMMARY.md`. Should fold in verification of new behavior once Group 2 + Group 3 land on UAT (next PR cycle).
-4. **Demo toggle alignment** — file BACKLOG entry to swap `DemoModeService.isAuthorized(email)` to consume `ProjectContextService.isAdmin()`. Aligns admin gates across the app. Low-priority, but Clark surfaced it.
-5. **Resume Phase 30 plan** — `/gsd-plan-phase 30` reads existing CONTEXT.md. Brief at `b7f9b80`. Phase 24 closed; route slot `/projects` is now consumable.
-6. **Phase 31 brief spot-check** — pre-existing brief; spot-check after 30 closes.
-7. **Retroactive demo-tag re-push manual walkthrough** — Director-led, Clark + Director run together via MCP (no agent — agents fabricate UUIDs on real platform mutations). Brief at `.planning/director/retroactive-demo-tag-repush.md`. 51 records to re-push. Required before Phase 31.
-8. **Cross-fork PR for Group 2 + Group 3 to UAT** — once committed + pushed, open a follow-up PR like #54. Ideally bundle with Phase 30 work to minimize PR cycles.
-9. **Hub generic-sql side-quest** — check Kevin's response on Slack about 0.6.0 connection_profile.
-10. **Send transparency HTML + for-joe MD to Joe (Work Worlds)** — Clark's task. Phase 27.5 closure removed the gate.
-11. **BACKLOG #095 recurring sync** — Joe + Dan + Clark.
-12. **DP2 worktree teardown** — `git worktree remove ../sme-mart-dp2 && git branch -D director-parks-2-phase20`.
-13. **Worktree hygiene** — `git worktree prune`.
-14. **Commit `~/.claude/` verify-phase.md merge** — 2 atomic commits left dirty after `/gsd-reapply-patches`.
-15. **`~/.claude/hooks/zb-mcp-lock-check.sh` patch** — `IFS=$'\t'` fix uncommitted in user-config dir.
+1. **Verify ZB MCP updated to 1.0.43.** Run `mcp__zerobias__zerobias_describe('platform.Board.create')` — should return new Board schema. If "Unknown service" or stale shape, MCP server needs restart.
+2. **Resolve Phase 29.5 brief open questions via MCP describe** (BEFORE inserting phase):
+   - `zerobias_describe('platform.Project.create')` → `membershipPolicy` enum values, `visibility` enum, full `NewProject` shape.
+   - `zerobias_describe('platform.Task.create')` → **CRITICAL** verify `boardId` requirement. If required AND no server default, provisioning recipe Step B is broken on next live run.
+   - `zerobias_describe('platform.Board.create')` → confirm `boardType` enum + `ownerId` semantics + `isDefault` behavior.
+   - `zerobias_describe('hydra.Role.addRoleMemberScope')` → for PERMS-AUDIT-1 backlog update.
+3. **Update `phase-29.5-brief.md`** with the resolved values (lock open questions before discuss-phase).
+4. **`/gsd-insert-phase 29.5 .planning/director/phase-29.5-brief.md`** — adds Phase 29.5 to v1.4 ROADMAP.
+5. **`/gsd-discuss-phase 29.5`** — resolve any remaining gray areas (single-phase vs 29.5a/29.5b split decision, inventory deliverable shape, schema PR coordination cadence).
+6. **`/gsd-plan-phase 29.5`** — produce PLAN.md.
+7. **Execute** — gsd-executor or fresh session.
+8. **Post-29.5 closure:**
+   - **Phase 30 brief refresh** — substantial rewrite (now uses real platform.Project + platform.Board); old brief at `b7f9b80` is stale.
+   - **PERMS-AUDIT-1 backlog update** — note hydra Role scoped-grant primitives now exist (was waiting on this).
+9. **Phase 31 (W3Geekery first customer + smoke test)** — depends on 30.
+10. **Retroactive demo-tag re-push manual walkthrough** — Director-led, Clark + Director run together via MCP (no agent — agents fabricate UUIDs on real platform mutations). Brief at `.planning/director/retroactive-demo-tag-repush.md`. 51 records to re-push. Required before Phase 31.
+11. **Side-quest cleanup** (any time):
+    - My-Engagements empty-state copy is RFP-framed (post-demo cleanup).
+    - Audit other list pages for unscoped-by-org pattern (My Projects, vendor browse, RFP list).
+    - Demo toggle alignment — swap `DemoModeService.isAuthorized(email)` to consume `ProjectContextService.isAdmin()`.
+    - My Tasks "Accountable" sub-filter broken on platform — file with Kevin.
+12. **Hub generic-sql side-quest** — check Kevin's response on Slack about 0.6.0 connection_profile.
+13. **Send transparency HTML + for-joe MD to Joe (Work Worlds)** — Clark's task.
+14. **BACKLOG #095 recurring sync** — Joe + Dan + Clark.
+15. **DP2 worktree teardown** — `git worktree remove ../sme-mart-dp2 && git branch -D director-parks-2-phase20`.
+16. **Worktree hygiene** — `git worktree prune`.
+17. **Commit `~/.claude/` verify-phase.md merge** — 2 atomic commits left dirty after `/gsd-reapply-patches`.
+18. **`~/.claude/hooks/zb-mcp-lock-check.sh` patch** — `IFS=$'\t'` fix uncommitted in user-config dir.
 
 ---
 
@@ -641,7 +793,7 @@ PR #54 cycle (2026-05-05/06):
 
 ## Quick-start prompt for the next Director Parks session
 
-> Resume Director Parks. Read `.planning/director/DIRECTOR-PARKS-RESUME.md` FIRST — start with the **"2026-05-07 PM/EVE session"** section at the top, which captures the locked tag-naming convention, ownership flip, demo-toggle bug fix, and my-engagements org-scoping fix. **Friday 2026-05-08 demo readiness:** Brian's org is **CLEAN** (no engagement/project/tag/task) — Clark will live-click Provision in the admin tab during the demo. Org-switcher already shows Brian's org because Clark added `cstacer@zerobias.com` as a member. Demo flow: `/admin → Provisioning tab → click Provision on Brian's row → switch to Brian Hierholzer Inc. via user-menu → My Engagements shows the new "Brian Hierholzer Inc. <- ZeroBias" engagement only`. **Locked verbiage (DO NOT regress):** Engagement.name `${orgName} <- ZeroBias`; Engagement.description `Platform Services Engagement: ZeroBias ➡️ ${orgName}` (no trailing period — orgs end in `Inc.`); Project.name `ZeroBias Platform`; Project.description `${orgName}'s gateway into ZeroBias — tasks, notes, and communication tied to the ZeroBias ➡️ ${orgName} platform engagement live here.`; Tag.name `sme-mart.eng.zerobias-to-${slug}`; Tag.description `Marketplace tag for the platform-services engagement: ZeroBias ➡️ ${orgName}.` All extracted to top-of-file constants in `provisioner.service.ts` for one-line iteration. **Locked tag ownership:** all `sme-mart.eng.*` tags owned by the marketplace operator org (W3Geekery today via `MARKETPLACE_OPERATOR_ORG_ID = cd7105df-...`, future ZeroBias when SME Mart absorbed into platform — TODO env-config externalize at graduation). **DECISIONS.md NEW entry "Engagement Tag Naming: Identity Tag (`{supply}-to-{demand}`) + Additive Classifier Tags (2026-05-07)"** codifies the two-layer pattern + cardinality semantics + why kebab-only nmtoken (vs `->`/`=>`/emoji — shell footgun + variation-selector mismatch). **NEW memory** `reference_auditgraph_data_lifecycle.md` indexed at top of MEMORY.md — canonical write/read/DELETE recipes for SmeMart classes via Pipeline.receive, including the `markDeleted-requires-non-empty-data-array` gotcha (workaround: include doomed record in both `data` and `markDeleted`). **Director note 2026-05-07 EVE — director-doc jargon is BANNED from customer-facing fields.** I screwed up by writing `Compliance-driven invariant — every ZB platform org has exactly one.` as the engagement description; that's meta-commentary, not user copy. Clark called it out hard. Verbiage going to user-visible records: keep it factual + parallel to the directional-arrow visual we already use; never include the WHY the engagement exists, only WHAT it is. **Director note 2026-05-07 EVE — `~/.claude/scripts/zb-mcp-profile-lock.sh` now hard-fails on missing `<session>` arg (no more silent 'unknown' default).** Look at the conversation header for `/rename` value before calling acquire. **Plus the original orientation:** role contract + direct-request override + Deployment Paths directive 2026-05-01 + Provisioning Admin-Only directive 2026-05-06 + GSD command format change + AskUserQuestion ban + v1.4 state. Then `.planning/director/SESSION-STATE.md` and recent `.planning/director/DECISIONS.md`. The `/meta:director` skill applies. **CRITICAL — GSD slash commands use hyphens (`/gsd-foo`); non-GSD plugins use colons (`/meta:sync`).** **CRITICAL — `/gsd-verify-phase` does NOT exist in 1.38.5; verification runs via the `gsd-verifier` subagent invoked directly through the Agent tool.** **CRITICAL — AskUserQuestion is globally banned.** **CRITICAL — 3P apps in zerobias-org/app deploy ONLY to uat/qa/prod.** **CRITICAL — Provisioning is admin-only (Director directive 2026-05-06): only Clark + Director run the 5-call recipe; end users hit a holding page.** **CRITICAL — When Clark shows me output with `??` or similar, ANSWER the question; don't ship a fix unless he explicitly says "fix it" (anti-pattern bit me 3+ times — modal/dropdown extrapolation, package.json edits, engagement description rewrite, all reverted).** **v1.4 status: Phases 20, 24, 25, 26, 27, 27.5, 28 COMPLETE.** Phase 24 UAT-deployed via PR #54 (merged 2026-05-06). **Phase 27 has uncommitted architectural rework + the 2026-05-07 EVE tag-naming + bug-fix pile on top of closure** — see top section. **Three commits already on top of origin HEAD `7efbdd8` (`c976ff2`, `56481c6`, `08770cf`) NOT pushed pending Clark's "before next UAT deploy" gate.** **Hold off committing/pushing until Clark explicitly says to.** **First action on resume:** check `git status -s` + `git log --oneline origin/poc/sme-mart..HEAD`; remind Clark of the 5-group commit/push plan (now bigger after the 2026-05-07 EVE additions). Run lint + tsc + targeted tests if asked to verify state. **Phase 30 plan UNBLOCKED** — `/gsd-plan-phase 30` reads existing CONTEXT.md; brief at `b7f9b80`. **Known bugs not fixed:** Dana branded-login subdomain bug sent to Chris (platform-side); demo toggle authorization uses email allowlist instead of admin signal (worth backlog); My Engagements empty-state copy is RFP-framed (post-demo cleanup); other list pages may share the unscoped-by-org pattern (audit needed); My Tasks "Accountable" sub-filter broken on platform (file with Kevin). Direct request overrides default boundary (you can run /gsd-* if asked).
+> Resume Director Parks. Read `.planning/director/DIRECTOR-PARKS-RESUME.md` FIRST — start with the **"2026-05-08 session"** section at the top, which captures: (a) all Phase 27 architectural rework SHIPPED via PR #55 (merged + UAT-deployed); (b) Friday demo successfully ran Provision live for Brian's org; (c) Nic's 2026-05-08 SDK release announcing real `platform.Project` / `platform.Board` / `hydra.Role` scoped-grant primitives + `zerobias-mcp@1.0.43`; (d) Phase 29.5 (Platform Model Migration) brief drafted at `.planning/director/phase-29.5-brief.md`. **8 new commits on `poc/sme-mart` since prior pushed HEAD; all in PR #55, all DEPLOYED.** Working tree should be clean post-quit. **CRITICAL FIRST ACTION:** verify ZB MCP is updated to 1.0.43 by running `mcp__zerobias__zerobias_describe('platform.Board.create')` — should return new Board schema. If stale ("Unknown service" or missing methods), MCP server needs restart. **Then resolve Phase 29.5 brief open questions via MCP describe BEFORE inserting phase:** (1) `platform.Project.create` membershipPolicy enum + visibility values; (2) `platform.Task.create` boardId requirement (HIGH RISK: if required AND no server default, provisioning recipe Step B breaks on next live run); (3) `platform.Board.create` boardType enum + ownerId + isDefault semantics; (4) `hydra.Role.addRoleMemberScope` for PERMS-AUDIT-1 backlog update. **Then update `phase-29.5-brief.md`** with resolved values to lock open questions, then `/gsd-insert-phase 29.5 .planning/director/phase-29.5-brief.md`, then `/gsd-discuss-phase 29.5`, then `/gsd-plan-phase 29.5`. **Phase 30 brief is now stale** — was built on SmeMart-side analogs that 29.5 retires; substantial rewrite after 29.5 closes. **Phase 31 unchanged** — depends on 30. **Locked verbiage (DO NOT regress in 29.5 recipe flip):** Engagement.name `${orgName} <- ZeroBias`; Engagement.description `Platform Services Engagement: ZeroBias ➡️ ${orgName}` (no trailing period — orgs end in `Inc.`); Project.name `ZeroBias Platform`; Project.description `${orgName}'s gateway into ZeroBias — tasks, notes, and communication tied to the ZeroBias ➡️ ${orgName} platform engagement live here.`; Tag.name `sme-mart.eng.zerobias-to-${slug}`; Tag.description `Marketplace tag for the platform-services engagement: ZeroBias ➡️ ${orgName}.` All in top-of-file constants in `provisioner.service.ts`. **Locked tag ownership:** all `sme-mart.eng.*` tags owned by `MARKETPLACE_OPERATOR_ORG_ID` (W3Geekery today; ZeroBias post-graduation). **DECISIONS.md "Engagement Tag Naming: Identity Tag + Additive Classifier Tags (2026-05-07)"** codifies two-layer pattern. **NEW memory** `reference_auditgraph_data_lifecycle.md` — canonical write/read/DELETE recipes including `markDeleted-requires-non-empty-data-array` gotcha. **Director note (2026-05-07 EVE) — director-doc jargon BANNED from customer-facing fields.** Verbiage to user-visible records: keep it factual + parallel to directional-arrow visual; never include WHY, only WHAT. **Director note (2026-05-07 EVE) — `~/.claude/scripts/zb-mcp-profile-lock.sh` hard-fails on missing `<session>` arg.** Look at conversation header for `/rename` before calling acquire. **Plus original orientation:** role contract + direct-request override + Deployment Paths directive 2026-05-01 + Provisioning Admin-Only directive 2026-05-06 + GSD command format change + AskUserQuestion ban + v1.4 state. Then `.planning/director/SESSION-STATE.md` and recent `.planning/director/DECISIONS.md`. The `/meta:director` skill applies. **CRITICAL — GSD slash commands use hyphens (`/gsd-foo`); non-GSD plugins use colons (`/meta:sync`).** **CRITICAL — `/gsd-verify-phase` does NOT exist in 1.38.5; verification runs via the `gsd-verifier` subagent invoked directly through the Agent tool.** **CRITICAL — AskUserQuestion is globally banned.** **CRITICAL — 3P apps in zerobias-org/app deploy ONLY to uat/qa/prod.** **CRITICAL — Provisioning is admin-only (Director directive 2026-05-06): only Clark + Director run the 5-call recipe; end users hit a holding page.** **CRITICAL — When Clark shows me output with `??` or similar, ANSWER the question; don't ship a fix unless he explicitly says "fix it".** **v1.4 status: Phases 20, 24, 25, 26, 27, 27.5, 28 COMPLETE + DEPLOYED. Phase 29.5 brief drafted (NEW). Phase 30 brief stale (needs rewrite post-29.5). Phase 31 not started (depends on 30).** Direct request overrides default boundary (you can run /gsd-* if asked).
 
 ---
 
