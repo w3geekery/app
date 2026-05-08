@@ -6,7 +6,7 @@
 - ✅ **v1.1 Org Navigation & Vendor Profile** — Phases 7-12 (shipped 2026-04-02) | [Archive](milestones/v1.1-ROADMAP.md)
 - ✅ **v1.2 RFP Packages & Pilot Projects** — Phases 13-17 (complete 2026-04-15) — Multi-document packages, invitation controls, form builder, pilot project lifecycle, demo scripts
 - 🔄 **v1.3 Dev Experience, Hardening & Transparency** — Phases 18-23 (active 2026-04-15) — Org switcher, local dev stacks, fire-and-forget audit, org documents, form templates, transparency spec
-- 🔄 **v1.4 3P Onboarding & Default Engagement** — Phases 24-28, 30-31 (active 2026-04-24) — Demo data visibility gate, platform data audit, ZB-as-provider seed, auth + routing + lazy guard, company profile form, default board, smoke test
+- 🔄 **v1.4 3P Onboarding & Default Engagement** — Phases 24-28, 29.5, 30-31 (active 2026-04-24) — Demo data visibility gate, platform data audit, ZB-as-provider seed, auth + routing + lazy guard, company profile form, platform model migration, default board, smoke test
 
 ## Phases
 
@@ -86,6 +86,7 @@
   - [x] **Plan 04 (Wave 4)** — Routing Integration: /onboarding/company-profile route registered in app.routes.ts (completed 2026-04-30)
   - [x] **Plan 05 (Wave 5)** — Routing Integration Test: CP-07 getCompletionStatus test + CP-08 flow coverage map (completed 2026-04-30)
 - [ ] **Phase 29: DEFERRED TO v1.5** — Tier display, Terms of Service, ZB branding (intentionally skipped in v1.4)
+- [ ] **Phase 29.5: Platform Model Migration (INSERTED)** (TBD plans) — Replace SmeMart GQL classes with new platform `platform.Project` / `platform.Board` primitives (est. 10-18 hrs)
 - [ ] **Phase 30: Default Project Board + Coming Soon Placeholders** (TBD plans) — Seeded project board with 3 feature stubs (est. 6-8 hrs)
 - [ ] **Phase 31: W3Geekery Dogfood + Production Smoke Test** (TBD plans) — End-to-end validation and production readiness (est. 4-6 hrs)
 
@@ -518,6 +519,16 @@ This phase is intentionally deferred from v1.4. When v1.5 begins, Phase 29 work 
 
 ---
 
+### Phase 29.5: Platform Model Migration (INSERTED)
+
+**Goal:** Replace SmeMart GQL classes (Engagement, EngagementVettingItem, SmeMartProject) with new platform `platform.Project` / `platform.Board` primitives announced 2026-05-08. Engagement-as-Project hierarchy locked; provisioning recipe collapses 7→5 steps; zero new GQL classes added. See `.planning/director/phase-29.5-brief.md`.
+**Requirements**: TBD (resolved in /gsd-discuss-phase + /gsd-plan-phase)
+**Depends on:** Phase 28 (Phase 29 deferred to v1.5; 29.5 inserted ahead of Phase 30 which depended on these primitives)
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 29.5 to break down)
+
 ### Phase 30: Default Project Board + Coming Soon Placeholders
 
 **Goal:** Authenticated onboarded users land on a seeded project board with honest "Coming Soon" placeholders for unfinished features
@@ -590,7 +601,7 @@ This phase is intentionally deferred from v1.4. When v1.5 begins, Phase 29 work 
 
 **v1.2 Milestone:** 5/5 phases complete, 14/14 plans complete (closed 2026-04-15).
 **v1.3 Milestone:** 6 phases total (18-23), 35 requirements, ~80–90 hrs estimated. Phases 18-19 complete (2026-04-17), phases 20-23 not started.
-**v1.4 Milestone:** 7 phases total (24-28, 30-31; phase 29 deferred), 38 requirements, ~37-55 hrs estimated. All phases not started. Phase 29 intentionally skipped.
+**v1.4 Milestone:** 8 phases total (24-28, 29.5, 30-31; phase 29 deferred), 38+ requirements, ~47-73 hrs estimated. Phase 29 intentionally skipped. Phase 29.5 inserted 2026-05-08 (Platform Model Migration — reconcile SmeMart GQL classes with new `platform.Project` / `platform.Board` primitives).
 
 ---
 
