@@ -3,9 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: 3P Onboarding & Default Engagement
 status: executing
-current_phase: 24
-last_updated: "2026-05-01T23:30:00.000Z"
-last_activity: 2026-05-01
+current_phase: 29.5
+last_updated: "2026-05-08T20:00:00.000Z"
+last_activity: 2026-05-08
+last_session_stopped_at: "Phase 29.5 context gathered"
+last_session_resume_file: ".planning/phases/29.5-platform-model-migration/29.5-CONTEXT.md"
 progress:
   total_phases: 20
   completed_phases: 10
@@ -195,6 +197,7 @@ Platform observations (carry-forward):
 ### Roadmap Evolution
 
 - Phase 27.5 inserted after Phase 27 (2026-04-30): Modernization Rule Enforcement — ESLint + pre-commit + CI gate (URGENT). Origin: Phase 27 Wave 2 imported `CommonModule` despite the rule being pasted in CONTEXT.md and handoff. Brief: `.planning/director/phase-27.5-brief.md`. Blocks Phase 30 + 31 plans until closed.
+- Phase 29.5 inserted after Phase 29 (2026-05-08): Platform Model Migration — replace SmeMart GQL classes (Engagement, EngagementVettingItem, SmeMartProject) with new `platform.Project` / `platform.Board` primitives announced 2026-05-08 (URGENT). Origin: Nic's SDK release shipped real platform primitives; Phase 30 (Default Project Board UI) was paused waiting for these — building 30 on SmeMart-side analogs would be double the work. Engagement-as-Project hierarchy locked; provisioning recipe collapses 7→5 steps. Brief: `.planning/director/phase-29.5-brief.md`. Blocks Phase 30 (which requires substantial brief rewrite post-29.5).
 
 ---
 
