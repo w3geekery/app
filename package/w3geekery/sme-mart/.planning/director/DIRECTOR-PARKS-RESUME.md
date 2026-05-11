@@ -189,7 +189,7 @@ When Plans 02, 03, 04 all report complete, executor returns to Director for wave
 
 - Plan 01's "TBD; recommend live describe later" framing on D-23 is a watch-list pattern. Brief-locked success criteria need explicit resolution, not punts. Future Director sessions should reject "TBD" framings on brief-anchored criteria and require either resolution-now or explicit deviation logging.
 - Wave 2 starts as soon as Clark invokes — the amendments don't block, but Plan 03's Task 0 is the first thing Plan 03 should do.
-- Plan 05 still gated on Wave 2 close + Daniel Rojas availability for schema PR review. 5-day stall clock starts at PR open.
+- Plan 05 still gated on Wave 2 close + Daniel Rojas review (in-product GitHub only — NO Slack, NO stall clock; both rescinded by Director 2026-05-11 per DECISIONS D-44).
 
 ### Commits since prior parkit (`c76910d`)
 
@@ -208,6 +208,166 @@ Total on `poc/sme-mart` since `51601ed`: 12+ commits ahead of origin (verify exa
 4. **Wave 3 (Plan 05):** schema deprecation PR. Director should not auto-greenlight Wave 3 if Wave 2 close has gaps (especially Plan 04's partition outcome and Plan 03's D-23 resolution).
 5. **Subsequent waves:** Wave 4 (Plans 06/07 UAT smoke), Wave 5 (Plan 08 closure). Each wave-close returns to Director for checkpoint.
 6. **Closure checkpoint:** Director reviews CLOSURE.md + verification report. Then Clark opens cross-fork PR to `zerobias-org/app:uat` bundling all 29.5 commits.
+
+---
+
+## 2026-05-11 PM parkit (3) — Wave 3 schema PR walkthrough in progress; vault auth pending
+
+**TL;DR:** Wave 3 (Plan 05 — schema deprecation PR to `zerobias-org/schema`) is partially executed. Schema YAML edits are committed on the **fork clone** (`~/Projects/w3geekery/zb-forks/org/schema` branch `feat/sme-mart-schema-deprecation-29-5`, commit `ffc4fc0`). Local `:gate` ran clean with BUILD SUCCESSFUL but `testIntegrationDataloader` was SKIPPED because no `NEON_API_KEY` in env. Daniel walked us through vault setup — vault CLI is now installed, but the OIDC login + env refresh are interactive steps Clark needs to drive in his own shell post-clear.
+
+### Wave 3 state
+
+| Step | Status | Notes |
+|---|---|---|
+| Fork clone discovery | ✅ found at `~/Projects/w3geekery/zb-forks/org/schema` (origin=w3geekery/schema, upstream=zerobias-org/schema, plus `zb-upstream-local` remote → ZB clone) |
+| Fork main sync with upstream | ✅ pulled 111 commits incl. PR #52 gradle bootstrap, PR #53 gradle-wrapper.jar fix | branch `main` now matches upstream, 111 ahead of `origin/main` (push of fork's main not yet done — not blocking) |
+| Feature branch | ✅ `feat/sme-mart-schema-deprecation-29-5` branched off updated main | `feat/credentials-catalog-multi` confirmed dead, was prior work that already merged |
+| YAML edits applied to fork clone | ✅ 3 files (description prepend + top-level `deprecated: true` matching `transportProtocolType.yml` precedent) — all 3 verified against brief mappings, executor's framing reconfirmed correct |
+| Java 21 LTS install | ✅ `brew install openjdk@21` done (keg-only at `/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home`) — zbb auto-detected without sudo symlink |
+| dataloader update | ✅ `@zerobias-com/platform-dataloader@1.0.113` (above zbb.yaml `>=1.0.87`) |
+| zbb update | ✅ `@zerobias-org/zbb@0.3.69` (above schema zbb.yaml's `0.3.63+` floor) |
+| Slot creation | ✅ `schema-local` slot at `~/.zbb/slots/schema-local/` (port range 15200-15299, no conflict with `sme-mart-local`'s 15100-15199) |
+| Stack add | ✅ `zbb stack add .` from schema repo root — added stack `schema` (`@zerobias-org/schema@1.0.0`) to the slot |
+| Vault CLI install | ✅ `brew install hashicorp/tap/vault` done (`Vault v2.0.0` at `/opt/homebrew/bin/vault`) |
+| `VAULT_ADDR` env var | 🟡 Clark adding to `~/dev_env_vars` (will source post-clear) — value: `https://vault.auditmation.io:8200` |
+| `vault login -method=oidc` | 🟡 PENDING — interactive, Clark drives post-clear |
+| `vault kv get operations-kv/neon/content` | 🟡 PENDING (verifies auth works) |
+| `zbb env refresh` | 🟡 PENDING (after vault auth, in loaded slot) |
+| `:gate` with NEON_API_KEY populated | 🟡 PENDING (the real testIntegrationDataloader run) |
+| Commit gate-stamp refresh | 🟡 PENDING (if stamp non-trivially changes) |
+| Push to fork | 🟡 PENDING |
+| Open cross-fork PR `w3geekery/schema:feat/...` → `zerobias-org/schema:main` | 🟡 PENDING |
+
+### Local commit on fork clone
+
+- **SHA:** `ffc4fc03d83e4f9f5a99e5489ec0de9e54e11c94`
+- **Branch:** `feat/sme-mart-schema-deprecation-29-5` on `~/Projects/w3geekery/zb-forks/org/schema`
+- **Type:** `fix(w3geekery):` (changed from executor's `docs(schema):` to match repo precedent like `fix(w3geekery): mark SmeMartProject.boundaryIds as multi`)
+- **Files:** `package/w3geekery/smemart/classes/{Engagement,SmeMartProject,EngagementVettingItem}.yml` (+6/-3)
+- **Pre-edit dataloader run** (against scratch DB Supabase pg17 at port 15432) PASSED — `Importer finished successfully` for all 3 changed classes. NOT captured in stamp (raw `dataloader -d ./` is the OLD CONTRIBUTING.md path) but proves YAML loadability.
+- **Local `:gate` BUILD SUCCESSFUL** but `testIntegrationDataloader SKIPPED` because no `NEON_API_KEY`. Stamp updated with new branch name only (sourceHash/testHash unchanged at `e3b0c4...855` = SHA-256("")).
+- **Uncommitted on working tree:** `gate-stamp.json` (branch-name update) + `package-lock.json` (incidental from `npm install` in gate). Decision to amend vs new-commit pending the real-Neon `:gate` run (which would update the stamp with more meaningful values).
+
+### Working tree state at parkit
+
+**Schema fork clone** (`~/Projects/w3geekery/zb-forks/org/schema`, branch `feat/sme-mart-schema-deprecation-29-5`):
+```
+M package-lock.json
+M package/w3geekery/smemart/gate-stamp.json
+```
+
+**App repo** (`~/Projects/w3geekery/zerobias-org-forks/app/package/w3geekery/sme-mart`, branch `poc/sme-mart`):
+- 14 commits ahead of origin (incl. all 29.5 Wave 1+2 work). DO NOT PUSH — accumulating for cross-fork PR to `zerobias-org/app:uat`.
+- 5 uncommitted form-builder/shared component files (`readonly` modifier additions on `signal()`/`input()`/`computed()`/`output()` from a parallel executor's lint-staged hook). Still pending the `(b) commit separately` decision per Phase 27.5 followup pattern. Not blocking Wave 3.
+
+### Architectural findings this session (worth preserving)
+
+1. **`zbb gate` ≡ `./gradlew gate`** — confirmed by Daniel directly. zbb wraps gradle with env handling (`JAVA_HOME`, `GRADLE_OPTS`).
+2. **`zb.schema` plugin source** lives at `~/Projects/zb/zerobias-org/util/packages/build-tools/src/main/kotlin/zb.schema.gradle.kts` (only visible AFTER `git pull` on util repo — local clone was stale). Plugin only adds TS-twin generation as a `postLoadActions` hook on `testIntegrationDataloader`; the real gate machinery is in `zb.content` and `zb.base`.
+3. **`zb.base.gradle.kts` lines 931-933 hardcode connector-style paths** (`sourceFiles = ["api.yml", "tsconfig.json"]`, `sourceDirs = ["src"]`, `testDirs = ["test"]`). Schema packages don't have these → `computeSourceHash()` finds zero matching files → returns SHA-256("") = `e3b0c44...855`. **Every schema package's stamp has the same empty-string SHA**. The stamp is structurally always-valid; YAML edits don't change it. Real schema validation is `testIntegrationDataloader` (Neon-side), not stamp-source-hashing. **Open question with Daniel:** is this intentional or should `zb.schema` override `sourceFiles`/`sourceDirs` to point at `classes`/`fields`/`enums`/`interfaces`?
+4. **Schema repo has NO PR-time CI.** PR #52 deleted `publish-pull-request.yml` + `pull-request-target.yml`. Only `publish.yml` remains, triggers on push to main/qa/dev/uat. PR open → zero automated validation. Daniel reviews manually; real validation runs post-merge via the publish workflow (which has Neon credentials).
+5. **The migrate-packages SKILL.md line "CI re-runs the full gate with Neon on push" is misleading** — CI actually runs only `monorepoGateCheck` (cheap, validates committed stamp) per `zb.monorepo-gate.gradle.kts`. The full gate including Neon-side dataloader runs ONLY during `publish` (push to env branch). Doc-gap captured.
+6. **Vault auth setup** per Daniel + `design/FLOWS.md`:
+   - `VAULT_ADDR=https://vault.auditmation.io:8200` (note: legacy `auditmation.io` domain, not zerobias.com)
+   - `vault login -method=oidc` writes `~/.vault-token`
+   - zbb's `VaultResolver.ts:26` reads token from `~/.vault-token`
+   - `zbb env refresh` resolves vault entries into slot env
+
+### Schema repo doc gaps collected this session
+
+File: `.planning/director/schema-repo-doc-gaps.md` (10 items). For Daniel to review/fix after this PR lands. Daniel has acknowledged docs need work ("might need to review skills").
+
+### Schema PR content drafted
+
+File: `.planning/director/29.5-05-pr-content.md`. Contains commit message + self-contained PR body (no @-mentions, no Slack-ping language). Both updated to use `fix(w3geekery):` type + Director's vigilance pass.
+
+### Memory entries added/updated this session
+
+- `feedback_never_slack_anyone.md` — tightened to cover GitHub reviewer-add too (rescinds D-44's "in-product GitHub OK" carve-out)
+- `project_schema_pr_process_is_director_clark.md` — agents do code+commit only on schema work; Clark+Director drive PR process
+
+### DECISIONS.md additions
+
+- **D-44** + **D-44 amendment** — NO Slack ping, NO stall clock, NO reviewer-add on Plan 05 PR. Reviewer routing is 100% Clark's responsibility, in all channels including in-product GitHub.
+
+### Commits since prior parkit (`53c0041`)
+
+```
+(app repo, on poc/sme-mart, all unpushed)
+<no new commits this session on the app repo>
+
+(schema fork clone, on feat/sme-mart-schema-deprecation-29-5, local-only)
+ffc4fc0 fix(w3geekery): mark Engagement, SmeMartProject, EngagementVettingItem as deprecated (Phase 29.5)
+```
+
+App repo's `poc/sme-mart` is unchanged from the prior parkit point. The 5-file form-builder drift is still in working-tree uncommitted state on the app repo.
+
+### Next-action sequence (on resume)
+
+After Clark does `quit / source ~/dev_env_vars / resume claude / clear / parks load`:
+
+1. **Verify VAULT_ADDR is set:** `echo $VAULT_ADDR` (expect `https://vault.auditmation.io:8200`).
+2. **Run interactive vault login:** `vault login -method=oidc` (opens browser for SSO; writes `~/.vault-token`).
+3. **Verify vault access:** `vault kv get operations-kv/neon/content` — should return NEON_API_KEY + NEON_PROJECT_ID values without error.
+4. **Re-enter the loaded slot:**
+   ```
+   cd ~/Projects/w3geekery/zb-forks/org/schema
+   zbb slot load schema-local
+   zbb env refresh
+   zbb env list | head -30
+   ```
+   Confirm `NEON_API_KEY` and `NEON_PROJECT_ID` now show `Resolution: vault` (masked values).
+5. **Re-run gate:**
+   ```
+   ./gradlew :w3geekery:smemart:gate
+   ```
+   This time `testIntegrationDataloader` should EXECUTE (Neon ephemeral branch creation, schema load, validation, branch teardown).
+6. **Check what changed in stamp:**
+   ```
+   git status -sb && git diff package/w3geekery/smemart/gate-stamp.json
+   ```
+   If `sourceHash` / `testHash` got meaningful values (not `e3b0c44...855`), the schema-side hashing now reflects real content. If still empty SHAs, the open question about `zb.schema` not overriding `sourceFiles` is confirmed and worth flagging to Daniel.
+7. **Stage stamp + amend commit `ffc4fc0`** (or new commit if amend feels risky):
+   ```
+   git restore package-lock.json
+   git add package/w3geekery/smemart/gate-stamp.json
+   git commit --amend --no-edit
+   ```
+8. **Push fork branch:**
+   ```
+   git push -u origin feat/sme-mart-schema-deprecation-29-5
+   ```
+   (Verify hook doesn't block — `zb-forks/org/schema` is OUTSIDE the hardcoded hook paths so should pass clean.)
+9. **Open cross-fork PR (Clark drives):**
+   ```
+   gh pr create \
+     --repo zerobias-org/schema \
+     --base main \
+     --head w3geekery:feat/sme-mart-schema-deprecation-29-5 \
+     --title "fix(w3geekery): mark Engagement, SmeMartProject, EngagementVettingItem as deprecated (Phase 29.5)" \
+     --body-file <(... from .planning/director/29.5-05-pr-content.md ...)
+   ```
+   NO `--reviewer`, NO @-mentions in body, NO Slack ping. Clark handles all human routing manually after PR is up.
+10. **Report PR URL back to Director.** Standing by for Wave 3 close checkpoint after PR is approved + merged.
+
+### If vault auth fails (fallback plan)
+
+If `vault login -method=oidc` doesn't work (SSO setup issue, ZB-specific auth quirks), the fast path is to ask Daniel for raw `NEON_API_KEY` + `NEON_PROJECT_ID` values and:
+```
+zbb env set NEON_API_KEY <value>
+zbb env set NEON_PROJECT_ID <value>
+```
+Then proceed from step 4 above. The PR can land either way — vault is the canonical mechanism but `zbb env set` is the documented escape hatch.
+
+### Quick-start prompt (Director Parks reads this first on resume)
+
+You're Director Parks for SME Mart. Phase 29.5 Wave 3 is in progress — schema deprecation PR to `zerobias-org/schema` for 3 YAML files (Engagement, SmeMartProject, EngagementVettingItem). Clark and you are walking through the PR process TOGETHER (per `project_schema_pr_process_is_director_clark.md`); gsd-execute is NOT authorized to push/PR/test schema work.
+
+**Current state:** Local commit `ffc4fc0` on fork clone `~/Projects/w3geekery/zb-forks/org/schema` branch `feat/sme-mart-schema-deprecation-29-5`. Local `:gate` passed but `testIntegrationDataloader` SKIPPED (no NEON_API_KEY). Vault CLI installed; Clark is post-clear about to set `VAULT_ADDR=https://vault.auditmation.io:8200`, run `vault login -method=oidc`, then in the loaded slot run `zbb env refresh` + re-run `:gate`. Plan 05 PR not yet open.
+
+**Next action:** verify Clark's vault auth landed, re-enter slot, refresh env, re-run gate with Neon, commit any meaningful stamp changes, push to fork, open the cross-fork PR (NO reviewer-add, NO Slack ping — per D-44 + D-44 amendment).
+
+**Open question for Daniel:** is the empty-SHA stamp behavior on schemas intentional (zb.base hardcoded sourceFiles for connectors only)? Doc gaps in `.planning/director/schema-repo-doc-gaps.md` — share with him after PR lands. PR content drafted in `.planning/director/29.5-05-pr-content.md`.
 
 ---
 
@@ -267,7 +427,7 @@ Director amendments applied to on-disk plans before commit:
 1. Plan 02: `depends_on: [29.5-01]`, Wave 1→2 (MCP-describe gate; conservative wins over risk-accept rework hours).
 2. All plans: stripped invented `PLAT-29-5-*` REQ-IDs (phase_req_ids was TBD; verification criteria + must_haves are the goal-backward anchors).
 3. Plan 04: inserted Task 0 pre-flight guard reading INVENTORY.md to confirm `engagement-hierarchy.service.ts` partition classification (re-scope to ResourceTypeEnum-only if NOT-TOUCHED).
-4. Plan 08: schema-PR-stall escape clause (>5 days from open = file `29.5b` carry-over phase + BACKLOG entry, close 29.5 on app-side changes alone). Plan 05: operational note for Slack ping in `#zb-dx` tagging Daniel Rojas when PR opens.
+4. Plan 08: Schema-PR coordination is Director-managed at-the-moment (NO 5-day stall clock, NO preemptive `29.5b` carry-over — both rescinded 2026-05-11 per D-44). Plan 05: NO Slack ping, NO external messaging of any kind — reviewer routing is in-product GitHub only; Clark handles any out-of-band coordination (also rescinded 2026-05-11 per D-44).
 
 ### 5 new commits this session (poc/sme-mart, unpushed)
 
@@ -326,7 +486,7 @@ The handoff prompt for `/gsd-execute-phase 29.5` is in this session's conversati
 2. **Re-paste gsd-execute handoff** (from conversation history or reconstruct from the Quick-start prompt) into Clark's gsd-plan shell (or fresh shell). Then Clark invokes `/gsd-execute-phase 29.5`.
 3. **Execute Wave 1** (Plan 01 solo): codebase audit + MCP describes producing INVENTORY.md. Return to Director for wave-close checkpoint.
 4. **Execute Wave 2** (Plans 02, 03, 04 parallel after Wave 1 closes). Plan 04's Task 0 is a pre-flight guard.
-5. **Execute Wave 3** (Plan 05 — schema deprecation PR). Honor Slack-ping op note + 5-day stall clock.
+5. **Execute Wave 3** (Plan 05 — schema deprecation PR). NO Slack ping. NO stall clock. Open the PR on `zerobias-org/schema`, add Daniel Rojas as in-product GitHub reviewer, return to Director at Plan 05 wave-close. See D-44 in DECISIONS.md.
 6. **Execute Wave 4** (Plans 06, 07 — UAT smoke tests, human-in-the-loop).
 7. **Execute Wave 5** (Plan 08 — closure).
 8. **Closure checkpoint:** Director reviews CLOSURE.md + verification report. Then Clark opens cross-fork PR to `zerobias-org/app:uat` bundling all 29.5 commits.
@@ -982,10 +1142,10 @@ Resume Director Parks. Read `.planning/director/DIRECTOR-PARKS-RESUME.md` FIRST 
 
 1. **Verify clean tree:** `git status -sb` (expected: clean, branch ~12 ahead). `git log --oneline -5` (expected: this parkit-2 commit at top, then `2d9af79` Wave 1 close).
 2. **Confirm Wave 2 status with Clark.** Either: (a) Clark already invoked Wave 2 in his gsd-execute shell and you're picking up at Wave 2 close checkpoint, OR (b) Wave 2 is still queued awaiting invocation — relay the Wave 2 amendments block from "2026-05-11 PM parkit (2)" section and greenlight invocation.
-3. **Wave 2 close checkpoint (when summary arrives):** verify Plan 03 Task 0 D-23 resolution landed (member-filter param names appended to INVENTORY.md), Plan 04 Task 0 partition outcome surfaced, all three plans (02/03/04) tsc/lint/test clean. Then greenlight Wave 3 (Plan 05 schema PR via Daniel Rojas + Slack ping in `#zb-dx`).
+3. **Wave 2 close checkpoint (when summary arrives):** verify Plan 03 Task 0 D-23 resolution landed (member-filter param names appended to INVENTORY.md), Plan 04 Task 0 partition outcome surfaced, all three plans (02/03/04) tsc/lint/test clean. Then greenlight Wave 3 (Plan 05 schema PR via Daniel Rojas as in-product GitHub reviewer — NO Slack ping, NO stall clock; see D-44).
 4. **Subsequent waves:** Wave 3 (Plan 05) → Wave 4 (Plans 06/07 UAT smoke) → Wave 5 (Plan 08 closure). Each wave-close returns for Director checkpoint.
 
-**Phase 29.5 status: PLANS COMMITTED, READY FOR EXECUTE.** Brief at `.planning/director/phase-29.5-brief.md` (271 lines, locked). CONTEXT.md at `.planning/phases/29.5-platform-model-migration/29.5-CONTEXT.md` (43 decisions, source of truth). DISCUSSION-LOG.md, PATTERNS.md, 8 PLAN.md files (Wave 1: 01 / Wave 2: 02+03+04 / Wave 3: 05 / Wave 4: 06+07 / Wave 5: 08) all committed. Director amendments applied: Plan 02 depends on 01 (MCP-describe gate), REQ-IDs stripped, Plan 04 Task 0 pre-flight guard, Plan 08 schema-PR-stall escape, Plan 05 Slack-ping op note.
+**Phase 29.5 status: PLANS COMMITTED, READY FOR EXECUTE.** Brief at `.planning/director/phase-29.5-brief.md` (271 lines, locked). CONTEXT.md at `.planning/phases/29.5-platform-model-migration/29.5-CONTEXT.md` (43 decisions, source of truth). DISCUSSION-LOG.md, PATTERNS.md, 8 PLAN.md files (Wave 1: 01 / Wave 2: 02+03+04 / Wave 3: 05 / Wave 4: 06+07 / Wave 5: 08) all committed. Director amendments applied: Plan 02 depends on 01 (MCP-describe gate), REQ-IDs stripped, Plan 04 Task 0 pre-flight guard. (Plan 05 Slack-ping op note and Plan 08 schema-PR-stall escape clause both RESCINDED 2026-05-11 per D-44 — see DECISIONS.md.)
 
 **Path (C) Engagement-as-Project hierarchy is LOCKED** — Engagement IS a top-level `platform.Project` (parentId=null, ownerId=buyerOrgId, tagId=identity-tag); workspace ("ZeroBias Platform") is child Project (parentId=engagement.id, tagless); vetting Board (boardType=list, isDefault=false, lazy-created) is immediate-child Board on engagement Project. **Engagement Task `aha1-N` DROPPED** (speculative with Governance verification gate in Plan 06). **Engagement + EngagementVettingItem + SmeMartProject GQL classes RETIRE** (deprecate-without-delete via zerobias-org/schema PR, Daniel Rojas review). **EngagementMetadata NOT created** for v1.4 (planted seed). **Vetting paired-task shape (γ): parent + one subtask per side.** Zero new GQL classes added; three retired.
 

@@ -577,3 +577,74 @@ The OTHER part of Phase 29's old scope — actual default-engagement-creation lo
 **Decision:** The org switcher will eventually become a project switcher (grouped by engagement). Deferred — needs more UX design work.
 **Why:** Every project has an owner org (even private projects), so project→org context is always derivable. But the UX for private vs shared vs multi-org projects in a dropdown needs thought. Brian wants this but it's not blocking the boundary party work.
 **Anti-pattern:** Agent may try to build an org switcher or project switcher as part of this phase. Out of scope.
+
+## D-44 NO Slack, NO Stall Clock for Plan 05 Schema PR (Phase 29.5)
+**Date:** 2026-05-11
+**Decision:** Two Plan 05 (Phase 29.5 schema deprecation PR to `zerobias-org/schema`) operational instructions are RESCINDED in full:
+1. **No Slack ping of any kind.** Prior plan text mandated posting to `#zb-dx` Slack tagging Daniel Rojas when the PR opens. RESCINDED. Claude/agents do NOT post to Slack, DM anyone, or send any external notification on this PR — or on anything else, ever, unless Clark specifically asks for it in that turn. Reviewer routing is in-product GitHub only (add Daniel as reviewer); any out-of-band coordination is Clark's, not Claude's.
+2. **No stall clock.** Prior plan text mandated a "5-calendar-day stall clock starts at PR open" with an automatic spinoff to a `29.5b` carry-over phase + `SCHEMA-29.5-CARRYOVER-1` backlog entry. RESCINDED. There is no stall clock. There is no preemptive 29.5b artifact. If at 29.5 closure time the schema PR is still open and Clark wants to close 29.5 on app-side changes alone, that is a Director call made *then*, not a templated procedure encoded in advance.
+
+**Why:** Slack and human-coordination signaling are Clark's tools, not Claude's. Encoding "Claude pings @user" into a plan inserts Claude into reviewer routing, social dynamics, and stakeholder management Clark owns. Encoding stall-clock procedural ceremony in advance commits to a process shape that hasn't proven necessary and adds artifacts (29.5b phase scaffold, carry-over backlog entry) without evidence of need.
+
+**How to apply:**
+- ANY future plan-phase output that says "ping @X in Slack" / "post in #channel" / "DM Y" gets struck at plan-checker stage. If missed there, struck at wave-greenlight by Director.
+- ANY future plan-phase output that says "X-day stall clock", "automatic carry-over phase", "preemptive spinoff trigger" gets struck on the same gate. Director-call-at-the-moment beats templated escape clause.
+- Plan 05 + Plan 08 cleaned 2026-05-11; resume file updated; memory entry `feedback_never_slack_anyone.md` filed (project-scoped).
+- See related rule: `feedback_never_slack_anyone.md` (NEVER Slack anyone unless explicitly asked, EVER).
+
+**Anti-pattern:** Agent (or any session) propagating struck Slack-ping or stall-clock language back into briefs/plans on re-read. Detection signal: any phrase resembling "ping X in #channel", "@<name> in Slack", or "N-day stall clock" appearing in 29.5 planning artifacts post-2026-05-11. If detected → strike immediately and reference this decision.
+
+## D-44 AMENDMENT 2026-05-11 — NO reviewer-add either
+**Date:** 2026-05-11 (same day, later in conversation)
+**Decision:** D-44's "Reviewer routing is in-product GitHub only (add Daniel as reviewer)" carve-out is RESCINDED in full. Claude/agents do NOT add GitHub reviewers, do NOT @-mention users in PR descriptions, do NOT route PR review to specific humans in any channel — including in-product GitHub. Clark handles 100% of reviewer routing for the Plan 05 PR (and all future PRs unless he specifically authorizes otherwise in a given turn).
+
+**Why:** When asked whether to authorize executor to add Daniel Rojas as in-product GitHub reviewer on Plan 05 PR open, Clark said: "NO don't add anyone as reviewer I WILL HANDLE THE PR with Director Parks." The original D-44 framing treated GitHub reviewer-add as the legitimate carve-out under the broader "no Slack/external messaging" rule. That framing was wrong. The actual rule is: **Claude does not notify, ping, route, or invite ANYONE on its own initiative, in any channel, in-product or not.** The test is "does this cause a notification to land in another human's inbox/feed on Claude's initiative?" — if yes, forbidden.
+
+**How to apply:**
+- Plan 05 PR opens with NO reviewers assigned, NO @-mentions in body, NO description tagging any specific human for action. PR is a passive artifact; Clark + Director route it manually after.
+- Future plans/handoffs/Tell-blocks: strike all "add X as reviewer" / "@-mention X in PR" / "tag X for review" language too, alongside the existing Slack-ping strike list.
+- Memory entry `feedback_never_slack_anyone.md` tightened accordingly (the "in-product GitHub" carve-out removed from the rule text).
+- D-44's original language ("Reviewer routing is in-product GitHub only") was a Director misread of Clark's intent — corrected here. Future readers: the rule is "no notifications, period, unless explicitly asked."
+
+**Anti-pattern:** Director or executor framing GitHub reviewer-add as "the lesser of two evils" or "in-product so it's fine." That framing is exactly what this amendment rescinds. Notification on Claude's initiative is the failure mode; the channel doesn't matter.
+
+## D-45 3P verification gates may not depend on ZB internal UI surfaces
+**Date:** 2026-05-11
+**Decision:** SME Mart is a 3rd-party consumer of the ZeroBias platform SDK. Verification of SME Mart correctness happens at two layers and ONLY at these two layers:
+
+1. **SDK contract layer** — does the SDK accept the create call, does it return the expected shape, can we round-trip via get/list, do parent/child links resolve correctly.
+2. **SME Mart's own UI surfaces** — does our engagement list / vetting view / admin tab correctly consume the SDK and render without errors.
+
+What is OUT OF SCOPE for any SME Mart phase gate:
+- Whether ZB Governance UI renders `platform.Project`
+- Whether ZB Task UI renders `platform.Board`
+- Whether any other ZB internal console / app / dashboard surfaces our SDK-created entities
+
+Those are ZB's roadmap concerns. SME Mart cannot gate v1.4 closure on ZB UI delivery timelines.
+
+**Why this rule exists:** Phase 29.5 Plans 06 + 07 were initially drafted (during the gsd-plan-phase run that produced 8 plans across 5 waves) with verification clauses like "platform.Project surfaces in ZB Governance UI under Projects list" and "Board surfaces in ZB Task UI." Two problems:
+
+1. **Factually broken** — ZB UI has no surface for the new Project/Board model yet. Nic is shipping that work separately. The verification target literally does not exist.
+2. **Scope violation** — even when it ships, ZB internal UI rendering is not SME Mart's verification concern. SME Mart owns SDK consumption + SME Mart UI surfaces. ZB owns ZB UI surfaces. Conflating them inserts SME Mart into ZB's release schedule.
+
+Clark caught this at Director-review time (2026-05-11): "ZB UI does not have any UI surface for new project/board changes and frankly that's literally none of your fucking business as a zerobias project and not a 3rd party sme mart project. We can make our own little project/board admin page if we need one."
+
+**Corrective action taken 2026-05-11:**
+- Plan 06 fully rewritten: SDK round-trip assertions for `platform.Project.get` + `platform.Project.list` + SME Mart engagement list/detail UI cross-check.
+- Plan 07 surgically edited: SDK round-trip assertions for vetting Board + paired-task shape + SME Mart Vetting view UI verification.
+- All conditional backlog entries targeting "ZB Phase 32 / ZB Governance rendering" (`[GOVERNANCE-PROJECT-RENDERING]`, `[VETTING-BOARD-RENDERING]`) STRUCK from the plans.
+- D-08 reframed as definitive: Engagement Task is dropped, no speculative reversal clause tied to ZB UI delivery.
+- Backlog seed planted: `SME-MART-PLATFORM-ADMIN-PAGE-1` — if SME Mart admins ever need a surface to list/inspect provisioned platform.Project + platform.Board for ops troubleshooting that the existing engagement list / vetting view doesn't solve, build a small SME Mart admin page. Lazy-evaluated; NOT v1.4 scope.
+
+**How to apply (going forward):**
+- ANY future plan-phase output that references "verify in ZB Governance UI" / "Board surfaces in ZB Task UI" / "renders in ZB <any> view" gets struck at plan-checker stage.
+- If missed there, struck at wave-greenlight by Director.
+- Verification clauses MUST point to either (a) SDK assertions via ZB MCP / direct SDK calls, OR (b) SME Mart's own UI surfaces.
+- If a SME Mart admin needs to inspect raw platform entities and the existing SME Mart UI doesn't suffice, the right move is to build an internal SME Mart admin page (via `SME-MART-PLATFORM-ADMIN-PAGE-1` backlog item) — NOT to gate our phase on ZB UI shipping.
+
+**Anti-pattern:** Agent (Director, executor, or gsd-planner) drafting a phase gate that requires opening any ZB-internal console. Detection signal: phrases like "ZB Governance", "ZB Task UI", "Platform admin console", "verify in Platform UI" appearing in any SME Mart plan or brief. If detected → strike immediately and reference D-45.
+
+**Related decisions:**
+- D-04 (platform.Project governance model)
+- D-08 (Engagement Task drop — now definitive, no speculative reversal)
+- D-34/D-35/D-36/D-37 (vetting Board + paired-task verbiage and shape)
