@@ -119,7 +119,7 @@ Error toward acting-on-request. Retreating to the rule when explicitly asked is 
 | 27 | Auth gate + onboarding routing + lazy-on-load default-engagement guard | ✅ COMPLETE 2026-04-30 + ✅ architectural rework SHIPPED 2026-05-08 (commit `74ed63e`, PR #55 merged + UAT-deployed) |
 | 27.5 | Modernization rule enforcement (ESLint + pre-commit + CI gate) | ✅ COMPLETE 2026-05-01 — verifier 8/8 ENF-*; closure commit `08cc25a` |
 | 28 | Company profile review/confirm form | ✅ COMPLETE 2026-04-30 |
-| **29.5** | **Platform Model Migration** | **PLANS COMMITTED 2026-05-11.** Brief LOCKED (Path C Engagement-as-Project), CONTEXT.md (43 decisions D-01..D-43), DISCUSSION-LOG.md, PATTERNS.md, 8 PLAN.md files across 5 waves, all on `poc/sme-mart` HEAD `c4d4e6a`. Director amendments applied (Plan 02 dep on 01, REQ-IDs stripped, Plan 04 Task 0 pre-flight guard, Plan 08 schema-PR-stall escape, Plan 05 Slack-ping op note). Ready for `/gsd-execute-phase 29.5`. |
+| **29.5** | **Platform Model Migration** | **WAVE 1 CLOSED 2026-05-11 PM** at `2d9af79`. Plan 01 INVENTORY.md (761 lines) ships: 15-service partition (3 REWRITE / 1 RECONCILE / 7 KEEP / 4 NOT-TOUCHED), long-tail audit (7 KEEP / 1 RETIRE / 1 DEFER), 6 MCP describes pinned, dual-read strategy, 4 backlog entries. ONE partial-meet: D-23 member-filter param names recorded as TBD. Director dispatched Wave 2 amendments (see Wave 1 Close subsection below): GO on Wave 2; D-23 → Plan 03 Task 0 pre-flight; deviation log entry for partial-meet; Plan 04 Task 0 outcome must surface at wave-close. Awaiting Clark to invoke Wave 2 in gsd-execute. |
 | 30 | Default Project board + "Coming Soon" placeholder surfaces | brief at `b7f9b80` — **needs substantial rewrite after 29.5 closes** (now uses real platform.Project + platform.Board) |
 | 31 | W3Geekery as first customer + production smoke test | not started; depends on 30 (which depends on 29.5) |
 | ~~29~~ | DEFERRED to v1.5 | tier display / ToS / branding |
@@ -149,6 +149,65 @@ Error toward acting-on-request. Retreating to the rule when explicitly asked is 
 - GLOBAL_DEMO `81053c14-a8e5-4939-b538-c122c7d0eb1a`
 - LEGACY_W3GEEKERY `d618b602-21cc-40a1-a9fa-534b7bc1672c`
 - W3Geekery marketplace (kept visible, NOT a demo tag) `a81cd320-243e-44eb-bdd9-9824019ef3dd`
+
+---
+
+## 2026-05-11 PM parkit (2) — Wave 1 closed + Wave 2 amendments dispatched
+
+**TL;DR:** gsd-execute closed Wave 1 (Plan 01) at `2d9af79` on `poc/sme-mart`. INVENTORY.md (761 lines) shipped clean — 15-service partition, long-tail audit, 6 MCP describes pinned, 4 backlog entries filed, no deviations from 43 locked decisions. ONE partial-meet: D-23 member-filter param names recorded as `TBD; recommend live describe before Plan 03` rather than resolved via live MCP describe in Plan 01. Director routed the resolution to Plan 03 Task 0 pre-flight (option b) and dispatched Wave 2 amendments via gsd-execute relay.
+
+### Wave 1 Close — Plan 01 results
+
+- Service audit: 3 REWRITE / 1 RECONCILE / 7 KEEP / 4 NOT-TOUCHED across 15 core services
+- Long-tail: 7 KEEP, 1 RETIRE (`EngagementVettingItem`), 1 DEFER (`ServiceOffering`)
+- MCP describes pinned for 6 endpoints: `platform.Project.list`, `platform.Project.create`, `platform.Project.addMember`, `platform.Board.create`, `platform.Task.create`, `portal.Project.search`
+- Demo data + dual-read window strategy (D-13/D-15)
+- 4 backlog entries filed: `PROVIDER-MY-ENGAGEMENTS-1`, `PROJECT-SVC-RENAME-1`, `SCHEMA-RETIREMENT-DELETE-1`, `[GOVERNANCE-PROJECT-RENDERING]`
+
+Wave 1 close commit (`2d9af79`) is on `poc/sme-mart`. NOT pushed (closure-PR discipline).
+
+### Wave 2 amendments dispatched
+
+Director routed three on-disk amendments via gsd-execute relay:
+
+1. **Plan 03 Task 0 pre-flight (NEW):** Insert as the first task before any implementation tasks. Content: "Pre-flight — MCP describe member-filter param shapes. Run `zerobias_describe('platform.Project.list')` and `zerobias_describe('portal.Project.search')`. For each, pin the exact param name(s) used for member-based filtering. Append findings to `29.5-01-INVENTORY.md` under a new `## D-23 Resolution` section." **Does NOT gate the rest of Plan 03** — buyer-side My Engagements uses ownerId+tagId filter (v1.4 implementation); provider-side member-filter is SPEC-ONLY per D-22 for `PROVIDER-MY-ENGAGEMENTS-1` backlog reference.
+
+2. **Plan 01 deviation log entry:** Record D-23 partial-meet as `DEVIATION-29.5-01-D23`. Rationale: Plan 01 success criterion was D-23 resolution; "TBD; recommend live describe" is not a valid resolution shape for a brief-locked criterion. Recording so the partial-meet is not silent.
+
+3. **Plan 04 Task 0 outcome reporting:** When Plan 04 runs, surface `engagement-hierarchy.service.ts` partition classification result explicitly in Plan 04's wave-close summary. If NOT-TOUCHED fires Plan 04's re-scope clause, document the re-scope decision in Plan 04's deviation log.
+
+### Wave 2 close checkpoint protocol
+
+When Plans 02, 03, 04 all report complete, executor returns to Director for wave-close checkpoint BEFORE invoking Wave 3 (Plan 05 schema deprecation PR). Wave 2 close summary should include:
+- Per-plan task outcomes
+- Any deviations
+- `tsc -p tsconfig.spec.json --noEmit` + lint + targeted test status on touched files
+- Plan 03 Task 0's D-23 resolution findings (member-filter param names for both surfaces)
+- Plan 04 Task 0's `engagement-hierarchy.service.ts` partition outcome
+
+### Director discipline notes
+
+- Plan 01's "TBD; recommend live describe later" framing on D-23 is a watch-list pattern. Brief-locked success criteria need explicit resolution, not punts. Future Director sessions should reject "TBD" framings on brief-anchored criteria and require either resolution-now or explicit deviation logging.
+- Wave 2 starts as soon as Clark invokes — the amendments don't block, but Plan 03's Task 0 is the first thing Plan 03 should do.
+- Plan 05 still gated on Wave 2 close + Daniel Rojas availability for schema PR review. 5-day stall clock starts at PR open.
+
+### Commits since prior parkit (`c76910d`)
+
+```
+64146ce docs(29.5): Wave 2 amendments — Plan 03 Task 0 + D-23 deviation log
+2d9af79 docs(29.5-01): codebase audit + MCP describe pins + inventory
+```
+
+Total on `poc/sme-mart` since `51601ed`: 12+ commits ahead of origin (verify exact count via `git rev-list --count origin/poc/sme-mart..HEAD`). DO NOT PUSH — accumulate for 29.5-closure cross-fork PR.
+
+### Next-action sequence (on resume)
+
+1. **Verify clean tree:** `git status -sb` (expected: clean, branch ~12 ahead). `git log --oneline -5` (expected: this parkit-2 at top, then `2d9af79` Wave 1 close).
+2. **Relay Wave 2 amendments + greenlight to gsd-execute.** Use the Wave 2 amendments dispatched section above as the relay content. If the relay was already done before /clear, just remind Clark that Wave 2 is queued and awaiting his invocation in the gsd-execute shell.
+3. **Watch for Wave 2 close summary.** When it arrives, run the wave-close checkpoint per the protocol above.
+4. **Wave 3 (Plan 05):** schema deprecation PR. Director should not auto-greenlight Wave 3 if Wave 2 close has gaps (especially Plan 04's partition outcome and Plan 03's D-23 resolution).
+5. **Subsequent waves:** Wave 4 (Plans 06/07 UAT smoke), Wave 5 (Plan 08 closure). Each wave-close returns to Director for checkpoint.
+6. **Closure checkpoint:** Director reviews CLOSURE.md + verification report. Then Clark opens cross-fork PR to `zerobias-org/app:uat` bundling all 29.5 commits.
 
 ---
 
@@ -791,7 +850,7 @@ Read paths validated:
 |---|---|---|
 | **Phase 24 closed + UAT-deployed** | DONE | ✅ 2026-05-06. PR #54 merged to `zerobias-org/app:uat`. |
 | **Phase 27 architectural rework — SHIPPED** | DONE | ✅ 2026-05-08. All work committed (5 groups + test fix + deps bump = 7 new commits on top of `7efbdd8`). PR #55 merged to `zerobias-org/app:uat`, CI passed first run, UAT-deployed. CloudFront invalidated. Demo (Friday 2026-05-08) ran successfully. |
-| **Phase 29.5 plans COMMITTED — ready for execute** | gsd-execute pending | 2026-05-11. Brief LOCKED (Path C). CONTEXT.md (43 decisions). DISCUSSION-LOG.md. PATTERNS.md. 8 PLAN.md across 5 waves with 4 Director amendments. All committed on `poc/sme-mart` HEAD `c4d4e6a`. Working tree clean, 10 ahead of origin. **Next:** re-paste gsd-execute handoff (from conversation history or Quick-start prompt below) → `/gsd-execute-phase 29.5` → Wave 1 (Plan 01 solo, inventory + MCP describes). |
+| **Phase 29.5 Wave 1 CLOSED + Wave 2 amendments dispatched** | gsd-execute pending Wave 2 invocation | 2026-05-11 PM. Plan 01 INVENTORY.md (761 lines) shipped at `2d9af79`. 15-service partition, 6 MCP describes pinned, 4 backlog entries filed, no deviations from 43 locked decisions. **ONE partial-meet:** D-23 member-filter param names recorded TBD. Director dispatched 3 amendments (Plan 03 Task 0 pre-flight, Plan 01 deviation log entry, Plan 04 Task 0 outcome surfacing) via gsd-execute relay. **Next:** Clark invokes Wave 2 (Plans 02, 03, 04 parallel) in gsd-execute shell. Wave 2 close returns to Director for checkpoint before Wave 3 (Plan 05 schema PR). |
 | **Errata 029 filed** | DONE | 2026-05-11. `.planning/director/errata/029-gsd-1.38.5-state-frontmatter-and-config-bugs.md`. Four 1.38.5 bugs: 1 fixed (config migration gap), 3 OPEN with workarounds documented (`gsd-tools state patch`, `state record-session`, missing `state.add-roadmap-evolution` handler). Detection rule + workaround discipline in file. |
 | **`tell-block` trigger phrase** | Active | One-word reply trigger added to `feedback_checkpoint_handoff_format.md`. Clark types `tell-block` → Director re-reads memory + refactors prior response into `Tell gsd-X:` format. No re-explanation needed. |
 | **MCP update verification (post-restart)** | Clark + Director | Run `mcp__zerobias__zerobias_describe('platform.Board.create')` to confirm `zerobias-mcp@1.0.43` is loaded. If stale, restart MCP server. |
@@ -917,13 +976,14 @@ PR #54 cycle (2026-05-05/06):
 
 ## Quick-start prompt for the next Director Parks session
 
-Resume Director Parks. Read `.planning/director/DIRECTOR-PARKS-RESUME.md` FIRST — start with the **"2026-05-11 parkit"** section at the top, which captures Phase 29.5 going from drafted brief → LOCKED brief (Path C Engagement-as-Project) → inserted into roadmap → discuss-phase complete (43 decisions D-01..D-43) → plan-phase complete (8 plans across 5 waves with 4 Director amendments) → 5 atomic commits landed (HEAD `c4d4e6a`). Working tree clean. Branch `poc/sme-mart`, 10 ahead of origin, DO NOT PUSH (accumulate for 29.5-closure cross-fork PR).
+Resume Director Parks. Read `.planning/director/DIRECTOR-PARKS-RESUME.md` FIRST — start with the **"2026-05-11 PM parkit (2)"** section at the top, which captures: Wave 1 (Plan 01) CLOSED at `2d9af79` shipping INVENTORY.md (761 lines, 15-service partition, 6 MCP describes pinned, 4 backlog entries, no deviations from 43 locked decisions); ONE partial-meet on D-23 (member-filter param names TBD); Director dispatched 3 Wave 2 amendments via gsd-execute relay (Plan 03 Task 0 pre-flight for D-23 resolution, Plan 01 deviation log entry for the partial-meet, Plan 04 Task 0 outcome surfacing requirement); Wave 2 awaits Clark's invocation in the gsd-execute shell. Then read the older **"2026-05-11 parkit"** section for full Phase 29.5 architectural lock-in context (Path C Engagement-as-Project, 5-step recipe, locked verbiage verbatim, locked enum values, GSD 1.38.5 errata 029, tell-block trigger). Working tree clean. Branch `poc/sme-mart`, ~12 ahead of origin, DO NOT PUSH (accumulate for 29.5-closure cross-fork PR).
 
 **CRITICAL FIRST ACTIONS on resume:**
 
-1. **Verify clean tree:** `git status -sb` (expected: clean, `## poc/sme-mart...origin/poc/sme-mart [ahead 10]`). `git log --oneline -10` (expected: `c4d4e6a docs(errata): 029 — GSD 1.38.5 state-frontmatter + config-migration bugs` at top).
-2. **Re-paste the gsd-execute handoff** into Clark's gsd-plan shell (or fresh shell). The handoff is the contract Director hands to gsd-execute. If you don't have it from conversation history, reconstruct from the brief + CONTEXT.md + the constraint blocks below. Then Clark invokes `/gsd-execute-phase 29.5`.
-3. **Execute Wave 1** (Plan 01 solo): codebase audit + MCP describes producing INVENTORY.md. Return for Director wave-close checkpoint before Wave 2 fires.
+1. **Verify clean tree:** `git status -sb` (expected: clean, branch ~12 ahead). `git log --oneline -5` (expected: this parkit-2 commit at top, then `2d9af79` Wave 1 close).
+2. **Confirm Wave 2 status with Clark.** Either: (a) Clark already invoked Wave 2 in his gsd-execute shell and you're picking up at Wave 2 close checkpoint, OR (b) Wave 2 is still queued awaiting invocation — relay the Wave 2 amendments block from "2026-05-11 PM parkit (2)" section and greenlight invocation.
+3. **Wave 2 close checkpoint (when summary arrives):** verify Plan 03 Task 0 D-23 resolution landed (member-filter param names appended to INVENTORY.md), Plan 04 Task 0 partition outcome surfaced, all three plans (02/03/04) tsc/lint/test clean. Then greenlight Wave 3 (Plan 05 schema PR via Daniel Rojas + Slack ping in `#zb-dx`).
+4. **Subsequent waves:** Wave 3 (Plan 05) → Wave 4 (Plans 06/07 UAT smoke) → Wave 5 (Plan 08 closure). Each wave-close returns for Director checkpoint.
 
 **Phase 29.5 status: PLANS COMMITTED, READY FOR EXECUTE.** Brief at `.planning/director/phase-29.5-brief.md` (271 lines, locked). CONTEXT.md at `.planning/phases/29.5-platform-model-migration/29.5-CONTEXT.md` (43 decisions, source of truth). DISCUSSION-LOG.md, PATTERNS.md, 8 PLAN.md files (Wave 1: 01 / Wave 2: 02+03+04 / Wave 3: 05 / Wave 4: 06+07 / Wave 5: 08) all committed. Director amendments applied: Plan 02 depends on 01 (MCP-describe gate), REQ-IDs stripped, Plan 04 Task 0 pre-flight guard, Plan 08 schema-PR-stall escape, Plan 05 Slack-ping op note.
 
