@@ -757,5 +757,11 @@ After Plan 08 verification gate passes, file these as BACKLOG.md entries:
 
 ---
 
+## Deviations
+
+**DEVIATION-29.5-01-D23:** D-23 (member-filter param resolution for `platform.Project.list` + `portal.Project.search`) recorded as TBD rather than resolved via live MCP describe. Resolution rerouted to Plan 03 Task 0 pre-flight per Director direction 2026-05-11. Brief success criterion ("Member-filter param shape confirmed for platform.Project.list and portal.Project.search") not fully met in Plan 01; tracked here so the partial-meet is not silent. Plan 01 stays closed; resolution lands in `## D-23 Resolution` section appended below by Plan 03 Task 0.
+
+---
+
 **Last updated:** 2026-05-11  
 **Next:** Plans 02–04 wave execution (provisioner recipe, service refactors, schema deprecation PR)
