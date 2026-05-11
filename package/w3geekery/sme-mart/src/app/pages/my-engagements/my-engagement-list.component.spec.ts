@@ -59,7 +59,7 @@ describe('MyEngagementList — org scoping with platform.Project shape', () => {
       ) => Promise<PagedResults<EngagementSummaryRow>>,
     };
     mockAppService = {
-      getCurrentOrgId: getCurrentOrgIdSpy as unknown as () => string | null,
+      getCurrentOrgId: getCurrentOrgIdSpy as unknown as () => string | undefined,
     };
 
     await TestBed.configureTestingModule({

@@ -8,7 +8,7 @@ import { SmeMartResourceService } from './sme-mart-resource.service';
 import { Memoize } from '../../shared/utils/memoize.decorator';
 import { SME_MART_PROJECT_FIELD_MAPPING, SME_MART_BOARD_FIELD_MAPPING, mapGqlToNeon, mapNeonToGql } from '../field-mappings';
 import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
-import type { ProjectExtended } from '@zerobias-com/platform-sdk';
+import type { ProjectExtended, Tag } from '@zerobias-com/platform-sdk';
 import type { QueryOptions } from '@zerobias-org/data-utils';
 import { PagedResults } from '@zerobias-org/types-core-js';
 import type {
@@ -421,8 +421,7 @@ export class SmeMartProjectService {
    * Transform platform.Project (ProjectExtended) to SmeMartProject.
    * Maps platform project shape to legacy SmeMartProject fields.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private transformPlatformProjectToSmeMartProject(proj: ProjectExtended): SmeMartProject & { tag?: any } {
+  private transformPlatformProjectToSmeMartProject(proj: ProjectExtended): SmeMartProject & { tag?: Tag } {
     return {
       id: String(proj.id),
       name: proj.name ?? '',

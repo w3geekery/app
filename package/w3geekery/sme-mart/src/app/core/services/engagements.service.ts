@@ -6,7 +6,7 @@ import { DemoVisibilityService } from './demo-visibility.service';
 import { Memoize } from '../../shared/utils/memoize.decorator';
 import { ENGAGEMENT_FIELD_MAPPING, mapNeonToGql, mapGqlToNeon } from '../field-mappings';
 import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
-import type { ProjectExtended } from '@zerobias-com/platform-sdk';
+import type { ProjectExtended, Tag } from '@zerobias-com/platform-sdk';
 import type { QueryOptions } from '@zerobias-org/data-utils';
 import { PagedResults } from '@zerobias-org/types-core-js';
 import type {
@@ -320,8 +320,7 @@ export class EngagementsService {
    * Platform.Project shape: { id, name, description, ownerId, status, visibility, tagId, boardCount, memberCount, creator, tag, ... }
    * Engagement shape: { id, title, description, buyer_zerobias_org_id, status, engagement_tag, ... }
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private transformPlatformProjectToEngagementSummary(proj: ProjectExtended): EngagementSummaryRow & { tag?: any } {
+  private transformPlatformProjectToEngagementSummary(proj: ProjectExtended): EngagementSummaryRow & { tag?: Tag } {
     return {
       id: String(proj.id),
       buyer_user_id: null, // Not available on platform.Project
