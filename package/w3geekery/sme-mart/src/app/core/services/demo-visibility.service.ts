@@ -116,16 +116,17 @@ export class DemoVisibilityService {
    * - Generic `<T>` preserves the domain type (Engagement[], Bid[], Note[], etc.).
    * - Caller does not need to cast or transform the result.
    *
-   * @param records - Array of records with optional `tag` field (GQL or Platform shape)
+   * @param records - Array of records (may have optional `tag` field for polymorphic filtering)
    * @returns Filtered array (new reference if non-admin; original reference if admin)
    */
-  applyVisibility<T extends { tag?: TagField }>(records: T[]): T[] {
+  applyVisibility<T>(records: T[]): T[] {
     // Admin bypass: return unfiltered
     if (this.projectContext.isAdmin()) {
       return records;
     }
 
     // Non-admin: filter out demo-tagged records
-    return records.filter(record => !this.isLocalDemoTagged(record));
+    // Cast to { tag?: TagField } for isLocalDemoTagged to extract tag safely
+    return records.filter(record => !this.isLocalDemoTagged(record as unknown as { tag?: TagField }));
   }
 }

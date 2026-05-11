@@ -50,19 +50,26 @@ describe('EngagementsService (Plan 075)', () => {
   });
 
   describe('listEngagements()', () => {
-    it('should query GQL for engagements', async () => {
-      const mockResult = {
-        items: [ENGAGEMENT_GQL_FIXTURE],
-        page: { pageNumber: 1, pageSize: 50, totalCount: 1 },
+    it('should query platform.Project.list for engagements (primary path)', async () => {
+      // D-15: Dual-read window: primary path tries platform.Project.list first
+      const mockPlatformResult = {
+        items: [],
+        pageSize: 50,
+        pageNumber: 1,
       };
-      graphqlRead.query.mockResolvedValue(mockResult);
+
+      // Set up the platform mock to succeed
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ((mockClientApi as any).platformClient['getProjectApi']() as any).list.mockResolvedValue(mockPlatformResult);
 
       await service.listEngagements({ pageNumber: 1, pageSize: 50 });
 
-      expect(graphqlRead.query).toHaveBeenCalledWith(
-        'Engagement',
-        expect.any(Array),
-        expect.any(Object),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(((mockClientApi as any).platformClient['getProjectApi']() as any).list).toHaveBeenCalledWith(
+        1,
+        50,
+        undefined,
+        undefined
       );
     });
 
@@ -184,18 +191,23 @@ describe('EngagementsService (Plan 075)', () => {
   });
 
   describe('Demo visibility (Phase 24 Plan 03)', () => {
-    const mockGqlReturn = [
-      { ...ENGAGEMENT_GQL_FIXTURE, id: '1', name: 'Real', tag: null },
-      { ...ENGAGEMENT_GQL_FIXTURE, id: '2', name: 'Real w/ marketplace tag', tag: [{ value: 'a81cd320-243e-44eb-bdd9-9824019ef3dd' }] },
-      { ...ENGAGEMENT_GQL_FIXTURE, id: '3', name: 'Demo (global)', tag: [{ value: '81053c14-a8e5-4939-b538-c122c7d0eb1a' }] },
-      { ...ENGAGEMENT_GQL_FIXTURE, id: '4', name: 'Demo (legacy)', tag: [{ value: 'd618b602-21cc-40a1-a9fa-534b7bc1672c' }] },
+    // Mock platform-returned Engagement records with tag field (polymorphic post-filter support)
+    const mockPlatformReturn = [
+      { id: '1', name: 'Real', tag: null },
+      { id: '2', name: 'Real w/ marketplace tag', tag: [{ value: 'a81cd320-243e-44eb-bdd9-9824019ef3dd' }] },
+      { id: '3', name: 'Demo (global)', tag: [{ value: '81053c14-a8e5-4939-b538-c122c7d0eb1a' }] },
+      { id: '4', name: 'Demo (legacy)', tag: [{ value: 'd618b602-21cc-40a1-a9fa-534b7bc1672c' }] },
     ];
 
     it('[DG-02] strips demo records for non-admin', async () => {
-      graphqlRead.query.mockResolvedValue({
-        items: mockGqlReturn,
-        page: { pageNumber: 1, pageSize: 50, totalCount: 4 },
-      });
+      // D-15: Platform path returns success, post-filter strips demo tags
+      const mockPlatformResult = {
+        items: mockPlatformReturn,
+        pageSize: 50,
+        pageNumber: 1,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ((mockClientApi as any).platformClient['getProjectApi']() as any).list.mockResolvedValue(mockPlatformResult);
 
       const result = await service.listEngagements();
 
@@ -204,10 +216,13 @@ describe('EngagementsService (Plan 075)', () => {
 
     it('[DG-03] admin sees all records including demo', async () => {
       mockProjectContext.setIsAdmin(true);
-      graphqlRead.query.mockResolvedValue({
-        items: mockGqlReturn,
-        page: { pageNumber: 1, pageSize: 50, totalCount: 4 },
-      });
+      const mockPlatformResult = {
+        items: mockPlatformReturn,
+        pageSize: 50,
+        pageNumber: 1,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ((mockClientApi as any).platformClient['getProjectApi']() as any).list.mockResolvedValue(mockPlatformResult);
 
       const result = await service.listEngagements();
 
@@ -215,23 +230,39 @@ describe('EngagementsService (Plan 075)', () => {
     });
 
     it('[DG-02] does NOT add server-side tag negation filter', async () => {
-      graphqlRead.query.mockResolvedValue({
-        items: mockGqlReturn,
-        page: { pageNumber: 1, pageSize: 50, totalCount: 4 },
-      });
+      // D-15: With platform path primary, fallback GQL is not called.
+      // Demo filtering is post-filter only (client-side). Assert the platform call
+      // does not include tag negation in params (platform API has no such filter concept).
+      const mockPlatformResult = {
+        items: [],
+        pageSize: 50,
+        pageNumber: 1,
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ((mockClientApi as any).platformClient['getProjectApi']() as any).list.mockResolvedValue(mockPlatformResult);
 
       await service.listEngagements();
 
-      const callArgs = graphqlRead.query.mock.calls[0];
-      const filters = callArgs[2]?.filters ?? {};
-      const filterValues = Object.values(filters).join(' ');
-      expect(filterValues).not.toContain('.not in.');
-      expect(filterValues).not.toContain('.ne.');
+      // Platform API call args: pageNumber, pageSize, undefined, undefined (no filters)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(((mockClientApi as any).platformClient['getProjectApi']() as any).list).toHaveBeenCalledWith(
+        1,
+        50,
+        undefined,
+        undefined
+      );
     });
 
-    it('requests tag field in GQL query', async () => {
+    it('requests tag field in GQL query (fallback path only)', async () => {
+      // D-15: Primary platform path doesn't request fields explicitly (API returns full ProjectExtended).
+      // Tag field is present in platform response. This test verifies the fallback (GQL) path
+      // would request the tag field if platform failed. Force platform to fail and verify GQL.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ((mockClientApi as any).platformClient['getProjectApi']() as any).list.mockRejectedValue(
+        new Error('platform timeout')
+      );
       graphqlRead.query.mockResolvedValue({
-        items: mockGqlReturn,
+        items: mockPlatformReturn,
         page: { pageNumber: 1, pageSize: 50, totalCount: 4 },
       });
 

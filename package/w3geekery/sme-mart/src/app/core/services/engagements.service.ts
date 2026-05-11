@@ -320,7 +320,8 @@ export class EngagementsService {
    * Platform.Project shape: { id, name, description, ownerId, status, visibility, tagId, boardCount, memberCount, creator, tag, ... }
    * Engagement shape: { id, title, description, buyer_zerobias_org_id, status, engagement_tag, ... }
    */
-  private transformPlatformProjectToEngagementSummary(proj: ProjectExtended): EngagementSummaryRow {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private transformPlatformProjectToEngagementSummary(proj: ProjectExtended): EngagementSummaryRow & { tag?: any } {
     return {
       id: String(proj.id),
       buyer_user_id: null, // Not available on platform.Project
@@ -346,6 +347,8 @@ export class EngagementsService {
       pending_bid_count: 0,
       accepted_provider_name: null,
       accepted_provider_id: null,
+      // D-24: Preserve tag field for polymorphic demo-visibility post-filter
+      tag: proj.tag,
     };
   }
 

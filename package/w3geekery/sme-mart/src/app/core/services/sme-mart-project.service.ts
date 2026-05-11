@@ -421,15 +421,16 @@ export class SmeMartProjectService {
    * Transform platform.Project (ProjectExtended) to SmeMartProject.
    * Maps platform project shape to legacy SmeMartProject fields.
    */
-  private transformPlatformProjectToSmeMartProject(proj: ProjectExtended): SmeMartProject {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private transformPlatformProjectToSmeMartProject(proj: ProjectExtended): SmeMartProject & { tag?: any } {
     return {
       id: String(proj.id),
       name: proj.name ?? '',
       description: proj.description ?? null,
-      status: proj.status ?? 'draft',
+      status: String(proj.status ?? 'draft'),
       engagementId: null, // Not available in platform.Project shape
       projectType: 'project', // Default to 'project' until further distinction in platform schema
-      startDate: proj.dateCreated ?? new Date().toISOString(),
+      startDate: proj.created?.toISOString() ?? new Date().toISOString(),
       targetEndDate: null, // Not available in platform.Project shape
       category: null, // Not available in platform.Project shape
       budgetType: null, // Not available in platform.Project shape
@@ -441,8 +442,10 @@ export class SmeMartProjectService {
       evaluationCriteria: null, // Not available in platform.Project shape
       wizardStep: null, // Not available in platform.Project shape
       wizardData: null, // Not available in platform.Project shape
-      createdAt: proj.dateCreated ?? new Date().toISOString(),
-      updatedAt: proj.dateLastModified ?? new Date().toISOString(),
+      createdAt: proj.created?.toISOString() ?? new Date().toISOString(),
+      updatedAt: proj.updated?.toISOString() ?? new Date().toISOString(),
+      // D-24: Preserve tag field for polymorphic demo-visibility post-filter
+      tag: proj.tag,
     };
   }
 
