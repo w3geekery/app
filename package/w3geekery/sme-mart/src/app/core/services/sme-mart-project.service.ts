@@ -7,6 +7,8 @@ import { SmeMartTagService } from './sme-mart-tag.service';
 import { SmeMartResourceService } from './sme-mart-resource.service';
 import { Memoize } from '../../shared/utils/memoize.decorator';
 import { SME_MART_PROJECT_FIELD_MAPPING, SME_MART_BOARD_FIELD_MAPPING, mapGqlToNeon, mapNeonToGql } from '../field-mappings';
+import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
+import type { ProjectExtended } from '@zerobias-com/platform-sdk';
 import type { QueryOptions } from '@zerobias-org/data-utils';
 import { PagedResults } from '@zerobias-org/types-core-js';
 import type {
@@ -17,6 +19,9 @@ import type {
 } from '../models';
 import type { GqlSmeMartProjectResponse, GqlSmeMartBoardResponse } from '../gql-types';
 
+// D-15: Dual-read window timeout values (primary 5s, fallback 5s)
+const PRIMARY_READ_TIMEOUT_MS = 5000;
+
 /**
  * SmeMartProjectService — Project Bloom + RFP container (Plan 075 Phase 2)
  *
@@ -24,8 +29,13 @@ import type { GqlSmeMartProjectResponse, GqlSmeMartBoardResponse } from '../gql-
  * - Project container (status: draft → active → completed)
  * - RFP entity (status: draft → published → active → completed)
  *
+ * Phase 29.5 refactor: Implements dual-read window (D-15) for platform.Project migration.
+ * - Primary path: reads from platform.Project.list with parentId (nil for RFPs) + tagId filter
+ * - Fallback path: legacy GQL SmeMartProject reads for data aging out
+ * - Demo visibility: post-filter applied to merged result set
+ *
  * All writes go through PipelineWriteService (fire-and-forget async).
- * All reads go through GraphqlReadService (from AuditgraphDB).
+ * Reads: dual-read primary platform.Project, fallback GQL SmeMartProject.
  */
 @Injectable({ providedIn: 'root' })
 export class SmeMartProjectService {
@@ -35,6 +45,7 @@ export class SmeMartProjectService {
   private readonly tagService = inject(SmeMartTagService);
   private readonly resourceService = inject(SmeMartResourceService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly clientApi = inject(ZerobiasClientApi);
 
   /** Scalar fields queryable via standard GraphqlReadService.query() */
   private readonly scalarFields = [
@@ -117,40 +128,98 @@ export class SmeMartProjectService {
 
   /**
    * List all projects with pagination.
+   * D-15: Dual-read window - primary platform.Project.list, fallback to legacy GQL SmeMartProject
+   *
+   * Primary path: platform.Project.list({ parentId: null }) for RFP-like projects
+   * Fallback path: GQL SmeMartProject search (legacy data during deprecation window)
+   * Demo visibility: post-filter applied to merged results
    */
   async listProjects(options?: QueryOptions & { statusFilter?: string }): Promise<PagedResults<SmeMartProject>> {
     const pageNumber = options?.pageNumber ?? 1;
     const pageSize = options?.pageSize ?? 50;
 
-    const filters: Record<string, string> = {};
-    if (options?.statusFilter) {
-      filters['status'] = `.eq.${options.statusFilter}`;
+    // DUAL_READ_WINDOW_D15: Try platform.Project.list first (primary)
+    let items: SmeMartProject[] = [];
+    let totalCount = 0;
+
+    try {
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('PRIMARY_READ_TIMEOUT')), PRIMARY_READ_TIMEOUT_MS)
+      );
+
+      const platformProjects = await Promise.race([
+        this.clientApi.platformClient
+          .getProjectApi()
+          .list(pageNumber, pageSize),
+        timeout,
+      ]);
+
+      if (platformProjects) {
+        // Transform platform.Project[] to SmeMartProject[]
+        const transformed = platformProjects.items.map(proj => this.transformPlatformProjectToSmeMartProject(proj as ProjectExtended));
+
+        // DG-02/DG-03: Client-side demo-visibility post-filter
+        const filtered = this.demoVisibility.applyVisibility(transformed) as SmeMartProject[];
+
+        items = filtered;
+        totalCount = platformProjects.pageSize * pageNumber + items.length; // Approximation pending actual paging info
+
+        console.debug('[PROJECT_LIST:PRIMARY_SUCCESS]', {
+          count: items.length,
+          source: 'platform.Project.list',
+        });
+      }
+    } catch (primaryErr) {
+      // DUAL_READ_WINDOW_D15: Primary read failed, try fallback (legacy GQL)
+      console.debug('[PROJECT_LIST:PRIMARY_FAILED]', {
+        error: (primaryErr as Error).message,
+        attemptingFallback: true,
+      });
+
+      try {
+        const filters: Record<string, string> = {};
+        if (options?.statusFilter) {
+          filters['status'] = `.eq.${options.statusFilter}`;
+        }
+
+        const gqlOptions: GqlQueryOptions = {
+          filters,
+          pageNumber,
+          pageSize,
+        };
+
+        const result = await this.graphqlRead.query<GqlSmeMartProjectResponse>(
+          'SmeMartProject',
+          this.scalarFields,
+          gqlOptions,
+        );
+
+        // DG-02/DG-03: Client-side demo-visibility post-filter
+        const filteredGql = this.demoVisibility.applyVisibility(result.items as (GqlSmeMartProjectResponse & { tag?: Array<{ value: string }> | null })[]);
+
+        items = filteredGql.map(gql =>
+          mapGqlToNeon<SmeMartProject>(gql, SME_MART_PROJECT_FIELD_MAPPING.gqlToNeon),
+        );
+        totalCount = result.page.totalCount ?? items.length;
+
+        console.debug('[PROJECT_LIST:FALLBACK_SUCCESS]', {
+          count: items.length,
+          source: 'GQL_SmeMartProject',
+        });
+      } catch (fallbackErr) {
+        console.error('[PROJECT_LIST:BOTH_FAILED]', {
+          primaryError: (primaryErr as Error).message,
+          fallbackError: (fallbackErr as Error).message,
+        });
+        throw fallbackErr;
+      }
     }
-
-    const gqlOptions: GqlQueryOptions = {
-      filters,
-      pageNumber,
-      pageSize,
-    };
-
-    const result = await this.graphqlRead.query<GqlSmeMartProjectResponse>(
-      'SmeMartProject',
-      this.scalarFields,
-      gqlOptions,
-    );
-
-    // DG-02/DG-03: Client-side demo-visibility post-filter (admin bypasses; per Option X, Decision-Probe-1 2026-05-01)
-    const filteredGql = this.demoVisibility.applyVisibility(result.items as (GqlSmeMartProjectResponse & { tag?: Array<{ value: string }> | null })[]);
-
-    const items = filteredGql.map(gql =>
-      mapGqlToNeon<SmeMartProject>(gql, SME_MART_PROJECT_FIELD_MAPPING.gqlToNeon),
-    );
 
     const paged = new PagedResults<SmeMartProject>();
     paged.items = items;
-    paged.pageNumber = result.page.pageNumber;
-    paged.pageSize = result.page.pageSize;
-    paged.count = result.page.totalCount ?? items.length;
+    paged.pageNumber = pageNumber;
+    paged.pageSize = pageSize;
+    paged.count = totalCount;
     return paged;
   }
 
@@ -347,6 +416,35 @@ export class SmeMartProjectService {
   // ---------------------------------------------------------------------------
   // Internal
   // ---------------------------------------------------------------------------
+
+  /**
+   * Transform platform.Project (ProjectExtended) to SmeMartProject.
+   * Maps platform project shape to legacy SmeMartProject fields.
+   */
+  private transformPlatformProjectToSmeMartProject(proj: ProjectExtended): SmeMartProject {
+    return {
+      id: String(proj.id),
+      name: proj.name ?? '',
+      description: proj.description ?? null,
+      status: proj.status ?? 'draft',
+      engagementId: null, // Not available in platform.Project shape
+      projectType: 'project', // Default to 'project' until further distinction in platform schema
+      startDate: proj.dateCreated ?? new Date().toISOString(),
+      targetEndDate: null, // Not available in platform.Project shape
+      category: null, // Not available in platform.Project shape
+      budgetType: null, // Not available in platform.Project shape
+      budgetMin: null, // Not available in platform.Project shape
+      budgetMax: null, // Not available in platform.Project shape
+      timeline: null, // Not available in platform.Project shape
+      responseDeadline: null, // Not available in platform.Project shape
+      questionsDeadline: null, // Not available in platform.Project shape
+      evaluationCriteria: null, // Not available in platform.Project shape
+      wizardStep: null, // Not available in platform.Project shape
+      wizardData: null, // Not available in platform.Project shape
+      createdAt: proj.dateCreated ?? new Date().toISOString(),
+      updatedAt: proj.dateLastModified ?? new Date().toISOString(),
+    };
+  }
 
   /**
    * Push a SmeMartProject to Pipeline (full replace — all fields).
