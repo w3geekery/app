@@ -1,70 +1,61 @@
 import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
+import { ZerobiasClientApi, ZerobiasClientSessionId } from '@zerobias-com/zerobias-client';
 import { PlatformEngagementProvisioner } from './platform-engagement-provisioner.service';
-import { PipelineWriteService, SME_MART_CLASS_IDS } from './pipeline-write.service';
-import { GraphqlReadService } from './graphql-read.service';
-import { fakePipelineWriteService, fakeGraphqlReadService } from '../../test-helpers/angular';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 describe('PlatformEngagementProvisioner', () => {
   let service: PlatformEngagementProvisioner;
-  let pipelineWrite: ReturnType<typeof fakePipelineWriteService>;
-  let graphqlRead: ReturnType<typeof fakeGraphqlReadService>;
   let snackBarMock: { open: ReturnType<typeof vi.fn> };
   type ApiMock = ReturnType<typeof vi.fn>;
   let clientApiMock: {
-    danaClient: { getOrgApi: () => { getOrg: ApiMock } };
+    toUUID: ApiMock;
     hydraClient: {
       getTagApi: () => { searchTags: ApiMock; createTag: ApiMock };
-      getResourceApi: () => { tagResource: ApiMock; getResource: ApiMock };
     };
-    platformClient: { getTaskApi: () => { create: ApiMock } };
+    platformClient: {
+      getProjectApi: () => { list: ApiMock; create: ApiMock; addMember: ApiMock };
+      getBoardApi: () => { create: ApiMock; list: ApiMock };
+    };
   };
 
   const testOrgId = 'org-123';
-  const testUserId = 'user-123';
-  const testOrgPartyId = 'org-party-123';
-  const testUserPartyId = 'user-party-123';
   const testOrgName = 'Test Org Inc.';
   const testOrgSlug = 'testorginc';
+  const testAdminPrincipalId = 'admin-principal-123';
   const testTagId = 'tag-123';
-  const testTaskId = 'task-123';
+  const testEngagementProjectId = 'engagement-project-123';
+  const testWorkspaceProjectId = 'workspace-project-123';
+  const testBoardId = 'board-123';
 
   const validInput = () => ({
     currentOrgId: testOrgId,
     currentOrgName: testOrgName,
     currentOrgSlug: testOrgSlug,
-    buyerUserId: testUserId,
-    assignedPartyId: testOrgPartyId,
-    accountablePartyId: testUserPartyId,
+    adminPrincipalId: testAdminPrincipalId,
   });
 
   beforeEach(() => {
-    pipelineWrite = fakePipelineWriteService();
-    graphqlRead = fakeGraphqlReadService();
     snackBarMock = { open: vi.fn() };
 
-    // Build a minimal mock of ZerobiasClientApi with nested getters
+    // Build a minimal mock of ZerobiasClientApi for 5-step recipe
     clientApiMock = {
-      danaClient: {
-        getOrgApi: vi.fn().mockReturnValue({
-          getOrg: vi.fn().mockResolvedValue({ name: testOrgName }),
-        }),
-      },
+      toUUID: vi.fn((id: string) => id), // Identity function for test
       hydraClient: {
         getTagApi: vi.fn().mockReturnValue({
           searchTags: vi.fn(),
           createTag: vi.fn(),
         }),
-        getResourceApi: vi.fn().mockReturnValue({
-          tagResource: vi.fn(),
-          getResource: vi.fn(),
-        }),
       },
       platformClient: {
-        getTaskApi: vi.fn().mockReturnValue({
+        getProjectApi: vi.fn().mockReturnValue({
+          list: vi.fn(),
           create: vi.fn(),
+          addMember: vi.fn(),
+        }),
+        getBoardApi: vi.fn().mockReturnValue({
+          create: vi.fn(),
+          list: vi.fn(),
         }),
       },
     };
@@ -73,8 +64,7 @@ describe('PlatformEngagementProvisioner', () => {
       providers: [
         PlatformEngagementProvisioner,
         { provide: ZerobiasClientApi, useValue: clientApiMock },
-        { provide: PipelineWriteService, useValue: pipelineWrite },
-        { provide: GraphqlReadService, useValue: graphqlRead },
+        { provide: ZerobiasClientSessionId, useValue: { getCurrentSessionId: () => null } },
         { provide: MatSnackBar, useValue: snackBarMock },
       ],
     });
@@ -82,125 +72,119 @@ describe('PlatformEngagementProvisioner', () => {
     service = TestBed.inject(PlatformEngagementProvisioner);
   });
 
-  describe('ensurePlatformEngagement', () => {
-    it('Guard fires: 0 results from discovery query → all 5 calls execute → returns created: true', async () => {
-      // Setup discovery query to return 0 results
-      graphqlRead.query.mockResolvedValue({
-        items: [],
-        page: { pageNumber: 1, pageSize: 10 },
-      });
-
+  describe('ensurePlatformEngagement (5-step recipe)', () => {
+    it('Happy path: all 5 steps succeed → returns created: true with all IDs', async () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
-      const resourceApi = clientApiMock.hydraClient.getResourceApi();
-      const taskApi = clientApiMock.platformClient.getTaskApi();
+      const projectApi = clientApiMock.platformClient.getProjectApi();
+      const boardApi = clientApiMock.platformClient.getBoardApi();
 
-      // Step A: Tag creation
+      // Step A: Tag probe and create
       tagApi.searchTags.mockResolvedValue({ items: [] });
       tagApi.createTag.mockResolvedValue({ id: testTagId });
 
-      // Step B: Task creation
-      taskApi.create.mockResolvedValue({ id: testTaskId });
+      // Step C: Engagement Project probe and create
+      projectApi.list.mockResolvedValueOnce({ items: [] });
+      projectApi.create.mockResolvedValueOnce({ id: testEngagementProjectId });
 
-      // Step C & E: Pipeline writes
-      pipelineWrite.pushEntities.mockResolvedValue(undefined);
+      // Step D: Workspace Project probe and create
+      projectApi.list.mockResolvedValueOnce({ items: [] });
+      projectApi.create.mockResolvedValueOnce({ id: testWorkspaceProjectId });
 
-      // Step D: Tag resource
-      resourceApi.getResource.mockResolvedValue({ tags: [] });
-      resourceApi.tagResource.mockResolvedValue(undefined);
+      // Step F: Default Board probe and create
+      boardApi.list.mockResolvedValue({ items: [] });
+      boardApi.create.mockResolvedValue({ id: testBoardId });
+
+      // Step G: Add member
+      projectApi.addMember.mockResolvedValue(undefined);
 
       // Execute
       const result = await service.ensurePlatformEngagement(validInput());
 
-      // Assert all calls made
+      // Assert all steps executed
       expect(tagApi.searchTags).toHaveBeenCalled();
       expect(tagApi.createTag).toHaveBeenCalled();
-      expect(taskApi.create).toHaveBeenCalled();
-      expect(pipelineWrite.pushEntities).toHaveBeenCalledTimes(2);
-      expect(resourceApi.tagResource).toHaveBeenCalled();
+      expect(projectApi.list).toHaveBeenCalledTimes(2); // Steps C and D both probe
+      expect(projectApi.create).toHaveBeenCalledTimes(2); // Steps C and D both create
+      expect(boardApi.create).toHaveBeenCalled();
+      expect(projectApi.addMember).toHaveBeenCalled();
 
-      // Assert result
+      // Assert result shape
       expect(result.created).toBe(true);
-      expect(result.engagementId).toBeTruthy();
-      expect(result.projectId).toBeTruthy();
+      expect(result.engagementProjectId).toBe(testEngagementProjectId);
+      expect(result.workspaceProjectId).toBe(testWorkspaceProjectId);
+      expect(result.boardId).toBe(testBoardId);
     });
 
-    it('Guard skips: 1 result from discovery query → ZERO bootstrap calls → returns created: false', async () => {
-      const existingEngagementId = 'engagement-456';
+    it('Idempotency: org already provisioned → returns created: false with empty IDs', async () => {
+      const tagApi = clientApiMock.hydraClient.getTagApi();
 
-      // Setup discovery query to return 1 engagement
-      graphqlRead.query.mockResolvedValue({
-        items: [{ id: existingEngagementId, tag: [{ value: testTagId }] }],
-        page: { pageNumber: 1, pageSize: 10 },
-      });
+      // isOrgProvisioned probe: tag exists
+      tagApi.searchTags.mockResolvedValue({ items: [{ id: testTagId }] });
 
       // Execute
       const result = await service.ensurePlatformEngagement(validInput());
 
-      // Assert no bootstrap calls made
-      expect(clientApiMock.hydraClient.getTagApi().searchTags).not.toHaveBeenCalled();
-      expect(clientApiMock.hydraClient.getTagApi().createTag).not.toHaveBeenCalled();
-      expect(clientApiMock.platformClient.getTaskApi().create).not.toHaveBeenCalled();
-      expect(pipelineWrite.pushEntities).not.toHaveBeenCalled();
-      expect(clientApiMock.hydraClient.getResourceApi().tagResource).not.toHaveBeenCalled();
+      // Assert recipe was not executed (only probe ran)
+      expect(tagApi.searchTags).toHaveBeenCalled(); // isOrgProvisioned probe
+      expect(tagApi.createTag).not.toHaveBeenCalled(); // Step A create skipped
+      expect(clientApiMock.platformClient.getProjectApi().list).not.toHaveBeenCalled();
 
       // Assert result
       expect(result.created).toBe(false);
-      expect(result.engagementId).toBe(existingEngagementId);
+      expect(result.engagementProjectId).toBe('');
+      expect(result.workspaceProjectId).toBe('');
+      expect(result.boardId).toBe('');
     });
 
-    it('Guard idempotent resume: existing tag probe skips create', async () => {
-      // Setup discovery query to return 0 (Engagement doesn't exist yet)
-      graphqlRead.query.mockResolvedValue({
-        items: [],
-        page: { pageNumber: 1, pageSize: 10 },
-      });
-
+    it('Step C idempotency: engagement project exists → probe returns it, skip create', async () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
-      const resourceApi = clientApiMock.hydraClient.getResourceApi();
-      const taskApi = clientApiMock.platformClient.getTaskApi();
+      const projectApi = clientApiMock.platformClient.getProjectApi();
+      const boardApi = clientApiMock.platformClient.getBoardApi();
 
-      // Step A: Tag exists via probe
-      tagApi.searchTags.mockResolvedValue({ items: [{ id: testTagId }] });
-      // Step A create should NOT be called
+      // isOrgProvisioned: tag doesn't exist yet
+      tagApi.searchTags.mockResolvedValueOnce({ items: [] });
+      // Step A: Create tag
+      tagApi.createTag.mockResolvedValue({ id: testTagId });
 
-      // Step B: Task creation
-      taskApi.create.mockResolvedValue({ id: testTaskId });
+      // Step C: Engagement project exists via probe
+      projectApi.list.mockResolvedValueOnce({ items: [{ id: testEngagementProjectId }] });
+      // Step C create should NOT be called
 
-      // Steps C & E: Pipeline writes
-      pipelineWrite.pushEntities.mockResolvedValue(undefined);
+      // Step D: Workspace project probe and create
+      projectApi.list.mockResolvedValueOnce({ items: [] });
+      projectApi.create.mockResolvedValueOnce({ id: testWorkspaceProjectId });
 
-      // Step D: Tag resource
-      resourceApi.getResource.mockResolvedValue({ tags: [] });
-      resourceApi.tagResource.mockResolvedValue(undefined);
+      // Step F: Board probe and create
+      boardApi.list.mockResolvedValue({ items: [] });
+      boardApi.create.mockResolvedValue({ id: testBoardId });
+
+      // Step G: Add member
+      projectApi.addMember.mockResolvedValue(undefined);
 
       // Execute
       const result = await service.ensurePlatformEngagement(validInput());
 
-      // Assert Step A probe fired but NOT create
-      expect(tagApi.searchTags).toHaveBeenCalled();
-      expect(tagApi.createTag).not.toHaveBeenCalled();
+      // Assert Step C probe fired but create did not
+      expect(projectApi.list).toHaveBeenCalledTimes(2); // C probe + D probe
+      expect(projectApi.create).toHaveBeenCalledTimes(1); // D create only
 
       // Assert other steps fired
-      expect(taskApi.create).toHaveBeenCalled();
-      expect(pipelineWrite.pushEntities).toHaveBeenCalledTimes(2);
-      expect(resourceApi.tagResource).toHaveBeenCalled();
+      expect(boardApi.create).toHaveBeenCalled();
+      expect(projectApi.addMember).toHaveBeenCalled();
 
       // Assert result
       expect(result.created).toBe(true);
+      expect(result.engagementProjectId).toBe(testEngagementProjectId);
+      expect(result.workspaceProjectId).toBe(testWorkspaceProjectId);
     });
 
-    it('Error handling: Step A failure → console.warn + snackbar + re-throw', async () => {
-      // Setup discovery query
-      graphqlRead.query.mockResolvedValue({
-        items: [],
-        page: { pageNumber: 1, pageSize: 10 },
-      });
-
+    it('Step A error: tag create fails → console.warn + snackbar + re-throw', async () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
       const testError = new Error('Tag creation failed');
 
-      // Step A: Tag probe succeeds but create fails
-      tagApi.searchTags.mockResolvedValue({ items: [] });
+      // isOrgProvisioned: tag doesn't exist
+      tagApi.searchTags.mockResolvedValueOnce({ items: [] });
+      // Step A: create fails
       tagApi.createTag.mockRejectedValue(testError);
 
       const warnSpy = vi.spyOn(console, 'warn');
@@ -216,14 +200,13 @@ describe('PlatformEngagementProvisioner', () => {
 
       expect(caught).toBe(true);
 
-      // Assert snackbar opened with correct message
+      // Assert snackbar and warning
       expect(snackBarMock.open).toHaveBeenCalledWith(
         'Setup in progress — please retry in a moment.',
         'Dismiss',
         { duration: 5000 },
       );
 
-      // Assert console.warn called
       expect(warnSpy).toHaveBeenCalledWith(
         '[PLATFORM_ENGAGEMENT_FAILURE]',
         expect.objectContaining({
@@ -235,24 +218,20 @@ describe('PlatformEngagementProvisioner', () => {
       warnSpy.mockRestore();
     });
 
-    it('Error handling: Step C failure (Pipeline) → snackbar + re-throw', async () => {
-      // Setup discovery query
-      graphqlRead.query.mockResolvedValue({
-        items: [],
-        page: { pageNumber: 1, pageSize: 10 },
-      });
-
+    it('Step C error: project create fails → console.warn + snackbar + re-throw', async () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
-      const taskApi = clientApiMock.platformClient.getTaskApi();
-      const testError = new Error('Pipeline write failed');
+      const projectApi = clientApiMock.platformClient.getProjectApi();
+      const testError = new Error('Project creation failed');
 
-      // Steps A and B succeed
+      // isOrgProvisioned: tag doesn't exist
       tagApi.searchTags.mockResolvedValue({ items: [] });
+      // Step A: create tag
       tagApi.createTag.mockResolvedValue({ id: testTagId });
-      taskApi.create.mockResolvedValue({ id: testTaskId });
+      // Step C: project create fails
+      projectApi.list.mockResolvedValueOnce({ items: [] });
+      projectApi.create.mockRejectedValue(testError);
 
-      // Step C fails
-      pipelineWrite.pushEntities.mockRejectedValue(testError);
+      const warnSpy = vi.spyOn(console, 'warn');
 
       // Execute and expect rejection
       let caught = false;
@@ -265,75 +244,132 @@ describe('PlatformEngagementProvisioner', () => {
 
       expect(caught).toBe(true);
 
-      // Assert snackbar opened
+      // Assert snackbar and warning
       expect(snackBarMock.open).toHaveBeenCalledWith(
         'Setup in progress — please retry in a moment.',
         'Dismiss',
         { duration: 5000 },
       );
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[PLATFORM_ENGAGEMENT_FAILURE]',
+        expect.objectContaining({
+          step: 'C',
+          callSiteTag: 'platform-engagement:ensure-engagement-project',
+        }),
+      );
+
+      warnSpy.mockRestore();
     });
   });
 
-  describe('RACI on coordination Task', () => {
+  describe('5-step recipe parameter validation', () => {
     beforeEach(() => {
-      graphqlRead.query.mockResolvedValue({
-        items: [],
-        page: { pageNumber: 1, pageSize: 10 },
-      });
       const tagApi = clientApiMock.hydraClient.getTagApi();
-      const resourceApi = clientApiMock.hydraClient.getResourceApi();
-      const taskApi = clientApiMock.platformClient.getTaskApi();
+      const projectApi = clientApiMock.platformClient.getProjectApi();
+      const boardApi = clientApiMock.platformClient.getBoardApi();
+
+      // Default successful path
       tagApi.searchTags.mockResolvedValue({ items: [] });
       tagApi.createTag.mockResolvedValue({ id: testTagId });
-      taskApi.create.mockResolvedValue({ id: testTaskId });
-      pipelineWrite.pushEntities.mockResolvedValue(undefined);
-      resourceApi.getResource.mockResolvedValue({ tags: [] });
-      resourceApi.tagResource.mockResolvedValue(undefined);
+      projectApi.list.mockResolvedValue({ items: [] });
+      // Use mockResolvedValueOnce to return different values for each create call
+      projectApi.create.mockResolvedValueOnce({ id: testEngagementProjectId });
+      projectApi.create.mockResolvedValueOnce({ id: testWorkspaceProjectId });
+      boardApi.list.mockResolvedValue({ items: [] });
+      boardApi.create.mockResolvedValue({ id: testBoardId });
+      projectApi.addMember.mockResolvedValue(undefined);
     });
 
-    it('Task.create receives org-party as assigned (R) and user-party as accountable (A)', async () => {
-      const taskApi = clientApiMock.platformClient.getTaskApi();
+    it('Step C: creates engagement project with locked verbiage (D-32, D-33)', async () => {
+      const projectApi = clientApiMock.platformClient.getProjectApi();
+
       await service.ensurePlatformEngagement(validInput());
-      expect(taskApi.create).toHaveBeenCalledOnce();
-      const newTask = taskApi.create.mock.calls[0][0];
-      expect(newTask.assigned).toBe(testOrgPartyId);
-      expect(newTask.accountable).toBe(testUserPartyId);
+
+      // Find the Step C create call (first call to create after list probe)
+      const createCalls = projectApi.create.mock.calls;
+      expect(createCalls.length).toBeGreaterThanOrEqual(1);
+
+      // First create is engagement project (Step C)
+      const engagementProjectCall = createCalls[0][0];
+      expect(engagementProjectCall.name).toBe(`${testOrgName} <- ZeroBias`); // D-32
+      expect(engagementProjectCall.description).toContain('Platform Services Engagement: ZeroBias ➡️'); // D-33
+      expect(engagementProjectCall.status).toBe('active'); // D-29
+      expect(engagementProjectCall.visibility).toBe('internal'); // D-29
+      expect(engagementProjectCall.membershipPolicy).toBe('private'); // D-29
+      expect(engagementProjectCall.parentId).toBeNull(); // D-04
+      expect(engagementProjectCall.tagId).toBe(testTagId); // D-01
     });
 
-    it('Task.create receives empty approvers (C) and empty notified (I)', async () => {
-      const taskApi = clientApiMock.platformClient.getTaskApi();
+    it('Step D: creates workspace project with locked verbiage (D-34, D-35), tagless (D-02)', async () => {
+      const projectApi = clientApiMock.platformClient.getProjectApi();
+
       await service.ensurePlatformEngagement(validInput());
-      const newTask = taskApi.create.mock.calls[0][0];
-      expect(newTask.approvers).toEqual([]);
-      expect(newTask.notified).toEqual([]);
+
+      const createCalls = projectApi.create.mock.calls;
+      // Second create is workspace project (Step D)
+      const workspaceProjectCall = createCalls[1][0];
+      expect(workspaceProjectCall.name).toBe('ZeroBias Platform'); // D-34
+      expect(workspaceProjectCall.description).toContain(`${testOrgName}'s gateway into ZeroBias`); // D-35
+      expect(workspaceProjectCall.parentId).toBe(testEngagementProjectId); // D-01
+      expect(workspaceProjectCall.tagId).toBeUndefined(); // D-02 (tagless)
+    });
+
+    it('Step F: creates default kanban board with locked verbiage (D-06, D-30)', async () => {
+      const boardApi = clientApiMock.platformClient.getBoardApi();
+
+      await service.ensurePlatformEngagement(validInput());
+
+      expect(boardApi.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectId: testWorkspaceProjectId,
+          name: 'ZeroBias Platform', // D-06, D-34 locked name
+          status: 'active', // D-30
+          boardType: 'kanban', // D-30
+          isDefault: true, // D-30
+        }),
+      );
+    });
+
+    it('Step G: adds admin principal as project member with admin role', async () => {
+      const projectApi = clientApiMock.platformClient.getProjectApi();
+
+      await service.ensurePlatformEngagement(validInput());
+
+      // addMember is called with (projectId, newProjectMember) as separate args
+      expect(projectApi.addMember).toHaveBeenCalledWith(
+        testEngagementProjectId,
+        expect.objectContaining({
+          principalId: testAdminPrincipalId,
+          role: 'admin',
+        }),
+      );
     });
   });
 
-  describe('Slug source', () => {
+  describe('Tag naming: slug source', () => {
     beforeEach(() => {
-      graphqlRead.query.mockResolvedValue({
-        items: [],
-        page: { pageNumber: 1, pageSize: 10 },
-      });
       const tagApi = clientApiMock.hydraClient.getTagApi();
-      const resourceApi = clientApiMock.hydraClient.getResourceApi();
-      const taskApi = clientApiMock.platformClient.getTaskApi();
+      const projectApi = clientApiMock.platformClient.getProjectApi();
+      const boardApi = clientApiMock.platformClient.getBoardApi();
+
       tagApi.searchTags.mockResolvedValue({ items: [] });
       tagApi.createTag.mockResolvedValue({ id: testTagId });
-      taskApi.create.mockResolvedValue({ id: testTaskId });
-      pipelineWrite.pushEntities.mockResolvedValue(undefined);
-      resourceApi.getResource.mockResolvedValue({ tags: [] });
-      resourceApi.tagResource.mockResolvedValue(undefined);
+      projectApi.list.mockResolvedValue({ items: [] });
+      projectApi.create.mockResolvedValue({ id: testEngagementProjectId });
+      boardApi.list.mockResolvedValue({ items: [] });
+      boardApi.create.mockResolvedValue({ id: testBoardId });
+      projectApi.addMember.mockResolvedValue(undefined);
     });
 
     it('Tag name uses platform-canonical orgSlug when provided', async () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
       await service.ensurePlatformEngagement({
-        ...validInput(),
+        currentOrgId: testOrgId,
         currentOrgName: 'Brian Hierholzer Inc.',
         currentOrgSlug: 'brianhierholzer',
+        adminPrincipalId: testAdminPrincipalId,
       });
-      // First arg of createTag is the tag name (CreateTagBody first positional)
       const createBody = tagApi.createTag.mock.calls[0][0];
       expect(createBody.name).toBe('sme-mart.eng.zerobias-to-brianhierholzer');
     });
@@ -341,9 +377,10 @@ describe('PlatformEngagementProvisioner', () => {
     it('Tag name falls back to slugify(orgName) when orgSlug missing', async () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
       await service.ensurePlatformEngagement({
-        ...validInput(),
+        currentOrgId: testOrgId,
         currentOrgName: 'Brian Hierholzer Inc.',
         currentOrgSlug: undefined,
+        adminPrincipalId: testAdminPrincipalId,
       });
       const createBody = tagApi.createTag.mock.calls[0][0];
       // slugify("Brian Hierholzer Inc.") -> "brian-hierholzer-inc"
@@ -351,45 +388,57 @@ describe('PlatformEngagementProvisioner', () => {
     });
 
     it('Tag ownerId is the marketplace operator org (W3Geekery), not the target customer org', async () => {
-      // Ensures the probe (which runs in the operator-admin's session scope) can
-      // see the tag — fixes the cross-customer probe blindness from 2026-05-07.
       const tagApi = clientApiMock.hydraClient.getTagApi();
       await service.ensurePlatformEngagement({
-        ...validInput(),
-        currentOrgId: 'd6810036-fbc1-54c2-b01d-1496fc14ed32', // Brian's org (target customer)
+        currentOrgId: 'd6810036-fbc1-54c2-b01d-1496fc14ed32', // target customer
         currentOrgName: 'Brian Hierholzer Inc.',
         currentOrgSlug: 'brianhierholzer',
+        adminPrincipalId: testAdminPrincipalId,
       });
       const createBody = tagApi.createTag.mock.calls[0][0];
-      // CreateTagBody(name, id, description, ownerId, type) — ownerId is 4th positional
       expect(createBody.ownerId).toBe('cd7105df-523d-5392-9f9a-3f83d3f30107'); // W3Geekery
-      expect(createBody.ownerId).not.toBe('d6810036-fbc1-54c2-b01d-1496fc14ed32'); // not target customer
-    });
-
-    it('isOrgProvisioned uses orgSlug when provided', async () => {
-      const tagApi = clientApiMock.hydraClient.getTagApi();
-      tagApi.searchTags.mockResolvedValue({ items: [] });
-      await service.isOrgProvisioned('org-x', 'Brian Hierholzer Inc.', 'brianhierholzer');
-      const searchBody = tagApi.searchTags.mock.calls[0][3];
-      expect(searchBody.name).toBe('sme-mart.eng.zerobias-to-brianhierholzer');
-    });
-
-    it('isOrgProvisioned falls back to slugify(orgName) when orgSlug missing', async () => {
-      const tagApi = clientApiMock.hydraClient.getTagApi();
-      tagApi.searchTags.mockResolvedValue({ items: [] });
-      await service.isOrgProvisioned('org-x', 'Brian Hierholzer Inc.');
-      const searchBody = tagApi.searchTags.mock.calls[0][3];
-      expect(searchBody.name).toBe('sme-mart.eng.zerobias-to-brian-hierholzer-inc');
+      expect(createBody.ownerId).not.toBe('d6810036-fbc1-54c2-b01d-1496fc14ed32');
     });
   });
 
-  describe('Class ID verification', () => {
-    it('SME_MART_CLASS_IDS.Engagement is exported and has correct value', () => {
-      expect(SME_MART_CLASS_IDS.Engagement).toBe('7711aa41-e55b-5cda-9b7a-35844a2006a1');
+  describe('isOrgProvisioned (idempotency probe)', () => {
+    it('Returns true when tag exists', async () => {
+      const tagApi = clientApiMock.hydraClient.getTagApi();
+      tagApi.searchTags.mockResolvedValue({ items: [{ id: testTagId }] });
+
+      const result = await service.isOrgProvisioned(testOrgId, testOrgName, testOrgSlug);
+
+      expect(result).toBe(true);
+      expect(tagApi.searchTags).toHaveBeenCalled();
     });
 
-    it('SME_MART_CLASS_IDS.SmeMartProject is exported and has correct value', () => {
-      expect(SME_MART_CLASS_IDS.SmeMartProject).toBe('c66114a2-48e2-5b93-b7d6-7ccd6ef45a03');
+    it('Returns false when tag does not exist', async () => {
+      const tagApi = clientApiMock.hydraClient.getTagApi();
+      tagApi.searchTags.mockResolvedValue({ items: [] });
+
+      const result = await service.isOrgProvisioned(testOrgId, testOrgName, testOrgSlug);
+
+      expect(result).toBe(false);
+    });
+
+    it('Uses provided orgSlug in tag name', async () => {
+      const tagApi = clientApiMock.hydraClient.getTagApi();
+      tagApi.searchTags.mockResolvedValue({ items: [] });
+
+      await service.isOrgProvisioned(testOrgId, 'Some Org Name', 'customslug');
+
+      const searchBody = tagApi.searchTags.mock.calls[0][3];
+      expect(searchBody.name).toBe('sme-mart.eng.zerobias-to-customslug');
+    });
+
+    it('Falls back to slugify(orgName) when orgSlug missing', async () => {
+      const tagApi = clientApiMock.hydraClient.getTagApi();
+      tagApi.searchTags.mockResolvedValue({ items: [] });
+
+      await service.isOrgProvisioned(testOrgId, 'Some Org Name');
+
+      const searchBody = tagApi.searchTags.mock.calls[0][3];
+      expect(searchBody.name).toBe('sme-mart.eng.zerobias-to-some-org-name');
     });
   });
 });
