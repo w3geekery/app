@@ -224,5 +224,21 @@ claude --resume poc/sme-mart
 
 ---
 
-**Last Updated:** 2026-05-01 23:30 UTC
-**Milestone v1.4:** EXECUTING — Phase 20 closed (2026-04-29), Phase 26 closed (2026-04-29), Phase 25 Plans 01-03 complete, Phase 28 closed (2026-04-30, 5/5 plans + 8/8 must-haves), Phase 27 closed (2026-05-01, AR-01..AR-06 validated), **Phase 27.5 closed (2026-05-01, 5/5 plans + 8/8 ENF-* requirements verified)**; Phase 24 (Demo Data Visibility Gate, re-spec'd around Option X) is next-up.
+**Phase 29.5 (Platform Model Migration) — EXECUTING:**
+
+- Plan 01: Hydra service baseline — ✅ COMPLETE 2026-05-08
+- Plan 02: Engagement provisioning recipe (5-step rewrite) — ✅ COMPLETE 2026-05-10
+- **Plan 03: Wave 2 Service Refactors (dual-read platform.Project) — ✅ COMPLETE 2026-05-11**
+  - Task 0: Pre-flight MCP member-filter param shapes (D-23 resolution)
+  - Task 1: EngagementsService with dual-read platform.Project integration (commit 9b7e8e9)
+  - Task 2: SmeMartProjectService with dual-read platform.Project integration (commit fe015b7)
+  - Task 3: DemoVisibilityService reconciled for dual-read polymorphism (commit 01a8911)
+  - Task 4: MyEngagementListComponent org-scoping verification with tests (commit c3411bb)
+  - Summary: `.planning/phases/29.5-platform-model-migration/29.5-03-SUMMARY.md`
+  - All deviations tracked: 3 auto-fixed (Rule 1/2 bugs + TypeScript errors)
+  - Test results: 5/5 passing on new component spec
+
+---
+
+**Last Updated:** 2026-05-11 09:42 UTC
+**Milestone v1.4:** EXECUTING — Phase 20 closed (2026-04-29), Phase 26 closed (2026-04-29), Phase 25 Plans 01-03 complete, Phase 28 closed (2026-04-30, 5/5 plans + 8/8 must-haves), Phase 27 closed (2026-05-01, AR-01..AR-06 validated), **Phase 27.5 closed (2026-05-01, 5/5 plans + 8/8 ENF-* requirements verified)**, **Phase 29.5 Plan 03 closed (2026-05-11, dual-read platform.Project integration complete)**; Phase 29.5 Plans 04-08 next-up.
