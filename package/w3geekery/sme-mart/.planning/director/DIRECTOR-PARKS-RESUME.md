@@ -119,7 +119,7 @@ Error toward acting-on-request. Retreating to the rule when explicitly asked is 
 | 27 | Auth gate + onboarding routing + lazy-on-load default-engagement guard | ✅ COMPLETE 2026-04-30 + ✅ architectural rework SHIPPED 2026-05-08 (commit `74ed63e`, PR #55 merged + UAT-deployed) |
 | 27.5 | Modernization rule enforcement (ESLint + pre-commit + CI gate) | ✅ COMPLETE 2026-05-01 — verifier 8/8 ENF-*; closure commit `08cc25a` |
 | 28 | Company profile review/confirm form | ✅ COMPLETE 2026-04-30 |
-| **29.5** | **Platform Model Migration (NEW 2026-05-08)** | **brief drafted at `.planning/director/phase-29.5-brief.md`; awaiting MCP-describe to resolve open questions, then `/gsd-insert-phase 29.5`** |
+| **29.5** | **Platform Model Migration** | **PLANS COMMITTED 2026-05-11.** Brief LOCKED (Path C Engagement-as-Project), CONTEXT.md (43 decisions D-01..D-43), DISCUSSION-LOG.md, PATTERNS.md, 8 PLAN.md files across 5 waves, all on `poc/sme-mart` HEAD `c4d4e6a`. Director amendments applied (Plan 02 dep on 01, REQ-IDs stripped, Plan 04 Task 0 pre-flight guard, Plan 08 schema-PR-stall escape, Plan 05 Slack-ping op note). Ready for `/gsd-execute-phase 29.5`. |
 | 30 | Default Project board + "Coming Soon" placeholder surfaces | brief at `b7f9b80` — **needs substantial rewrite after 29.5 closes** (now uses real platform.Project + platform.Board) |
 | 31 | W3Geekery as first customer + production smoke test | not started; depends on 30 (which depends on 29.5) |
 | ~~29~~ | DEFERRED to v1.5 | tier display / ToS / branding |
@@ -149,6 +149,128 @@ Error toward acting-on-request. Retreating to the rule when explicitly asked is 
 - GLOBAL_DEMO `81053c14-a8e5-4939-b538-c122c7d0eb1a`
 - LEGACY_W3GEEKERY `d618b602-21cc-40a1-a9fa-534b7bc1672c`
 - W3Geekery marketplace (kept visible, NOT a demo tag) `a81cd320-243e-44eb-bdd9-9824019ef3dd`
+
+---
+
+## 2026-05-11 parkit — Phase 29.5 discuss + plan complete; 5 new commits; gsd-execute handoff prepared
+
+**TL;DR:** Phase 29.5 went from drafted brief → LOCKED brief → inserted into roadmap → discuss-phase complete (43 decisions) → plan-phase complete (8 plans/5 waves with 4 Director amendments) → 5 atomic commits landed → errata 029 filed for GSD 1.38.5 bugs. Working tree clean. Branch 10 ahead of origin (don't push; accumulate for 29.5-closure PR). gsd-execute handoff prompt ready in conversation history (re-paste from this resume if cleared).
+
+### Architectural pivot (vs. 2026-05-08 brief draft)
+
+Discuss-phase pre-flight (Director + Clark, 2026-05-08 PM) replaced the original Path-A "Engagement-stays-as-GQL-class-linked-to-Project" with **Path (C) Engagement-as-Project hierarchy**:
+
+- Engagement IS a top-level `platform.Project` (parentId=null, ownerId=buyerOrgId).
+- Workspace ("ZeroBias Platform") is a child Project (parentId=engagement.id).
+- Vetting Board (boardType=list, isDefault=false, lazy-created) is an immediate-child Board on the engagement Project.
+- Workspace child Project is **tagless** — identity tag rides engagement Project only via `Project.tagId` (built-in at create).
+- **Engagement Task `aha1-N` DROPPED** — speculative drop with Governance verification gate as Plan 06 deliverable.
+- **`Engagement` + `EngagementVettingItem` + `SmeMartProject` GQL classes RETIRE** (deprecate-without-delete in zerobias-org/schema PR via Daniel Rojas).
+- **`EngagementMetadata` NOT created** for v1.4 — vetting state on Tasks, billing not in v1.4 scope. Planted seed for v1.5+.
+- **Vetting paired-task shape: (γ)** parent + one subtask per side (activityId on parent ties to vetting workflow).
+- Zero new GQL classes added; three retired. Customer-facing noun stays "Engagement"; Project is persistence-only.
+
+Architectural directive locked: **eliminate GQL surface area where feasible**. v1.4 ends with SmeMart's GQL surface meaningfully smaller than today.
+
+### Provisioning recipe collapsed 7 → 5 steps
+
+```
+A:  hydra.Tag.create  — identity tag sme-mart.eng.zerobias-to-{slug}, ownerId=MARKETPLACE_OPERATOR_ORG_ID
+~B~ DROPPED (Engagement Task aha1-N — Project.status enum + Governance-Project-rendering replaces both roles)
+C:  platform.Project.create  — engagement Project, parentId=null, ownerId=buyerOrgId, tagId=A.id, locked verbiage
+D:  platform.Project.create  — workspace Project, parentId=C.id, name="ZeroBias Platform", tagId=undefined
+~E~ DROPPED (Pipeline.receive link — Project.tagId built-in eliminates round-trip)
+F:  platform.Board.create  — default kanban Board, projectId=D.id, isDefault=true
+G:  platform.Project.addMember  — admin user as member of engagement Project
+```
+
+Locked verbiage (preserved verbatim at top of `provisioner.service.ts` per D-32..D-37):
+- Engagement Project.name: `${orgName} <- ZeroBias`
+- Engagement Project.description: `Platform Services Engagement: ZeroBias ➡️ ${orgName}` (no trailing period)
+- Workspace Project.name: `ZeroBias Platform`
+- Workspace Project.description: `${orgName}'s gateway into ZeroBias — tasks, notes, and communication tied to the ZeroBias ➡️ ${orgName} platform engagement live here.`
+- Tag.name: `sme-mart.eng.zerobias-to-${slug}`
+- Tag.description: `Marketplace tag for the platform-services engagement: ZeroBias ➡️ ${orgName}.`
+
+Locked enum values (resolved via MCP describe 2026-05-08): Project.status='active', visibility='internal', membershipPolicy='private'; Board boardType='kanban' (default) / 'list' (vetting); Board.isDefault=true (default) / false (vetting). Task.boardId optional with server fallback chain (project → boundary → org → parent for subtasks).
+
+### 8 plans across 5 waves (with 4 Director amendments)
+
+```
+Wave 1: 01 (codebase audit + MCP describes — INVENTORY.md)
+Wave 2: 02 (provisioner rewrite, depends 01), 03 (service refactors + dual-read, depends 01), 04 (ResourceTypeEnum + engagement-hierarchy, depends 01)
+Wave 3: 05 (schema deprecation PR via Daniel Rojas, depends 02+03)
+Wave 4: 06 (UAT Governance verification — D-08 gate), 07 (UAT vetting Board smoke — D-12 gate)
+Wave 5: 08 (closure — lint/tsc/test green, BACKLOG, ROADMAP, CLOSURE.md)
+```
+
+Director amendments applied to on-disk plans before commit:
+1. Plan 02: `depends_on: [29.5-01]`, Wave 1→2 (MCP-describe gate; conservative wins over risk-accept rework hours).
+2. All plans: stripped invented `PLAT-29-5-*` REQ-IDs (phase_req_ids was TBD; verification criteria + must_haves are the goal-backward anchors).
+3. Plan 04: inserted Task 0 pre-flight guard reading INVENTORY.md to confirm `engagement-hierarchy.service.ts` partition classification (re-scope to ResourceTypeEnum-only if NOT-TOUCHED).
+4. Plan 08: schema-PR-stall escape clause (>5 days from open = file `29.5b` carry-over phase + BACKLOG entry, close 29.5 on app-side changes alone). Plan 05: operational note for Slack ping in `#zb-dx` tagging Daniel Rojas when PR opens.
+
+### 5 new commits this session (poc/sme-mart, unpushed)
+
+```
+c4d4e6a docs(errata): 029 — GSD 1.38.5 state-frontmatter + config-migration bugs
+3cd51bd docs(29.5): 8 phase plans across 5 waves with director amendments
+1fd1721 docs(29.5): pattern map for platform model migration
+9ba2c3e chore(deps): bump @zerobias-com/platform-sdk to 1.1.17 within caret range
+62cecad chore(gsd): complete 1.38.5 workflow config backfill (24 keys)
+```
+
+Plus 3 earlier this session (committed by plan-phase agent before parkit visibility):
+```
+aca9d11 docs(29.5): capture context + discussion log + state record
+6d44727 docs(29.5): insert phase into v1.4 roadmap
+60057dc chore(gsd): backfill workflow.discuss_mode config key (1.38.5 migration gap)
+```
+
+Plus the brief lock (also committed by an earlier agent):
+```
+7805b56 docs(director): lock Path (C) Engagement-as-Project + 5-step provisioning recipe in phase-29.5 brief
+```
+
+Total: **9 new commits on `poc/sme-mart` since `51601ed`. Branch 10 ahead of origin (includes parkit commit). DO NOT PUSH** — accumulate for the 29.5-closure cross-fork PR.
+
+### Errata 029 filed
+
+`.planning/director/errata/029-gsd-1.38.5-state-frontmatter-and-config-bugs.md` documents four distinct GSD 1.38.5 bugs:
+1. **OPEN:** `gsd-tools state patch` corrupts STATE.md frontmatter (milestone_name→"milestone", current_phase dropped).
+2. **OPEN:** `gsd-tools state record-session` same corruption pattern.
+3. **OPEN:** `state.add-roadmap-evolution` workflow handler missing.
+4. **FIXED:** Per-project config migration gap (24 missing workflow keys).
+
+Workaround discipline: NEVER invoke `gsd-tools state {patch,record-session}` in 1.38.5; direct frontmatter edits + git checkout revert if SDK runs anyway. Errata file includes detection rule for future Director sessions.
+
+### gsd-execute handoff prepared
+
+The handoff prompt for `/gsd-execute-phase 29.5` is in this session's conversation history (last turn before parkit). It includes the full constraint stack: 43 locked decisions, locked verbiage verbatim, locked enum values, Angular 21 modernization rules (verbatim per `feedback_handoff_must_include_modernization_rules.md`), architectural directives, SDK state-frontmatter write ban, AskUserQuestion ban, source-of-truth rule, execution discipline (tsc spec config gate, targeted tests, per-wave checkpoint protocol).
+
+**On resume:** if conversation context was cleared, RE-PASTE the gsd-execute handoff from this Resume's next-action-sequence reconstruction (below) before Clark invokes `/gsd-execute-phase 29.5`. The handoff is the contract Director hands to gsd-execute.
+
+### Memory updates this session
+
+- `feedback_checkpoint_handoff_format.md` — strengthened to NON-NEGOTIABLE, added explicit self-check protocol, WRONG vs RIGHT example, four Failure-Mode Anchors, **trigger phrase `tell-block`** (one-word reply = re-read memory + refactor prior response into proper format, no re-explanation needed). Index entry in MEMORY.md updated to lead with "**`Tell gsd-X:` BLOCK IS NON-NEGOTIABLE** (corrected 9+ times)" so it's unmissable on session-start scan.
+
+### Discipline notes from this session
+
+- **AskUserQuestion was offered by the SDK** during workflow init prompts but the agent correctly avoided it (global ban). Used text-mode prompts.
+- **Plan-phase agent self-reported** the state-record-session corruption (Bug 2 in errata 029) and reverted via git checkout. Good discipline.
+- **Director caught and corrected** invented PLAT-29-5-* REQ-IDs before they reached on-disk plans. Cargo-cult REQ-tracking would have confused gsd-verifier.
+- **Director caught and corrected** Plan 02's missing dependency on Plan 01 (risk-accept vs. conservative trade — conservative won).
+
+### Next-action sequence (on resume)
+
+1. **Verify clean tree:** `git status` (expected: clean). `git log --oneline -10` (expected: `c4d4e6a` errata 029 at top).
+2. **Re-paste gsd-execute handoff** (from conversation history or reconstruct from the Quick-start prompt) into Clark's gsd-plan shell (or fresh shell). Then Clark invokes `/gsd-execute-phase 29.5`.
+3. **Execute Wave 1** (Plan 01 solo): codebase audit + MCP describes producing INVENTORY.md. Return to Director for wave-close checkpoint.
+4. **Execute Wave 2** (Plans 02, 03, 04 parallel after Wave 1 closes). Plan 04's Task 0 is a pre-flight guard.
+5. **Execute Wave 3** (Plan 05 — schema deprecation PR). Honor Slack-ping op note + 5-day stall clock.
+6. **Execute Wave 4** (Plans 06, 07 — UAT smoke tests, human-in-the-loop).
+7. **Execute Wave 5** (Plan 08 — closure).
+8. **Closure checkpoint:** Director reviews CLOSURE.md + verification report. Then Clark opens cross-fork PR to `zerobias-org/app:uat` bundling all 29.5 commits.
 
 ---
 
@@ -669,7 +791,9 @@ Read paths validated:
 |---|---|---|
 | **Phase 24 closed + UAT-deployed** | DONE | ✅ 2026-05-06. PR #54 merged to `zerobias-org/app:uat`. |
 | **Phase 27 architectural rework — SHIPPED** | DONE | ✅ 2026-05-08. All work committed (5 groups + test fix + deps bump = 7 new commits on top of `7efbdd8`). PR #55 merged to `zerobias-org/app:uat`, CI passed first run, UAT-deployed. CloudFront invalidated. Demo (Friday 2026-05-08) ran successfully. |
-| **Phase 29.5 brief drafted** | Director | NEW 2026-05-08. Brief at `.planning/director/phase-29.5-brief.md`. Open questions queued for MCP describe (post-session-restart). Then `/gsd-insert-phase 29.5`. |
+| **Phase 29.5 plans COMMITTED — ready for execute** | gsd-execute pending | 2026-05-11. Brief LOCKED (Path C). CONTEXT.md (43 decisions). DISCUSSION-LOG.md. PATTERNS.md. 8 PLAN.md across 5 waves with 4 Director amendments. All committed on `poc/sme-mart` HEAD `c4d4e6a`. Working tree clean, 10 ahead of origin. **Next:** re-paste gsd-execute handoff (from conversation history or Quick-start prompt below) → `/gsd-execute-phase 29.5` → Wave 1 (Plan 01 solo, inventory + MCP describes). |
+| **Errata 029 filed** | DONE | 2026-05-11. `.planning/director/errata/029-gsd-1.38.5-state-frontmatter-and-config-bugs.md`. Four 1.38.5 bugs: 1 fixed (config migration gap), 3 OPEN with workarounds documented (`gsd-tools state patch`, `state record-session`, missing `state.add-roadmap-evolution` handler). Detection rule + workaround discipline in file. |
+| **`tell-block` trigger phrase** | Active | One-word reply trigger added to `feedback_checkpoint_handoff_format.md`. Clark types `tell-block` → Director re-reads memory + refactors prior response into `Tell gsd-X:` format. No re-explanation needed. |
 | **MCP update verification (post-restart)** | Clark + Director | Run `mcp__zerobias__zerobias_describe('platform.Board.create')` to confirm `zerobias-mcp@1.0.43` is loaded. If stale, restart MCP server. |
 | **Dana branded-login subdomain bug — sent to Chris** | Chris (platform) | NOT a sme-mart fix. Dana `MeProducerImpl.login()` uses `request.headers.host` + emits relative `/login/` URL; doesn't consult `app.custom_login` or `app_instance.hostname`. Report sent today. |
 | **Demo toggle gate uses email allowlist (not admin signal)** | Backlog candidate | `DemoModeService.isAuthorized` checks hardcoded `clark@w3geekery.com` + `zerobias.com` domain, independent of platform admin signal. Should align with `ProjectContextService.isAdmin()`. NOT filed yet. |
@@ -793,7 +917,31 @@ PR #54 cycle (2026-05-05/06):
 
 ## Quick-start prompt for the next Director Parks session
 
-> Resume Director Parks. Read `.planning/director/DIRECTOR-PARKS-RESUME.md` FIRST — start with the **"2026-05-08 session"** section at the top, which captures: (a) all Phase 27 architectural rework SHIPPED via PR #55 (merged + UAT-deployed); (b) Friday demo successfully ran Provision live for Brian's org; (c) Nic's 2026-05-08 SDK release announcing real `platform.Project` / `platform.Board` / `hydra.Role` scoped-grant primitives + `zerobias-mcp@1.0.43`; (d) Phase 29.5 (Platform Model Migration) brief drafted at `.planning/director/phase-29.5-brief.md`. **8 new commits on `poc/sme-mart` since prior pushed HEAD; all in PR #55, all DEPLOYED.** Working tree should be clean post-quit. **CRITICAL FIRST ACTION:** verify ZB MCP is updated to 1.0.43 by running `mcp__zerobias__zerobias_describe('platform.Board.create')` — should return new Board schema. If stale ("Unknown service" or missing methods), MCP server needs restart. **Then resolve Phase 29.5 brief open questions via MCP describe BEFORE inserting phase:** (1) `platform.Project.create` membershipPolicy enum + visibility values; (2) `platform.Task.create` boardId requirement (HIGH RISK: if required AND no server default, provisioning recipe Step B breaks on next live run); (3) `platform.Board.create` boardType enum + ownerId + isDefault semantics; (4) `hydra.Role.addRoleMemberScope` for PERMS-AUDIT-1 backlog update. **Then update `phase-29.5-brief.md`** with resolved values to lock open questions, then `/gsd-insert-phase 29.5 .planning/director/phase-29.5-brief.md`, then `/gsd-discuss-phase 29.5`, then `/gsd-plan-phase 29.5`. **Phase 30 brief is now stale** — was built on SmeMart-side analogs that 29.5 retires; substantial rewrite after 29.5 closes. **Phase 31 unchanged** — depends on 30. **Locked verbiage (DO NOT regress in 29.5 recipe flip):** Engagement.name `${orgName} <- ZeroBias`; Engagement.description `Platform Services Engagement: ZeroBias ➡️ ${orgName}` (no trailing period — orgs end in `Inc.`); Project.name `ZeroBias Platform`; Project.description `${orgName}'s gateway into ZeroBias — tasks, notes, and communication tied to the ZeroBias ➡️ ${orgName} platform engagement live here.`; Tag.name `sme-mart.eng.zerobias-to-${slug}`; Tag.description `Marketplace tag for the platform-services engagement: ZeroBias ➡️ ${orgName}.` All in top-of-file constants in `provisioner.service.ts`. **Locked tag ownership:** all `sme-mart.eng.*` tags owned by `MARKETPLACE_OPERATOR_ORG_ID` (W3Geekery today; ZeroBias post-graduation). **DECISIONS.md "Engagement Tag Naming: Identity Tag + Additive Classifier Tags (2026-05-07)"** codifies two-layer pattern. **NEW memory** `reference_auditgraph_data_lifecycle.md` — canonical write/read/DELETE recipes including `markDeleted-requires-non-empty-data-array` gotcha. **Director note (2026-05-07 EVE) — director-doc jargon BANNED from customer-facing fields.** Verbiage to user-visible records: keep it factual + parallel to directional-arrow visual; never include WHY, only WHAT. **Director note (2026-05-07 EVE) — `~/.claude/scripts/zb-mcp-profile-lock.sh` hard-fails on missing `<session>` arg.** Look at conversation header for `/rename` before calling acquire. **Plus original orientation:** role contract + direct-request override + Deployment Paths directive 2026-05-01 + Provisioning Admin-Only directive 2026-05-06 + GSD command format change + AskUserQuestion ban + v1.4 state. Then `.planning/director/SESSION-STATE.md` and recent `.planning/director/DECISIONS.md`. The `/meta:director` skill applies. **CRITICAL — GSD slash commands use hyphens (`/gsd-foo`); non-GSD plugins use colons (`/meta:sync`).** **CRITICAL — `/gsd-verify-phase` does NOT exist in 1.38.5; verification runs via the `gsd-verifier` subagent invoked directly through the Agent tool.** **CRITICAL — AskUserQuestion is globally banned.** **CRITICAL — 3P apps in zerobias-org/app deploy ONLY to uat/qa/prod.** **CRITICAL — Provisioning is admin-only (Director directive 2026-05-06): only Clark + Director run the 5-call recipe; end users hit a holding page.** **CRITICAL — When Clark shows me output with `??` or similar, ANSWER the question; don't ship a fix unless he explicitly says "fix it".** **v1.4 status: Phases 20, 24, 25, 26, 27, 27.5, 28 COMPLETE + DEPLOYED. Phase 29.5 brief drafted (NEW). Phase 30 brief stale (needs rewrite post-29.5). Phase 31 not started (depends on 30).** Direct request overrides default boundary (you can run /gsd-* if asked).
+Resume Director Parks. Read `.planning/director/DIRECTOR-PARKS-RESUME.md` FIRST — start with the **"2026-05-11 parkit"** section at the top, which captures Phase 29.5 going from drafted brief → LOCKED brief (Path C Engagement-as-Project) → inserted into roadmap → discuss-phase complete (43 decisions D-01..D-43) → plan-phase complete (8 plans across 5 waves with 4 Director amendments) → 5 atomic commits landed (HEAD `c4d4e6a`). Working tree clean. Branch `poc/sme-mart`, 10 ahead of origin, DO NOT PUSH (accumulate for 29.5-closure cross-fork PR).
+
+**CRITICAL FIRST ACTIONS on resume:**
+
+1. **Verify clean tree:** `git status -sb` (expected: clean, `## poc/sme-mart...origin/poc/sme-mart [ahead 10]`). `git log --oneline -10` (expected: `c4d4e6a docs(errata): 029 — GSD 1.38.5 state-frontmatter + config-migration bugs` at top).
+2. **Re-paste the gsd-execute handoff** into Clark's gsd-plan shell (or fresh shell). The handoff is the contract Director hands to gsd-execute. If you don't have it from conversation history, reconstruct from the brief + CONTEXT.md + the constraint blocks below. Then Clark invokes `/gsd-execute-phase 29.5`.
+3. **Execute Wave 1** (Plan 01 solo): codebase audit + MCP describes producing INVENTORY.md. Return for Director wave-close checkpoint before Wave 2 fires.
+
+**Phase 29.5 status: PLANS COMMITTED, READY FOR EXECUTE.** Brief at `.planning/director/phase-29.5-brief.md` (271 lines, locked). CONTEXT.md at `.planning/phases/29.5-platform-model-migration/29.5-CONTEXT.md` (43 decisions, source of truth). DISCUSSION-LOG.md, PATTERNS.md, 8 PLAN.md files (Wave 1: 01 / Wave 2: 02+03+04 / Wave 3: 05 / Wave 4: 06+07 / Wave 5: 08) all committed. Director amendments applied: Plan 02 depends on 01 (MCP-describe gate), REQ-IDs stripped, Plan 04 Task 0 pre-flight guard, Plan 08 schema-PR-stall escape, Plan 05 Slack-ping op note.
+
+**Path (C) Engagement-as-Project hierarchy is LOCKED** — Engagement IS a top-level `platform.Project` (parentId=null, ownerId=buyerOrgId, tagId=identity-tag); workspace ("ZeroBias Platform") is child Project (parentId=engagement.id, tagless); vetting Board (boardType=list, isDefault=false, lazy-created) is immediate-child Board on engagement Project. **Engagement Task `aha1-N` DROPPED** (speculative with Governance verification gate in Plan 06). **Engagement + EngagementVettingItem + SmeMartProject GQL classes RETIRE** (deprecate-without-delete via zerobias-org/schema PR, Daniel Rojas review). **EngagementMetadata NOT created** for v1.4 (planted seed). **Vetting paired-task shape (γ): parent + one subtask per side.** Zero new GQL classes added; three retired.
+
+**5-step provisioning recipe (was 7):** A (hydra Tag) → ~~B dropped~~ → C (engagement Project) → D (workspace Project) → ~~E dropped~~ → F (default kanban Board) → G (addMember admin). Locked verbiage preserved verbatim at top of `provisioner.service.ts` per D-32..D-37 (Engagement Project.name `${orgName} <- ZeroBias`, Engagement Project.description `Platform Services Engagement: ZeroBias ➡️ ${orgName}` (no trailing period), Workspace Project.name `ZeroBias Platform`, Workspace Project.description `${orgName}'s gateway into ZeroBias — tasks, notes, and communication tied to the ZeroBias ➡️ ${orgName} platform engagement live here.`, Tag.name `sme-mart.eng.zerobias-to-${slug}`, Tag.description `Marketplace tag for the platform-services engagement: ZeroBias ➡️ ${orgName}.`). Locked enum values (D-29..D-31): Project.status='active', visibility='internal', membershipPolicy='private'; Default Board boardType='kanban'/isDefault=true, Vetting Board boardType='list'/isDefault=false. Task.boardId optional with server fallback chain (project → boundary → org → parent for subtasks). All `sme-mart.eng.*` tags owned by `MARKETPLACE_OPERATOR_ORG_ID` (W3Geekery `cd7105df-523d-5392-9f9a-3f83d3f30107` today; ZeroBias post-graduation).
+
+**Errata 029 filed** — four GSD 1.38.5 bugs documented at `.planning/director/errata/029-gsd-1.38.5-state-frontmatter-and-config-bugs.md`. Bug 4 (config migration gap) FIXED via commits `60057dc` + `62cecad`. Bugs 1-3 OPEN with workarounds: **NEVER invoke `gsd-tools state {patch,record-session}` in 1.38.5** — they corrupt STATE.md frontmatter; use direct frontmatter edits + git checkout revert if SDK runs anyway. `state.add-roadmap-evolution` handler missing; direct-edit `### Roadmap Evolution` section.
+
+**New trigger phrase `tell-block`** (low-friction correction primitive). If Clark types `tell-block` or `tell-block!` as a one-word reply, that's a correction signal: re-read `feedback_checkpoint_handoff_format.md`, identify which failure-mode anchor I tripped, refactor the prior response into proper `Tell gsd-X:` format. No re-explanation needed from Clark. The format rule has been corrected 9+ times; strengthen self-check before every end-of-turn.
+
+**Phase 30 brief stale** — built on SmeMart-side analogs that 29.5 retires; needs substantial Director-side rewrite post-29.5-closure (NOT a 29.5 deliverable). **Phase 31** unchanged, depends on 30.
+
+**Plus original orientation:** role contract + direct-request override + Deployment Paths directive 2026-05-01 (uat/qa/prod only) + Provisioning Admin-Only directive 2026-05-06 + GSD command format change (hyphens for `/gsd-*`, colons for `/meta:*`) + AskUserQuestion globally banned + customer-facing noun stays "Engagement" + when Clark shows output with `??` ANSWER don't ship a fix + `/gsd-verify-phase` doesn't exist in 1.38.5 (use gsd-verifier subagent via Agent tool).
+
+**v1.4 status:** Phases 20, 24, 25, 26, 27, 27.5, 28 COMPLETE + DEPLOYED. Phase 29.5 PLANS COMMITTED READY-FOR-EXECUTE. Phase 30 brief stale (post-29.5 rewrite). Phase 31 not started (depends on 30).
+
+Then read `.planning/director/SESSION-STATE.md` and recent `.planning/director/DECISIONS.md` entries (most recent at top). The `/meta:director` skill applies once context is loaded. Direct request overrides default boundary (you can run `/gsd-*` if Clark asks).
 
 ---
 
