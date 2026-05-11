@@ -765,3 +765,89 @@ After Plan 08 verification gate passes, file these as BACKLOG.md entries:
 
 **Last updated:** 2026-05-11  
 **Next:** Plans 02–04 wave execution (provisioner recipe, service refactors, schema deprecation PR)
+
+---
+
+## D-23 Resolution — Member-filter param shapes
+
+**Task 0 Pre-flight Findings (2026-05-11)**
+
+### platform.Project.list
+
+**SDK Source:** `@zerobias-com/platform-sdk@1.1.19` installed in node_modules
+
+**Actual signature:**
+```typescript
+list(pageNumber?: number, pageSize?: number, boundaryId?: UUID, ownerId?: UUID, 
+     status?: ProjectStatusDef, visibility?: ProjectVisibilityDef, sort?: SortObject, 
+     pageToken?: string): Promise<PagedResults<Project>>
+```
+
+**Member-filter parameters:** NONE. This surface accepts `boundaryId` and `ownerId` for scoping, but does NOT expose a `memberPrincipalId`, `memberFilter`, `member`, or similar parameter. There is no mechanism to filter projects by membership within the `list` operation.
+
+**Implication for provider-side visibility:** To find projects where a principal is a member, the caller would need to:
+1. Fetch all projects (or filtered by owner/boundary)
+2. Call `listMembers(projectId)` on each project
+3. Filter by matching `principalId` in the members array (N+1 pattern, not ideal at scale)
+
+### portal.Project.search
+
+**SDK Source:** `@zerobias-com/portal-sdk@1.1.19` installed in node_modules
+
+**Actual signature:**
+```typescript
+search(searchProjectBody: SearchProjectBody, pageNumber?: number, pageSize?: number, 
+       sort?: SortObject, pageToken?: string): Promise<PagedResults<ProjectExtended>>
+```
+
+**SearchProjectBody fields:**
+```typescript
+export declare class SearchProjectBody {
+    'search'?: string | null;                           // full-text search
+    'name'?: string | null;                             // name filter
+    'description'?: string | null;                      // description filter
+    'ownerIds'?: Array<UUID> | null;                    // filter by owner (array)
+    'boundaryIds'?: Array<UUID> | null;                 // filter by boundary (array)
+    'statuses'?: Array<string> | null;                  // filter by status (array)
+    'visibilities'?: Array<string> | null;              // filter by visibility (array)
+    'createdBy'?: Array<UUID> | null;                   // filter by creator (array)
+}
+```
+
+**Member-filter parameters:** NONE. This surface also does NOT expose a member-filter parameter. It supports filtering by `ownerIds`, `createdBy`, and other fields, but not membership.
+
+### Surface Comparison
+
+| Aspect | platform.Project.list | portal.Project.search |
+|---|---|---|
+| Full-text search | NO | YES (via `search`) |
+| Owner filter | YES (`ownerId`) | YES (`ownerIds` array) |
+| Member filter | NO | NO |
+| Boundary filter | YES (`boundaryId`) | YES (`boundaryIds` array) |
+| Creator filter | NO | YES (`createdBy` array) |
+
+**Neither surface exposes a member-filter parameter.** Both are designed for owner-centric or creator-centric queries, not member-centric queries.
+
+### Recommendation for PROVIDER-MY-ENGAGEMENTS-1 (v1.5+)
+
+Given the absence of member-filter parameters:
+
+**Option A (N+1 pattern):** Use `platform.Project.list({ ownerId: null })` to fetch all projects matching criteria, then filter locally:
+```typescript
+const projects = await platformClient.getProjectApi().list(...);
+const myProjects = [];
+for (const project of projects.items) {
+  const members = await platformClient.getProjectApi().listMembers(project.id);
+  if (members.some(m => m.principalId === myPrincipalId)) {
+    myProjects.push(project);
+  }
+}
+```
+**Trade-off:** Works; scales poorly beyond ~10 projects with members.
+
+**Option B (owner-anchored only):** Use `portal.Project.search({ ownerIds: [myOrgId] })` to list projects owned by the provider org. Does NOT include projects where provider is a member but not owner.
+**Trade-off:** Simpler; misses non-owned membership.
+
+**Option C (future API enhancement):** File a feature request with ZB platform team to add `memberPrincipalId` or `memberIds` parameter to either surface.
+
+**Resolution statement:** D-23 resolved 2026-05-11 (Plan 03 Task 0 pre-flight). Neither `platform.Project.list` nor `portal.Project.search` exposes a member-filter param. Provider-side `PROVIDER-MY-ENGAGEMENTS-1` (v1.5+) will either adopt Option A (N+1 pattern) or wait for platform enhancement (Option C). This does NOT impact buyer-side My Engagements (Plan 03 Tasks 1–4), which uses `platform.Project.list({ ownerId: <buyerOrgId> })` without member filtering.
