@@ -241,14 +241,12 @@ export class OrgProvisioningTabComponent implements OnInit {
         currentOrgId: row.id,
         currentOrgName: row.name,
         currentOrgSlug: row.slug,
-        buyerUserId: resolved.adminUserPrincipalId,
-        assignedPartyId: resolved.orgPartyId,
-        accountablePartyId: resolved.adminUserPartyId,
+        adminPrincipalId: resolved.adminUserPrincipalId,
       });
 
       this.snackBar.open(
         result.created
-          ? `Provisioned ${row.name} (engagement ${result.engagementId})`
+          ? `Provisioned ${row.name} (engagement ${result.engagementProjectId})`
           : `${row.name} was already provisioned`,
         'Dismiss',
         { duration: 5000 },
