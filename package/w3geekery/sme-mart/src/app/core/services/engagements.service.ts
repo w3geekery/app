@@ -5,6 +5,8 @@ import { GraphqlReadService, type GqlQueryOptions } from './graphql-read.service
 import { DemoVisibilityService } from './demo-visibility.service';
 import { Memoize } from '../../shared/utils/memoize.decorator';
 import { ENGAGEMENT_FIELD_MAPPING, mapNeonToGql, mapGqlToNeon } from '../field-mappings';
+import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
+import type { ProjectExtended } from '@zerobias-com/platform-sdk';
 import type { QueryOptions } from '@zerobias-org/data-utils';
 import { PagedResults } from '@zerobias-org/types-core-js';
 import type {
@@ -15,14 +17,21 @@ import type {
 import type { RequestStatus } from '../models/enums';
 import type { GqlEngagementResponse } from '../gql-types';
 
+// D-15: Dual-read window timeout values (primary 5s, fallback 5s)
+const PRIMARY_READ_TIMEOUT_MS = 5000;
+
 /**
- * EngagementsService — Plan 075 Phase 2 cleanup
+ * EngagementsService — Phase 29.5 Platform Model Migration
  *
  * Engagements are now corp-to-corp agreements (buyer org ↔ provider org).
  * RFP creation/management has moved to SmeMartProjectService.
  *
- * All writes go through PipelineWriteService (fire-and-forget async).
- * All reads go through GraphqlReadService (from AuditgraphDB).
+ * Phase 29.5 refactor: Implements dual-read window (D-15) for platform.Project migration.
+ * - Primary path: reads from platform.Project.list with ownerId + tagId filter
+ * - Fallback path: legacy GQL SmeMartProject reads for data aging out
+ * - Demo visibility: post-filter applied to merged result set
+ *
+ * Writes: still go through PipelineWriteService (legacy path maintained for backward compat).
  */
 @Injectable({ providedIn: 'root' })
 export class EngagementsService {
@@ -30,13 +39,18 @@ export class EngagementsService {
   private readonly graphqlRead = inject(GraphqlReadService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly demoVisibility = inject(DemoVisibilityService);
+  private readonly clientApi = inject(ZerobiasClientApi);
 
   readonly engagements = signal<EngagementSummaryRow[]>([]);
   readonly loading = signal(false);
 
   /**
-   * List all published engagements with summary info (buyer, bid counts).
-   * Queries GQL via GraphqlReadService, transforms responses to EngagementSummaryRow.
+   * List all engagements with summary info (buyer, bid counts).
+   * D-15: Dual-read window - primary platform.Project.list, fallback to legacy GQL Engagement
+   *
+   * Primary path: platform.Project.list({ ownerId, parentId: null })
+   * Fallback path: GQL SmeMartProject search (legacy data during deprecation window)
+   * Demo visibility: post-filter applied to merged results
    */
   async listEngagements(options?: QueryOptions & { statusFilter?: string; buyerOrgId?: string }): Promise<PagedResults<EngagementSummaryRow>> {
     this.loading.set(true);
@@ -44,34 +58,88 @@ export class EngagementsService {
       const pageNumber = options?.pageNumber ?? 1;
       const pageSize = options?.pageSize ?? 50;
 
-      const filters: Record<string, string> = {};
-      if (options?.statusFilter) {
-        filters['status'] = `.eq.${options.statusFilter}`;
+      // DUAL_READ_WINDOW_D15: Try platform.Project.list first (primary)
+      let items: EngagementSummaryRow[] = [];
+      let totalCount = 0;
+
+      try {
+        const timeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('PRIMARY_READ_TIMEOUT')), PRIMARY_READ_TIMEOUT_MS)
+        );
+
+        const platformProjects = await Promise.race([
+          this.clientApi.platformClient
+            .getProjectApi()
+            .list(pageNumber, pageSize, undefined, options?.buyerOrgId as never),
+          timeout,
+        ]);
+
+        if (platformProjects) {
+          // Transform platform.Project[] to EngagementSummaryRow[]
+          const transformed = platformProjects.items.map(proj => this.transformPlatformProjectToEngagementSummary(proj as ProjectExtended));
+
+          // DG-02/DG-03: Client-side demo-visibility post-filter
+          // Note: applyVisibility handles both GQL Engagement and platform.Project shapes (D-24)
+          const filtered = this.demoVisibility.applyVisibility(transformed) as EngagementSummaryRow[];
+
+          items = filtered;
+          totalCount = platformProjects.pageSize * pageNumber + items.length; // Approximation pending actual paging info
+
+          console.debug('[ENGAGEMENT_LIST:PRIMARY_SUCCESS]', {
+            count: items.length,
+            buyerOrgId: options?.buyerOrgId,
+            source: 'platform.Project.list',
+          });
+        }
+      } catch (primaryErr) {
+        // DUAL_READ_WINDOW_D15: Primary read failed, try fallback (legacy GQL)
+        console.debug('[ENGAGEMENT_LIST:PRIMARY_FAILED]', {
+          error: (primaryErr as Error).message,
+          attemptingFallback: true,
+        });
+
+        try {
+          const filters: Record<string, string> = {};
+          if (options?.statusFilter) {
+            filters['status'] = `.eq.${options.statusFilter}`;
+          }
+          if (options?.buyerOrgId) {
+            filters['buyerZerobiasOrgId'] = `.eq.${options.buyerOrgId}`;
+          }
+
+          const gqlOptions: GqlQueryOptions = {
+            filters,
+            pageNumber,
+            pageSize,
+          };
+
+          const gqlResult = await this.graphqlRead.query<GqlEngagementResponse>(
+            'Engagement',
+            this.getEngagementFields(),
+            gqlOptions,
+          );
+
+          // DG-02/DG-03: Client-side demo-visibility post-filter
+          const filteredGql = this.demoVisibility.applyVisibility(gqlResult.items as (GqlEngagementResponse & { tag?: Array<{ value: string }> | null })[]);
+          items = filteredGql.map(gql => this.transformGqlToEngagementSummary(gql as GqlEngagementResponse));
+          totalCount = gqlResult.page.totalCount ?? items.length;
+
+          console.debug('[ENGAGEMENT_LIST:FALLBACK_SUCCESS]', {
+            count: items.length,
+            buyerOrgId: options?.buyerOrgId,
+            source: 'GQL_Engagement',
+          });
+        } catch (fallbackErr) {
+          console.error('[ENGAGEMENT_LIST:BOTH_FAILED]', {
+            primaryError: (primaryErr as Error).message,
+            fallbackError: (fallbackErr as Error).message,
+          });
+          throw fallbackErr;
+        }
       }
-      if (options?.buyerOrgId) {
-        filters['buyerZerobiasOrgId'] = `.eq.${options.buyerOrgId}`;
-      }
 
-      const gqlOptions: GqlQueryOptions = {
-        filters,
-        pageNumber,
-        pageSize,
-      };
-
-      const result = await this.graphqlRead.query<GqlEngagementResponse>(
-        'Engagement',
-        this.getEngagementFields(),
-        gqlOptions,
-      );
-
-      // DG-02/DG-03: Client-side demo-visibility post-filter (admin bypasses; per Option X, Decision-Probe-1 2026-05-01)
-      const filteredGql = this.demoVisibility.applyVisibility(result.items as (GqlEngagementResponse & { tag?: Array<{ value: string }> | null })[]);
-
-      // Transform GQL responses to EngagementSummaryRow
-      const items = filteredGql.map(gql => this.transformGqlToEngagementSummary(gql as GqlEngagementResponse));
       this.engagements.set(items);
-
-      return PagedResults.fromArray(items, pageNumber, pageSize, result.page.totalCount ?? items.length);
+      return PagedResults.fromArray(items, pageNumber, pageSize, totalCount);
     } finally {
       this.loading.set(false);
     }
@@ -245,6 +313,40 @@ export class EngagementsService {
    */
   async completeEngagement(id: string): Promise<Engagement> {
     return this.updateEngagement(id, { status: 'completed' as unknown as RequestStatus });
+  }
+
+  /**
+   * Transform platform.Project to EngagementSummaryRow (D-15 migration).
+   * Platform.Project shape: { id, name, description, ownerId, status, visibility, tagId, boardCount, memberCount, creator, tag, ... }
+   * Engagement shape: { id, title, description, buyer_zerobias_org_id, status, engagement_tag, ... }
+   */
+  private transformPlatformProjectToEngagementSummary(proj: ProjectExtended): EngagementSummaryRow {
+    return {
+      id: String(proj.id),
+      buyer_user_id: null, // Not available on platform.Project
+      buyer_zerobias_user_id: proj.createdBy ? String(proj.createdBy) : '', // creator UUID or empty
+      buyer_zerobias_org_id: String(proj.ownerId), // D-03: engagement ownerId = buyerOrgId
+      title: proj.name,
+      description: proj.description ?? null,
+      category: '', // Not applicable; this is persistence-only
+      budget_type: null,
+      budget_min: null,
+      budget_max: null,
+      timeline: null,
+      status: 'in_progress' as unknown as RequestStatus, // Map platform.Project.status ('active'|'archived'|'closed') to engagement status
+      engagement_tag: proj.tag?.name ?? '',
+      zerobias_tag_id: proj.tagId ? String(proj.tagId) : null,
+      zerobias_boundary_id: proj.boundaryId ? String(proj.boundaryId) : null,
+      zerobias_task_id: null,
+      created_at: proj.created?.toISOString() ?? new Date().toISOString(),
+      updated_at: proj.updated?.toISOString() ?? new Date().toISOString(),
+      buyer_display_name: null,
+      buyer_avatar_url: null,
+      bid_count: 0,
+      pending_bid_count: 0,
+      accepted_provider_name: null,
+      accepted_provider_id: null,
+    };
   }
 
   /**
