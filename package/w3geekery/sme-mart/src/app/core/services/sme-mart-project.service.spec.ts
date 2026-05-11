@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { ZerobiasClientApi, ZerobiasClientSessionId } from '@zerobias-com/zerobias-client';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SmeMartProjectService } from './sme-mart-project.service';
 import { PipelineWriteService } from './pipeline-write.service';
@@ -7,7 +8,7 @@ import { DemoVisibilityService } from './demo-visibility.service';
 import { ProjectContextService } from './project-context.service';
 import { SmeMartTagService } from './sme-mart-tag.service';
 import { SmeMartResourceService } from './sme-mart-resource.service';
-import { fakeProjectContextService } from '../../test-helpers/angular';
+import { fakeProjectContextService, fakeClientApi } from '../../test-helpers/angular';
 import type { GqlSmeMartProjectResponse } from '../gql-types';
 
 type MockFn = ReturnType<typeof vi.fn>;
@@ -32,6 +33,7 @@ describe('SmeMartProjectService', () => {
   let mockPipelineWrite: MockPipelineWrite;
   let mockGraphqlRead: MockGraphqlRead;
   let mockProjectContext: ReturnType<typeof fakeProjectContextService>;
+  let mockClientApi: ReturnType<typeof fakeClientApi>;
 
   beforeEach(() => {
     mockPipelineWrite = {
@@ -48,6 +50,7 @@ describe('SmeMartProjectService', () => {
       rawQuery: vi.fn().mockResolvedValue(null),
     };
     mockProjectContext = fakeProjectContextService(false);
+    mockClientApi = fakeClientApi();
 
     TestBed.configureTestingModule({
       providers: [
@@ -58,6 +61,8 @@ describe('SmeMartProjectService', () => {
         { provide: ProjectContextService, useValue: mockProjectContext },
         { provide: SmeMartTagService, useValue: { generateRfpTag: vi.fn(), createTag: vi.fn().mockResolvedValue(null) } },
         { provide: SmeMartResourceService, useValue: { linkResources: vi.fn().mockResolvedValue(undefined) } },
+        { provide: ZerobiasClientApi, useValue: mockClientApi },
+        { provide: ZerobiasClientSessionId, useValue: { getCurrentSessionId: () => null } },
       ],
     });
 

@@ -7,13 +7,14 @@
 
 import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ZerobiasClientApi, ZerobiasClientSessionId } from '@zerobias-com/zerobias-client';
 import { EngagementsService } from '../../core/services/engagements.service';
 import { PipelineWriteService } from './pipeline-write.service';
 import { GraphqlReadService } from './graphql-read.service';
 import { DemoVisibilityService } from './demo-visibility.service';
 import { ProjectContextService } from './project-context.service';
 import { ENGAGEMENT_GQL_FIXTURE } from '../../test-helpers/gql-fixtures';
-import { fakePipelineWriteService, fakeGraphqlReadService, fakeProjectContextService } from '../../test-helpers/angular';
+import { fakePipelineWriteService, fakeGraphqlReadService, fakeProjectContextService, fakeClientApi } from '../../test-helpers/angular';
 import type { RequestStatus } from '../models/enums';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
@@ -23,12 +24,14 @@ describe('EngagementsService (Plan 075)', () => {
   let graphqlRead: ReturnType<typeof fakeGraphqlReadService>;
   let mockSnackBar: { open: ReturnType<typeof vi.fn> };
   let mockProjectContext: ReturnType<typeof fakeProjectContextService>;
+  let mockClientApi: ReturnType<typeof fakeClientApi>;
 
   beforeEach(() => {
     pipelineWrite = fakePipelineWriteService();
     graphqlRead = fakeGraphqlReadService();
     mockSnackBar = { open: vi.fn() };
     mockProjectContext = fakeProjectContextService(false); // non-admin by default
+    mockClientApi = fakeClientApi();
 
     TestBed.configureTestingModule({
       providers: [
@@ -38,6 +41,8 @@ describe('EngagementsService (Plan 075)', () => {
         { provide: GraphqlReadService, useValue: graphqlRead },
         { provide: ProjectContextService, useValue: mockProjectContext },
         { provide: MatSnackBar, useValue: mockSnackBar },
+        { provide: ZerobiasClientApi, useValue: mockClientApi },
+        { provide: ZerobiasClientSessionId, useValue: { getCurrentSessionId: () => null } },
       ],
     });
 
