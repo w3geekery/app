@@ -256,9 +256,6 @@ describe('OrgProvisioningTabComponent', () => {
         currentOrgId: TARGET_ORG,
         currentOrgName: 'Target Org',
         currentOrgSlug: 'targetorg',
-        buyerUserId: TARGET_USER_PRINCIPAL,
-        assignedPartyId: TARGET_ORG_PARTY,
-        accountablePartyId: TARGET_USER_PARTY,
       });
     });
 
