@@ -648,3 +648,235 @@ Clark caught this at Director-review time (2026-05-11): "ZB UI does not have any
 - D-04 (platform.Project governance model)
 - D-08 (Engagement Task drop — now definitive, no speculative reversal)
 - D-34/D-35/D-36/D-37 (vetting Board + paired-task verbiage and shape)
+
+## D-46 Hierarchy NAMING via Tags; Structural Hierarchy STILL Uses Nested platform.Project (backend team directive 2026-05-12)
+**Date:** 2026-05-12 (Clark relayed backend team guidance; reading clarified by Clark same-day after Director floated an over-aggressive interpretation)
+**Decision:** Use **nesting** (`platform.Project.parentId` chain) for the structural hierarchy. Use **tags** on each Project for the user-renameable **tier NAMING** (Workspace, Aperture, Thread defaults; anything a customer renames via Brian's Hierarchy Editor). Backend team direction: "use nesting, but for hierarchy NAMING use tags." Both mechanisms operate together; neither replaces the other.
+
+**What this means in practice:**
+
+| Concern | Mechanism |
+|---|---|
+| Structural containment (what lives within what; boundary cascade per D-47; Project Lead inheritance per D-48) | `parentId` chain between `platform.Project` rows |
+| Tier identity / label (this Project IS-A "Workspace" / "Aperture" / "Thread" / a customer-renamed tier) | Tag on the Project (`tier.*` namespace, exact schema TBD) |
+| User-renameable tier display name (per-engagement Hierarchy Editor) | Resolved via the tier tag's display name, OR a per-engagement template tag — open question |
+
+**Rules of thumb:**
+- ✅ Engagement Project (parentId=null, depth 1) -> child **Project-tier** Project (parentId=engagement.id, depth 2) is the v1.4 minimum nesting. Both are real `platform.Project` rows. The depth-2 child carries `sme-mart.tier.project` (Project tier is the SECOND FIXED tier — "always first child of Engagement" per Brian's canonical sketch). It is NOT Workspace; Workspace is a deeper renameable middle tier (depth 3) that v1.4 does not auto-instantiate.
+- ✅ Customer extends to Workspace / Aperture / Thread via Hierarchy Editor -> additional nested `platform.Project` rows under the depth-2 Project, each tagged with their tier identity (`sme-mart.tier.workspace`, `sme-mart.tier.aperture`, `sme-mart.tier.thread`). Structural nesting deepens; tag tells the UI what tier-name to render.
+- ✅ Customer renames "Aperture" to "Crew" -> changes the tier tag's display label (or replaces the tag), not the structural depth. The Project stays where it was.
+- ❌ Do NOT model tier identity by parentId-depth (the parkit-4 framing — "Engagement = depth 1, Project = depth 2, Workspace = depth 3" — was wrong). Depth is structural; tag is identity.
+- ❌ Do NOT collapse the engagement to a single flat Project and represent all tiers as tags on one row. Structural nesting is real (boundary scope; member scope; task scope).
+- ❌ Do NOT model Aperture/Thread tiers as Task-tag grouping on a single Workspace board (the over-aggressive "B2" reading Director floated and Clark rejected). Tiers below Workspace are still Projects with their own boards.
+
+**Impact on prior canonical artifacts:**
+- `.claude/handoffs/transparency-center-entangled-tasks-2026-04-21.html` Hierarchy Editor tab — still the UX target AND substantially correct on storage. The earlier annotation "sketch is no longer literal-on-storage" is itself rescinded: each tier IS a nested Project; the sketch's visual nesting matches structural nesting. The only refinement is that tier IDENTITY ("this is a Workspace") rides on a tag, not on parentId-depth.
+- Memory `project_sme_mart_hierarchy_model.md` — corrected in same parkit. Backing storage table still says nested Projects, with an added "tier tag" column.
+- DIRECTOR-PARKS-RESUME.md parkit (4) "Plan 02 corrective recipe (final, after empirical simplification)" — still RETRACTED, but for a different reason now: the corrective inserted a Project tier purely to fix depth alignment, when the real fix is to add a tier tag on the existing depth-2 Project. The 2-Project recipe was structurally fine; it just needed a tier tag.
+
+**Settled implementation answers (CORRECTED 2026-05-12 PM — earlier draft of this entry mis-tagged the depth-2 child as Workspace; the SECOND fixed tier is "Project", not "Workspace"):**
+
+1. **How many Projects in v1.4 provisioning recipe?** TWO. Engagement (depth 1, parentId=null) + **Project-tier** Project (depth 2, parentId=engagement.id). These are the TWO FIXED top tiers per Brian's canonical sketch (Engagement always; Project "always first child of Engagement"). v1.4 does NOT auto-instantiate Workspace (depth 3) or any renameable middle tier.
+2. **What does the depth-2 Project tier add beyond a tagged Engagement?** A distinct boundary scope (inherited via D-47), a distinct auto-board for Tasks to live on, a distinct member-add surface (with Project Lead inheriting from Engagement per D-48). Tasks live on the **Project tier's** auto-board, NOT the Engagement's.
+3. **Tag schema for tier identity — LOCKED 2026-05-12.** Namespace `sme-mart.tier.{label}` (matches the updated `sme-mart.engagement.*` convention per D-49). Tags are operator-owned marketplace-singletons:
+   - `sme-mart.tier.project` — for depth-2 Project tier (REQUIRED by v1.4 provisioner)
+   - `sme-mart.tier.workspace` — for depth-3 Workspace renameable middle tier (BOOTSTRAPPED ON UAT 2026-05-12 for future Hierarchy Editor use; NOT used by v1.4 provisioner)
+   - `sme-mart.tier.aperture` / `sme-mart.tier.thread` — bootstrap when first customer extends
+   - Engagement tier does NOT get a separate tier tag. Engagement identity tag (`sme-mart.engagement.{supply}-to-{demand}`) itself signals tier via namespace prefix.
+4. **Where do Tasks live?** On the depth-2 **Project tier's** auto-board (the deeper, more-specific scope of the two v1.4-instantiated tiers). The Engagement Project's auto-board is incidental / mostly unused in v1.4. D-34's locked "ZeroBias Platform" name applies to the **Project tier** (depth 2), NOT to Workspace.
+5. **Hierarchy Editor template persistence — STILL OPEN.** Likely a per-engagement hydra tag with serialized template (`sme-mart.hier-template.{engagementId}` with a JSON payload describing the tier structure + names), but exact shape pending Brian's design + backend confirmation. Not v1.4 scope — v1.4 ships with the default template (which is just Engagement + Project after this correction); per-engagement customization is later.
+
+**Why:** Backend team's directive separates two orthogonal concerns. Structural containment is real (boundaries, roles, task scope) and the parentId chain is the right primitive. Tier naming is taxonomic / display-only and the hydra catalog is the right primitive for cross-cutting labels. Conflating them (the parkit-4 framing that read tier identity from depth) collapses two independent dimensions onto one axis and makes user-renaming hard. Separating them aligns with the hydra-catalog-as-labeling-system architecture and gives the Hierarchy Editor a clean point of customization (the tag's display name) without touching structural nesting.
+
+**How to apply:**
+- Plan 02 amendment v3 (corrected): keep the 2-Project shape (Engagement + Project tier); the depth-2 child's `tagId` field carries the **`sme-mart.tier.project`** tag UUID at create time; DELETE Step G (auto-add covers creator); leave Board.update Step F as-is per D-06.
+- Any future provisioner / brief / plan that places "Workspace" at depth 2 OR uses `sme-mart.tier.workspace` for the depth-2 child gets STRUCK at plan-checker. Cite this entry. Depth 2 = Project tier. Workspace = depth 3 and v1.4 doesn't instantiate it.
+- Any future provisioner / brief / plan that says "tier identity is at parentId-depth N" gets struck at plan-checker. Cite this entry. Tier identity = tag; depth = structural.
+- Future per-engagement Hierarchy Editor work: customer adds a Workspace tier -> new nested `platform.Project` under the depth-2 Project, tagged `sme-mart.tier.workspace`. Customer renames -> tag's display name (or tag itself) changes; structural nesting untouched.
+
+**Anti-pattern:**
+- (a) Treating tier identity as depth-derived (parkit-4 framing).
+- (b) Collapsing to a single flat Project and tagging it with all tier labels (Director's over-aggressive "Reading A" floated 2026-05-12 PM and rejected by Clark).
+- (c) Collapsing Aperture/Thread to Task-tag grouping on one board (Director's "Reading B2" floated same conversation and rejected).
+- (d) Proposing `Project.flavor` / `Project.type` discriminator enums (Kevin's 2026-04-22 hypothesis) — backend's answer is "tag," not "Project field."
+
+**Related decisions:**
+- D-32..D-37 (locked Engagement / Workspace verbiage — survive unchanged; the Projects that carry them remain at 2)
+- D-47 (boundary subset chain — applies cleanly to the Engagement -> Workspace nesting per this entry's structure)
+- D-48 (Project Lead inheritance — applies cleanly down the 2-Project chain in v1.4)
+
+## D-47 Boundary Subset Chain Is a Platform Bug, Owned by Nic (2026-05-12)
+**Date:** 2026-05-12 (Clark relayed Nic's response to push-back item #2 from parkit 4)
+**Decision:** The empirical "tighten-never-loosen" leak that Director found on CI 2026-05-11 (child Workspace Project accepted a link to "Platform" boundary not in the parent Engagement Project's boundary set) is a **platform bug**, NOT a workaround-at-app-level concern. Nic will ensure that any sub-project/child-Project of a Project will inherit the same `boundaryId` constraint, and the test we ran — creating a child Project with a different `boundaryId` than the parent — should have been rejected.
+
+**Correct multi-boundary path:** Linking a Project to multiple boundaries is done via `resourceLink` (the `projectmemberofboundary` link type, used in the CI probe). That is the supported mechanism. The bug is that the platform does NOT enforce the parent's boundary set as the allowed-superset on child Projects + via resourceLink.
+
+**What this changes for SME Mart:**
+- Push-back item #2 from DIRECTOR-PARKS-RESUME.md parkit (4) section is **RETIRED from the active push-back list** — Nic owns it.
+- No SME Mart-side workaround needed. Once Nic's fix lands, the platform rejects boundary violations and SME Mart's code naturally cannot construct an out-of-subset boundary link.
+- v1.4 recipe must respect the upcoming-enforced rule: child Project (if we still nest) must inherit the parent's boundary; additional boundaries must be added via `resourceLink` only after the parent gains them too.
+- Pending verification: once Nic's fix is deployed (UAT / CI), re-run the same CI probe to confirm the rejection. Add to push-back follow-up tracker.
+
+**Why:** Brian's CE12 "tighten-never-loosen" invariant is a security invariant the platform should enforce at the API surface. App-level workarounds (validating in `provisioner.service.ts` before calling `linkResources`) are unreliable — any consumer can bypass them — and SME Mart isn't the only consumer. Platform-side enforcement is the right layer.
+
+**How to apply:**
+- Stop drafting app-level validators for "is this boundary in the parent's set." Trust the platform's enforcement once it lands.
+- Track Nic's fix as a release-watch item on the platform team's roadmap. Re-test on CI when notified.
+- If v1.4 ships before the fix and SME Mart code can technically construct violating links, that is acceptable — the recipe we use today (single boundary at engagement creation, no out-of-subset additions) does not exercise the bug path. Nothing in v1.4 needs to change pre-fix.
+
+**Anti-pattern:**
+- Drafting "validate boundary subset chain in app code before linkResources" as part of Plan 02 or any v1.4 plan. That's pre-empting platform enforcement and adds maintenance burden for a transient gap.
+- Treating this as a co-owned concern. It's Nic-owned. SME Mart's responsibility ends at "use single-boundary patterns + resourceLink for additions."
+
+**Related decisions:**
+- D-46 (hierarchy via tags) — narrows the surface where boundary inheritance even matters; if we have fewer/no nested Projects per engagement, fewer paths can trip the platform check.
+
+## D-48 Project Lead Permissions Inherit Down the parentId Chain (2026-05-12)
+**Date:** 2026-05-12 (Clark relayed backend team guidance)
+**Decision:** In nested `platform.Project` structures (where `parentId` is set), the parent Project's "Project Lead" role automatically grants Project Lead permissions on all descendant Projects, in addition to each child's own explicitly-named Project Lead.
+
+**Example:**
+```
+Project A — Project Lead: Sam (explicit)
+  └── child Project B — Project Lead: Mary (explicit) + Sam (inherited from A)
+```
+
+In this example, Sam has Project Lead permissions on BOTH A and B; Mary has Project Lead permissions on B only. Inheritance is one-way (parent-to-child); Mary does NOT gain Project Lead permissions on A from being Lead on B.
+
+**SME Mart UX implications:**
+- When SME Mart eventually surfaces a member-management UI for engagement Projects (post-v1.4 likely), it should distinguish **inherited** vs. **explicit** role grants in the display (badge, secondary text, or grouped sections).
+- Verbiage near the "add Project Lead" action should inform users that adding a Lead at a parent Project grants the role on all descendants. Otherwise users may add Sam at the Engagement Project and then "also" add him at the child Workspace, not realizing the second add is redundant.
+- If this causes confusion or unintended permission blast radius in real engagements, revisit (add explicit-only override mode, or rework the inheritance UX).
+
+**Caveat — interacts with D-46:** If D-46 drives v1.4 toward a single `platform.Project` per engagement (tag-based hierarchy, no parentId chain), there is no chain to inherit through, and this entry becomes UX guidance for future-when-we-actually-nest only. If v1.4 still uses 2-Project engagement+workspace nesting, the inheritance applies immediately.
+
+**Why:** Backend team's confirmed model. Surfaced 2026-05-12 in the same context as D-46 and D-47. Captured now so future member-management UI work has the rule on hand.
+
+**How to apply:**
+- Do not assume role grants are isolated per-Project. They follow the parentId chain (parent-to-child).
+- Member-management UI: always render "inherited from {parentName}" alongside the role badge for inherited grants.
+- Permission-check code (when we write any): walk the parentId chain when checking "is user X a Project Lead on this Project?" — match if X is explicit OR inherited.
+
+**Anti-pattern:**
+- Treating Project Lead grants as Project-local. They are not — they cascade down the parentId chain.
+- Surfacing inherited grants as if they were explicit (causes user confusion; "I didn't add Sam to this Workspace, why is he Lead?").
+
+**Related decisions:**
+- D-46 (tags-not-nesting may render this mostly moot for v1.4 if we collapse to single Project per engagement)
+- BACKLOG: tracking item for member-management UI; not v1.4 scope.
+
+### Mechanism Addendum (2026-05-12 Wave 4 close, Plan 06 empirical verification)
+
+**The cascade is eager-materialized-per-Project, NOT lazy parent-chain resolution.** Each `platform.Project` carries its own explicit membership record for the creator. `platform.Project.listMembers(child)` returns inherited Leads directly without walking the chain.
+
+Empirical evidence from Plan 06 Assertion 5 (UAT, 2026-05-12):
+- `listMembers(4617e9d7-...)` (depth-1 Engagement Project): returns Clark as explicit Project Lead, roleId `7dc84215-...`.
+- `listMembers(e62b2446-...)` (depth-2 Project tier): returns Clark as explicit Project Lead, roleId `7dc84215-...` — same membership-row shape.
+
+**Implications of the eager mechanism:**
+- "Is X a Lead?" query code can call `listMembers` on the target Project directly — no parent-chain walk needed. Simpler than the original D-48 language implied.
+- Renaming/transferring Lead at depth 1 does NOT automatically propagate to depth 2 — each is a separate membership record. Member-management UI must surface this distinction OR provide an explicit bulk-cascade affordance.
+- The "How to apply" bullet about walking the parentId chain in permission-check code is SUPERSEDED — query each Project directly.
+
+**Open question (NOT resolved by Plan 06):** Whether eager-cascade fires when a Lead is added to a parent Project AFTER children already exist. Plan 06 only verified the creation-time path. Must verify when post-v1.4 member-management UI work begins.
+
+**Filed alongside errata 033** (`033-d48-cascade-mechanism-eager-not-lazy.md`).
+
+## D-49 Engagement Tag Namespace: `sme-mart.engagement.*` (full word, supersedes `sme-mart.eng.*`)
+**Date:** 2026-05-12
+**Decision:** New engagement tags use the full-word namespace `sme-mart.engagement.{supply}-to-{demand}` (identity) and `sme-mart.engagement.{type|scope}.{label}` (classifier). Supersedes D-43's `sme-mart.eng.*` abbreviation for NEW tags. Legacy `sme-mart.eng.*` tags retain their existing names per D-43 anti-pattern (d) ("renaming legacy tags via UUID-churn migration is forbidden; coexistence is fine").
+
+**Why:** Tag NAMES appear in logs, CLI output, grep results, audit traces. Three saved keystrokes from `eng` vs `engagement` doesn't justify the readability + self-documentation cost. `eng` is ambiguous (engineering, engine, English, etc.); `engagement` reads at a glance. Also symmetric with `sme-mart.tier.workspace` (full-word `tier`) — no abbreviation in any layer of the namespace.
+
+**Examples:**
+- `sme-mart.engagement.zerobias-to-w3geekery` (NEW namespace; W3Geekery's platform engagement identity tag — UAT UUID `b39bf3eb-d8eb-4024-a610-80bcf39ddefa`, created 2026-05-12)
+- `sme-mart.engagement.type.platform` (NEW namespace, classifier)
+- `sme-mart.engagement.type.guild` (NEW namespace, classifier — when Guild engagements land per Brian's 2026-05-05 + 2026-05-12 directives)
+- `sme-mart.engagement.scope.q4-2026` (NEW namespace, classifier)
+- `sme-mart.eng.w3geekery-default-zb` (LEGACY — stays on its existing name; coexists fine; UUID-stable)
+
+**How to apply:**
+- All NEW engagement-tag creation (provisioner.service.ts, manual MCP walkthroughs, future migration scripts) uses `sme-mart.engagement.*`.
+- Search / probe logic that needs to find ALL engagements (both legacy + new) checks BOTH namespaces. For v1.4 this is primarily `isOrgProvisioned()` and any reverse lookup; in practice the UUIDs are what get stored, so cross-namespace queries are rare.
+- Documentation, decision artifacts, planning briefs going forward use the new namespace.
+- Director / agents that grep for engagement tags should grep for both `sme-mart.eng.` and `sme-mart.engagement.` to cover both eras.
+
+**Anti-pattern:**
+- (a) Renaming legacy `sme-mart.eng.*` tags to the new namespace via UUID-churn migration. Forbidden per D-43.
+- (b) Creating NEW tags with the old `sme-mart.eng.*` short form. Use the full word going forward.
+- (c) Mixing abbreviations across the namespace (e.g., `sme-mart.eng.type.*` for one classifier and `sme-mart.engagement.scope.*` for another). Pick one — going forward, full word everywhere.
+
+**Related decisions:**
+- D-43 (original `sme-mart.eng.*` namespace + classifier pattern — superseded for new tags by this entry; structural pattern retained)
+- D-50 (tier-tag schema — uses `sme-mart.tier.{label}` full-word convention symmetric with this)
+
+## D-50 Tier-Tag Schema + Canonical 7-Tier Hierarchy Anchor (depth 2 is "Project", NOT "Workspace")
+**Date:** 2026-05-12 PM (filed after Director got the tier mapping wrong TWICE in the same session — first in the parkit-5 RESUME section, then in the UAT walkthrough Step D proposal)
+**Decision:** Two locks bundled because they fail together when misread:
+
+**Part 1 — Canonical tier mapping (the rule Director kept getting wrong):**
+
+```
+depth 1: Engagement   [FIXED, parentId=null, identity tag in sme-mart.engagement.* namespace]
+depth 2: Project      [FIXED — "always first child of Engagement", tier tag sme-mart.tier.project]
+depth 3: Workspace    [RENAMEABLE middle tier 1 — default name, tier tag sme-mart.tier.workspace]
+depth 4: Aperture     [RENAMEABLE middle tier 2, tier tag sme-mart.tier.aperture]
+depth 5: Thread       [RENAMEABLE middle tier 3, tier tag sme-mart.tier.thread]
+depth 6: Task         [FIXED — platform.Task class, owned by a Board]
+depth 7: Sub-Task     [FIXED — platform.Task with parentTaskId]
+```
+
+The two FIXED top tiers are **Engagement + Project**. The depth-2 child is the "Project" tier (Brian's canonical sketch: *"Project is fixed... here there be dragons"*). "Workspace" is depth 3 and is a RENAMEABLE MIDDLE tier that v1.4 does NOT auto-instantiate. v1.4 provisioning recipe lands depths 1 + 2 only; customers extend to depth 3+ via Hierarchy Editor.
+
+**D-34's locked name `"ZeroBias Platform"` attaches to the PROJECT tier (depth 2), NOT to a Workspace.** D-35's locked description likewise.
+
+**Part 2 — Tier-tag schema:**
+
+Namespace: `sme-mart.tier.{label}` (full word `tier`; matches D-49's full-word convention for `engagement`).
+
+Properties:
+- ownerId = `MARKETPLACE_OPERATOR_ORG_ID` (W3Geekery today: `cd7105df-523d-5392-9f9a-3f83d3f30107`; eventually ZeroBias)
+- type = `"marketplace"` (per 2026-04-29 tagType convention)
+- scope = `"org"` (auto-derived from ownerId being an org UUID; confirmed via SDK)
+- One-time bootstrap per environment; reused as a marketplace-singleton across ALL engagements + customers
+- Applied via `platform.Project.create`'s built-in `tagId` field at depth 2+ creation time
+
+**Engagement tier does NOT get a separate tier tag** — the engagement identity tag (`sme-mart.engagement.{supply}-to-{demand}`) itself signals tier via namespace prefix. A query for `name LIKE 'sme-mart.engagement.%'` returns all Engagement-tier Projects across the marketplace.
+
+**Bootstrapped on UAT 2026-05-12:**
+- `sme-mart.tier.project` = `420b0753-e72c-4b81-8929-70508a119bf0` (REQUIRED by v1.4 provisioner)
+- `sme-mart.tier.workspace` = `2d7e6b6d-62e1-4691-958c-41cd1b8de043` (reserved for future Hierarchy Editor extension; not used by v1.4)
+- `sme-mart.tier.aperture` — bootstrap on first customer extension
+- `sme-mart.tier.thread` — bootstrap on first customer extension
+
+**Why this entry exists:** Director made the depth-2-is-Workspace mistake twice in one session 2026-05-12:
+1. In the parkit-5 RESUME section (recorded the "v2 amendment" with `tier.workspace` at depth 2)
+2. In the UAT walkthrough Step D proposal (suggested tagging the depth-2 child with the workspace tier tag)
+
+Both were caught by Clark and corrected. The mistake was rooted in stale memory that conflated "the depth-2 child" with "Workspace" because Plan 02's pre-2026-05-08 code labeled its depth-2 child as "workspace Project" (wrong label, structurally correct depth). Filing this entry pulls the canonical rule into a single locked decision so future Director sessions see it before re-reading any historical artifact.
+
+**How to apply:**
+- ANY provisioner / recipe / brief / handoff that puts "Workspace" at depth 2 is WRONG. Strike at plan-checker. Cite this entry.
+- ANY provisioner / recipe that tags the depth-2 child with `sme-mart.tier.workspace` is WRONG. The tag is `sme-mart.tier.project`. Strike at plan-checker.
+- ANY claim that D-34/D-35 verbiage belongs on a "Workspace tier" is WRONG. They attach to the Project tier (depth 2).
+- ANY claim that v1.4 instantiates Workspace/Aperture/Thread by default is WRONG. v1.4 instantiates Engagement + Project only. Renameable middle tiers are customer-extension-only.
+- Tier tags are operator-owned marketplace-singletons. Create ONCE per environment via `hydra.Tag.createTag`. Reuse the same tagId across all customers and engagements.
+
+**Validated empirically on UAT 2026-05-12 walkthrough:**
+- W3Geekery Engagement Project `4617e9d7-b7b4-4679-be43-10fc4140295c` (depth 1, tagId=engagement-identity)
+- W3Geekery Project tier Project `e62b2446-b99f-4160-b7cc-aac9734964eb` (depth 2, parentId=engagement, tagId=`sme-mart.tier.project`)
+- Both auto-Board + auto-Lead behaviors fired as expected
+- Read-back via `platform.Project.get` confirms parentId chain + tagId resolution intact
+
+**Anti-pattern:**
+- (a) Reading tier identity from parentId depth (e.g., "anything at depth 2 IS-A Workspace"). Depth is structural; tier identity is in the `sme-mart.tier.*` tag.
+- (b) Bootstrapping `sme-mart.tier.workspace` and using it for the depth-2 child. That's the wrong tier tag for that depth.
+- (c) Reproposing the parkit-4 "insert middle Project tier" amendment. That was retracted; the depth-2 child IS the Project tier already.
+- (d) Adding `sme-mart.tier.engagement`. Not needed; engagement identity tag signals tier via namespace.
+- (e) Per-customer tier-tag duplication (creating `sme-mart.tier.project` once per customer). Marketplace-singleton; bootstrap ONCE per environment.
+
+**Related decisions:**
+- D-32..D-37 (locked verbiage — applies to Engagement and Project tiers per this entry's mapping; NOT to Workspace)
+- D-43 (engagement tag namespace — extended by D-49 to full word)
+- D-46 (corrected reading: nesting for structure + tags for tier naming; this entry locks the specific tier-to-tag mapping)
+- D-49 (engagement namespace; symmetric full-word convention)
