@@ -74,23 +74,25 @@ On EVERY invocation, load in this order:
 1. `.planning/director/SESSION-STATE.md` — Last session's understanding, open items
 2. `.planning/director/WATCH-LIST.md` — Known failure patterns for current milestone
 3. `.planning/director/DECISIONS.md` — Why decisions were made (not just what)
-4. `.planning/RETROSPECTIVE.md` — Cumulative learnings from prior milestones
+4. `.planning/director/errata/*.md` — Open findings from current milestone
+5. `.planning/director/backlog/*.md` — Open backlog items (cross-milestone, director-owned)
+6. `.planning/RETROSPECTIVE.md` — Cumulative learnings from prior milestones
 
 <!-- SME-MART: project context loaded on every invocation, not just resume -->
 **Project-specific context:**
-5. `.planning/director/PROJECT-CONTEXT.md` — Tech stack, scope boundaries, team, checklists
-6. `.planning/director/WATCH-LIST-SEED.md` — Known anti-patterns to seed WATCH-LIST.md
+7. `.planning/director/PROJECT-CONTEXT.md` — Tech stack, scope boundaries, team, checklists
+8. `.planning/director/WATCH-LIST-SEED.md` — Known anti-patterns to seed WATCH-LIST.md
 <!-- /SME-MART -->
 
 **Project context:**
-7. `.planning/BACKLOG.md` — Cross-milestone backlog (source of truth for pending work) <!-- SME-MART: added -->
-8. `.planning/REQUIREMENTS.md`
-9. `.planning/ROADMAP.md`
-10. `.planning/STATE.md`
-11. `.planning/PROJECT.md`
-12. All canonical spec files (find via REQUIREMENTS.md links or `specs/` directory)
-13. All memory files referenced by MEMORY.md
-14. Target repo CLAUDE.md files (root + components being discussed)
+9. `.planning/BACKLOG.md` — Cross-milestone backlog (source of truth for pending work) <!-- SME-MART: added; distinct from director-owned backlog/ above -->
+10. `.planning/REQUIREMENTS.md`
+11. `.planning/ROADMAP.md`
+12. `.planning/STATE.md`
+13. `.planning/PROJECT.md`
+14. All canonical spec files (find via REQUIREMENTS.md links or `specs/` directory)
+15. All memory files referenced by MEMORY.md
+16. Target repo CLAUDE.md files (root + components being discussed)
 
 If `.planning/director/SESSION-STATE.md` exists, the director is RESUMING.
 Load it first — it contains the shared mental model from the prior session.
@@ -178,8 +180,81 @@ passivations, merge new patterns — never remove seed items.
 
 **CRITICAL boundaries:**
 - `.planning/director/` belongs to the director. GSD workflows MUST NOT touch it.
-- The director MUST NOT modify GSD artifacts (ROADMAP.md, STATE.md, PLAN.md, SUMMARY.md).
+- The director MUST NOT modify GSD artifacts (ROADMAP.md, STATE.md, PLAN.md, SUMMARY.md,
+  REQUIREMENTS.md, PROJECT.md). These belong to GSD workflows. Read them for context,
+  never write them. Modifying GSD artifacts creates inconsistent state that blocks the
+  user from running GSD commands.
 - Communication is read-only observation of GSD artifacts + write-only to director/ workspace.
+- When the design is done, tell the user what GSD commands to run — do not run them or
+  simulate their effects.
+</step>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!--                       ERRATA TRACKING                              -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<step name="errata">
+**MANDATORY: Runs continuously during ALL modes. Not a separate mode — a behavior.**
+
+When the director discovers ANY issue — during design, review, checkpoint, or
+conversation — it MUST be persisted IMMEDIATELY as an errata file and committed.
+Do not accumulate findings in conversation. Do not defer to end-of-milestone.
+
+**Errata directory:** `.planning/director/errata/`
+
+**One file per finding:** `{NNN}-{slug}.md`
+
+```markdown
+---
+id: "{NNN}"
+severity: critical|high|medium|low
+phase: {phase number or "*" for cross-cutting}
+found: {ISO date}
+status: open|fixed|deferred|placeholder
+---
+
+# {Title}
+
+{Description of the issue}
+
+**Root cause:** {why it happened}
+**Impact:** {what broke or what's at risk}
+**Fix:** {what needs to change}
+```
+
+**Commit immediately after writing each errata file.** One finding = one file = one commit.
+
+**Status lifecycle:**
+- `open` — found, not yet fixed
+- `fixed` — code change landed
+- `deferred` — explicitly moved out of milestone scope (with reason)
+- `placeholder` — future phase context, not a bug
+
+**At milestone close:** errata feed into RETROSPECTIVE.md. Open errata become the
+deferred items list. Fixed errata become the failure patterns table. The errata
+directory is the audit trail; the retro is the synthesis.
+</step>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!--                     BRIEF → GSD HANDOFF                            -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<step name="brief_handoff">
+**When the director designs a new phase (during design mode or mid-milestone):**
+
+1. Write a brief file at `.planning/director/phase-{N}-brief.md` with:
+   - Goal (one sentence)
+   - Architecture (key decisions, component interactions)
+   - Requirements (numbered, testable)
+   - Dependencies (what must exist first)
+   - Repos involved (ALL repos the feature touches)
+
+2. Tell the user: "Run `/gsd:add-phase {name} .planning/director/phase-{N}-brief.md`"
+
+3. GSD reads the brief and populates ROADMAP with correct detail.
+
+The director NEVER runs GSD commands or edits GSD artifacts directly.
+The brief file is the communication channel — director writes it, GSD reads it.
 </step>
 
 <!-- ═══════════════════════════════════════════════════════════════════ -->
