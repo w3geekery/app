@@ -10,7 +10,130 @@
 
 ---
 
-## 📍 LATEST: 2026-05-12 LATE parkit (7) — Phase 29.5 FULLY CLOSED + cross-fork PR ready to open
+## 📍 LATEST: 2026-05-12 LATER parkit (8) — Phase 30 brief + discuss done, awaiting UI-spec; GSD updated to 1.41.2; about to /clear
+
+**TL;DR:** Since parkit-7: Phase 30 brief v2 + User-flow addendum written and committed (`a529fa7` + `bacd2c8`). gsd-discuss-phase 30 ran, Director locked all 8 gray areas (A + G1–G7), CONTEXT.md v2 + DISCUSSION-LOG committed by gsd-plan agent (`91e41af`). gsd-plan exited at the UI-spec gate (won't nest UI-phase due to AskUserQuestion bug #1009). Pre-push gate caught a spec drift defect (errata 034 — v3 amendment missed updating `org-provisioning-tab.component.spec.ts`); Director hand-fixed + verified full suite 1762/1762, errata flipped to `fixed`. Branch pushed to `origin/poc/sme-mart` (1762-test pre-push hook passed). meta:director adapter synced from upstream meta-harness (v2 guardrails: errata step + brief_handoff step + GSD-artifacts boundary expansion + required-reading additions). GSD itself updated 1.38.5 → 1.41.2; local patches on `verify-phase.md` backed up to `gsd-local-patches/` pending reapply.
+
+### Phase 30 status
+
+| Step | Status | Anchor |
+|---|---|---|
+| Brief v2 (Director) | ✅ committed `a529fa7` |
+| Brief addendum: no-signup / ZB-piggyback (Director) | ✅ committed `bacd2c8` |
+| discuss-phase 30 | ✅ Director locks A + G1–G7 approved; agent wrote CONTEXT.md v2 + DISCUSSION-LOG.md; committed `91e41af` |
+| **ui-phase 30** | 🟡 **NEXT — pending Clark dispatch after /clear + restart** |
+| plan-phase 30 (`--skip-research`) | ⏸ blocked on ui-phase return |
+| execute-phase 30 | ⏸ blocked on plan-phase return |
+
+### What's queued (immediately on resume)
+
+1. **`/gsd-update --reapply`** — merges Director's verify-phase.md local patches into the new 1.41.2 via 3-way merge. `gsd-local-patches/get-shit-done/workflows/verify-phase.md` was auto-backed-up by the installer. Run BEFORE ui-phase / plan-phase / execute-phase so verify-phase logic uses the merged patches.
+2. **`/gsd-ui-phase 30`** — resume the actual Phase 30 work at the UI-spec gate. Writes `30-UI-SPEC.md` for the planner to consume.
+3. **`/gsd-plan-phase 30 --skip-research`** — after UI-spec returns. `--skip-research` honors the Director-approved skip (CONTEXT.md is exhaustive; pattern-mapper handles the 3 Discovery Flags between research and planning).
+
+Skip the installer's default footer ("type /gsd-new-project or ask Claude to run the gsd-new-project skill") — that's for new users starting a new project, not applicable here.
+
+### GSD 1.41.2 — relevant changes
+
+Picked up via `/gsd-update` mid-session. Highlights:
+
+- **`gap-analysis` parses non-`REQ-` requirement IDs** — relevant: SME Mart uses `PB-*`, `DEM-*`.
+- **`extractCurrentMilestone` no longer truncates ROADMAP at heading-like lines inside fenced code blocks** — relevant: our ROADMAP has code-block sections.
+- **`MODEL_ALIAS_MAP` updated to `claude-opus-4-7`** — the model running this session.
+- **`/gsd-edit-phase` (new)** — useful for brief revisions like the Phase 30 v2 rewrite we did manually. Worth remembering.
+- **Six namespace meta-skills:** `gsd-ns-review`, `gsd-ns-ideate`, `gsd-ns-manage`, `gsd-ns-project`, `gsd-ns-workflow`, `gsd-ns-context` — new organization layer.
+- **31 micro-skills deleted, consolidated:**
+  - `add-phase / insert-phase / remove-phase` → `gsd-phase`
+  - `new-workspace / remove-workspace / list-workspaces` → `gsd-workspace`
+  - `add-todo / add-backlog / note / plant-seed / check-todos` → `gsd-capture`
+  - `settings / settings-advanced / settings-integrations` → `gsd-config`
+  - `do / next` → folded into `gsd-progress` (freeform dispatch)
+  - `reapply-patches` → `/gsd-update --reapply` (flag form)
+
+The Phase 30 workflow commands (ui-phase, plan-phase, execute-phase, discuss-phase) are all still present and structurally compatible.
+
+**errata 029 (1.38.5 state-frontmatter bugs):** changelog showed state-subsystem activity (`gsd state complete-phase` subcommand, `depends_on` preservation) but no explicit "state-frontmatter writes fixed" entry. Leave errata 029 status as-is until next state-subsystem use; if it works, flip to `fixed`.
+
+### meta:director adapter sync (committed `bec38ee`)
+
+Project adapter `.claude/commands/meta/director.md` updated from `bbd10be`-era to upstream HEAD `307150e`. 7 of 7 proposed changes auto-merged (no conflict with 47 SME-MART markers). Key additions:
+
+- **NEW `<step name="errata">`** — mandatory continuous errata-filing protocol (the discipline followed this session filing errata 030–034).
+- **NEW `<step name="brief_handoff">`** — brief → GSD handoff pattern.
+- **EXPANDED GSD-artifacts prohibition** to include `REQUIREMENTS.md` and `PROJECT.md` (was missing) + 2 explanatory sentences.
+- **ADDED closing sentence** to passivate: "tell the user what GSD commands to run — do not run them or simulate their effects."
+- **ADDED `errata/*.md` + `backlog/*.md`** to required-reading list; renumbered downstream items; BACKLOG.md line clarified as project-wide (distinct from director-owned `backlog/`).
+
+Stats: 533 → 608 lines, 7 → 9 steps. 47 SME-MART markers preserved verbatim.
+
+### errata since parkit-7
+
+| # | Severity | Status | Carry-forward |
+|---|---|---|---|
+| 034 — v3 amendment caller-spec drift | Medium | **fixed** (`1b5649f`) | one-line spec edit; pre-push hook caught it before push (proved its value) |
+
+Cumulative errata count this milestone: 034. All 5 errata filed this session (030–034) committed individually per skill rule.
+
+### Commits since parkit-7 (`5212d59`)
+
+```
+bec38ee chore(meta:director): sync v2 guardrails from upstream zerobias-org/meta-harness
+91e41af docs(30): Phase 30 CONTEXT.md v2 + DISCUSSION-LOG (post-29.5 rewrite)
+bacd2c8 docs(director,30): brief addendum — User-flow context (no signup, ZB-piggyback)
+a529fa7 docs(director,30): phase-30 brief v2 — post-29.5 rewrite
+ab0d1cc docs(director,29.5): errata 034 status -> fixed (commit 1b5649f)
+1b5649f fix(29.5): drop stale RACI fields from org-provisioning-tab spec assertion
+b569f5e docs(director,29.5): errata 034 — v3 amendment caller-spec drift
+```
+
+### Push state
+
+Branch `poc/sme-mart` was **pushed to `origin/poc/sme-mart`** earlier this session (pre-push hook ran full suite 1762/1762). Currently 4 commits ahead of origin again (the 4 Phase-30-related commits + meta:director sync committed after the push). NOT yet pushed; safe to push anytime.
+
+Cross-fork PR to `zerobias-org/app:uat` still deferred until "next useful code lands" per Clark's earlier call (Phase 29.5 alone wasn't enough user-visible value to publish).
+
+### Phase 30 Director gray-area locks (committed in CONTEXT.md `91e41af`)
+
+For continuity if anything needs re-litigating:
+
+- **A**: rewrite from scratch (v1 CONTEXT obsolete; pre-D-46 SmeMartProject framing retired)
+- **G1**: (c) lightweight default-project-board component; NO ProjectDetail reuse (avoids ~400-line refactor risk per Discovery Flag #3)
+- **G2**: (a fallback) helpers in `engagements.service` (engagement-hierarchy.service verified at write-time as tag-prefix parser, NOT depth resolver). PLUS hoist `SME_MART_TIER_PROJECT_TAG_ID` → `core/constants/tier-tags.ts` with re-export from provisioner for caller stability.
+- **G3**: (a) new `feature-coming-soon` component; existing thin `coming-soon.component.ts` DO-NOT-MODIFY (used by catalog/request-assistance/feedback routes).
+- **G4**: Material `mat-card` × 3 grid on dashboard.
+- **G5**: (a) inline `ZbEmptyStateContainerComponent` on missing-Project-tier; NO auto-reprovision (that's Phase 31 / D-49-NAMESPACE-MIGRATE-1).
+- **G6**: stop-the-line verbatim, load-bearing for planner agent (>~150 lines new component code = plan-time blocker for Director re-scope).
+- **G7**: D-32..D-35 verbiage UAT cross-check folded into Phase 30 exit criteria; broader Plan 06 UI checks owned by Plan 06.
+
+Non-blocking observation: agent added an optional "Open project workspace" link from dashboard to `/project/:depth2ProjectId/overview`. Not in explicit G1 lock; Director approved as natural UX bridge; plan-phase may strike at discretion.
+
+### Quick-start prompt (Director Parks reads this first on resume — UPDATED for parkit-8)
+
+You're Director Parks for SME Mart. Phase 29.5 is fully closed (parkit-7 covered that). **You are now mid-Phase-30**, paused at the UI-spec gate.
+
+Phase 30 = the SME Mart dashboard / home view at `/projects` that pre-existing ZB users land on after Phase 27 routing + Phase 28 profile review. NOT a signup flow (SME Mart never authenticates anyone). Renders engagement header (D-32/D-33 verbiage) + Project tier body (D-34/D-35 verbiage) + 3 Coming Soon placeholder surfaces (Org Documents / Engagement Dashboard / Message Center).
+
+**Immediate sequence (after Clark restarts + /clear + /parks loads):**
+
+1. `/gsd-update --reapply` — merge Director's verify-phase.md local patches into the new 1.41.2 (backed up by installer to `gsd-local-patches/`).
+2. `/gsd-ui-phase 30` — resume Phase 30 at the UI-spec gate; writes `30-UI-SPEC.md`.
+3. `/gsd-plan-phase 30 --skip-research` — after UI-spec returns. `--skip-research` honors Director-approved skip (CONTEXT.md is exhaustive; pattern-mapper handles Discovery Flags).
+
+Do NOT run `/gsd-new-project` — that's installer footer guidance for new projects, not applicable.
+
+**Context to load on resume:**
+- This parkit-8 section → `.planning/phases/30-default-project-board-coming-soon-placeholders/30-CONTEXT.md` → `30-DISCUSSION-LOG.md`.
+- Director-locked decisions for Phase 30: A, G1(c), G2(a fallback + hoist), G3(a), G4(cards), G5(a), G6(stop-the-line verbatim), G7(verbiage-only).
+- D-32..D-35 locked verbiage (for the verification exit criteria).
+- D-46/D-48 (mechanism addendum)/D-49/D-50 — locked decision triad ratified during 29.5.
+
+**Branch posture:** `poc/sme-mart` 4 ahead of origin (post-push) — same as parkit-7 origin sync state plus the 4 Phase-30-and-meta:director commits since push. Don't push for cross-fork PR yet; bundle when next useful code lands.
+
+**Director-side commits ready to land at next parkit** — none pending; tree is clean before this parkit-8 commit.
+
+---
+
+## 📍 parkit (7): 2026-05-12 LATE — Phase 29.5 FULLY CLOSED + cross-fork PR ready to open
 
 **TL;DR:** Wave 4 returned with Plan 06 SDK PASS (5/5 assertions) + Plan 07 PREMISE-MISMATCH routed to Director. Director ran the meta:director checkpoint protocol — filed 4 errata (030/031/032/033, one commit each), D-48 mechanism addendum in DECISIONS.md, 2 new BACKLOG entries (D-49-NAMESPACE-MIGRATE-1 + VETTING-PLATFORM-MIGRATE-1). Wave 5 Tell block dispatched. Plan 08 returned clean — gates 0/0/0/50/50, single commit `41c501c`, ROADMAP marks Phase 29.5 COMPLETE 8/8, 3 organic backlog entries filed. Phase 29.5 closed. Branch sits at 42 ahead of origin pre-EOD-parkit, will be 43 after this parkit commit. Cross-fork PR (`w3geekery/app:poc/sme-mart` → `zerobias-org/app:uat`) is now ready to open — Clark's action.
 
