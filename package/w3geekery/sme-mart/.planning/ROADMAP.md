@@ -86,7 +86,7 @@
   - [x] **Plan 04 (Wave 4)** — Routing Integration: /onboarding/company-profile route registered in app.routes.ts (completed 2026-04-30)
   - [x] **Plan 05 (Wave 5)** — Routing Integration Test: CP-07 getCompletionStatus test + CP-08 flow coverage map (completed 2026-04-30)
 - [ ] **Phase 29: DEFERRED TO v1.5** — Tier display, Terms of Service, ZB branding (intentionally skipped in v1.4)
-- [ ] **Phase 29.5: Platform Model Migration (INSERTED)** (TBD plans) — Replace SmeMart GQL classes with new platform `platform.Project` / `platform.Board` primitives (est. 10-18 hrs)
+- [x] **Phase 29.5: Platform Model Migration (INSERTED)** (8 plans, ALL COMPLETE 2026-05-12) — Replaced SmeMart GQL classes with `platform.Project` / `platform.Board` / `platform.Task` primitives. Engagement-as-Project hierarchy locked (D-46); provisioning recipe collapsed 7→5 steps; auto-Board + auto-Lead cascade (D-48) validated on UAT. See `.planning/phases/29.5-platform-model-migration/29.5-CLOSURE.md`.
 - [ ] **Phase 30: Default Project Board + Coming Soon Placeholders** (TBD plans) — Seeded project board with 3 feature stubs (est. 6-8 hrs)
 - [ ] **Phase 31: W3Geekery Dogfood + Production Smoke Test** (TBD plans) — End-to-end validation and production readiness (est. 4-6 hrs)
 
@@ -519,21 +519,35 @@ This phase is intentionally deferred from v1.4. When v1.5 begins, Phase 29 work 
 
 ---
 
-### Phase 29.5: Platform Model Migration (INSERTED)
+### Phase 29.5: Platform Model Migration (INSERTED) — ✅ COMPLETE 2026-05-12
 
-**Goal:** Replace SmeMart GQL classes (Engagement, EngagementVettingItem, SmeMartProject) with new platform `platform.Project` / `platform.Board` primitives announced 2026-05-08. Engagement-as-Project hierarchy locked; provisioning recipe collapses 7→5 steps; zero new GQL classes added. See `.planning/director/phase-29.5-brief.md`.
-**Requirements**: TBD (resolved in /gsd-discuss-phase + /gsd-plan-phase)
+**Goal:** Replace SmeMart GQL classes (Engagement, EngagementVettingItem, SmeMartProject) with `platform.Project` / `platform.Board` / `platform.Task` primitives. Engagement-as-Project hierarchy locked; provisioning recipe collapsed 7→5 steps; zero new GQL classes added.
+**Requirements**: D-29, D-30, D-32–D-35, D-43, D-46, D-48, D-49, D-50 (ratified during phase; see DECISIONS.md)
 **Depends on:** Phase 28 (Phase 29 deferred to v1.5; 29.5 inserted ahead of Phase 30 which depended on these primitives)
-**Plans:** 0 plans
+**Closure:** `.planning/phases/29.5-platform-model-migration/29.5-CLOSURE.md`
+**Plans:** 8/8 complete
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 29.5 to break down)
+- [x] **Plan 01 (Wave 1)** — INVENTORY audit + MCP endpoint verification
+- [x] **Plan 02 (Wave 2)** — Provisioner.service rewrite (7→5 steps); v3 amendment landed D-50 tier flip at commit `523e924`
+- [x] **Plan 03 (Wave 2)** — Service refactors (engagements + sme-mart-project + demo-visibility); dual-read window opened
+- [x] **Plan 04 (Wave 2)** — ResourceType enum extended (`project`, `board`); re-scoped enum-only per Task 0 KEEP classification
+- [x] **Plan 05 (Wave 3)** — Schema deprecation PR on `zerobias-org/schema` (review managed out-of-band per Director rescind of stall-clock)
+- [x] **Plan 06 (Wave 4)** — UAT Engagement/Project SDK round-trip: PASS (5/5 SDK assertions). UI cross-check staged for Clark (deferred, not a 29.5 blocker)
+- [x] **Plan 07 (Wave 4)** — UAT Vetting Board smoke: **PREMISE-OBSOLETE / DEFERRED via Director Option A** (errata 031). Vetting modernization routed to `VETTING-PLATFORM-MIGRATE-1` (v1.5+)
+- [x] **Plan 08 (Wave 5)** — Final cleanup + closure: gates clean, CLOSURE.md authored, 3 organic backlog entries filed
+
+**Wave 4 errata (open follow-ups):** 030 (D-49 namespace drift; hard prereq Phase 31), 031 (vetting platform.Board not implemented; v1.5+), 032 (`platform.Project.get` omits parentId for top-level; Touch-It-Fix-It on next provisioner.spec edit), 033 (D-48 cascade is eager-materialize, not lazy; addendum landed, open question on later-add behavior).
+
+**Follow-up backlog entries (Platform Alignment section of BACKLOG.md):** `D-49-NAMESPACE-MIGRATE-1`, `VETTING-PLATFORM-MIGRATE-1`, `PROVIDER-MY-ENGAGEMENTS-1`, `PROJECT-SVC-RENAME-1`, `SCHEMA-RETIREMENT-DELETE-1`.
 
 ### Phase 30: Default Project Board + Coming Soon Placeholders
 
+> **⚠ Brief revision needed post-29.5 closure.** The phase-30 brief at commit `b7f9b80` predates the D-46 / D-49 / D-50 ratification triad (Engagement-as-Project hierarchy + namespace flip + Project-vs-Workspace naming) and references prior tier-tag assumptions that were invalidated during Phase 29.5. Director will rewrite the brief separately before Phase 30 planning begins. Goal/Success Criteria below remain directionally correct but require alignment with platform.Project / platform.Board primitives.
+
 **Goal:** Authenticated onboarded users land on a seeded project board with honest "Coming Soon" placeholders for unfinished features
 
-**Depends on:** Phase 26 (seeded project content) + Phase 27 (routing) + Phase 28 (onboarding marker)
+**Depends on:** Phase 26 (seeded project content) + Phase 27 (routing) + Phase 28 (onboarding marker) + **Phase 29.5 (platform model migration — COMPLETE 2026-05-12, primitives available)**
 
 **Requirements:** PB-01, PB-02, PB-03, PB-04, PB-06, PB-07
 
@@ -596,7 +610,8 @@ Plans:
 | 27.5. Modernization Enforcement | 5/5 | Complete    | 2026-05-01 |
 | 28. Company Profile Form | 4/5 | Complete    | 2026-04-30 |
 | 29. DEFERRED TO v1.5 | — | Skipped | — |
-| 30. Default Project Board | 0/? | Not started | — |
+| 29.5. Platform Model Migration | 8/8 | Complete    | 2026-05-12 (Wave 5 close, commit at Plan 08) |
+| 30. Default Project Board | 0/? | Not started | Brief revision needed post-29.5 (Director TBD) |
 | 31. W3Geekery Dogfood + Smoke Test | 0/? | Not started | — |
 
 **v1.2 Milestone:** 5/5 phases complete, 14/14 plans complete (closed 2026-04-15).
@@ -606,4 +621,4 @@ Plans:
 ---
 
 **Created:** 2026-03-17
-**Last Updated:** 2026-04-24 (v1.4 ROADMAP complete)
+**Last Updated:** 2026-05-12 (Phase 29.5 closed; Phase 30 brief revision flagged)
