@@ -13,9 +13,25 @@
 
 ## Goal
 
-A functional **default project surface** that authenticated, onboarded users land on at the `/projects` route slot reserved by Phase 27 Wave 3. The surface renders the user's default ZeroBias engagement and its depth-2 Project tier Project (D-34 locked name `"ZeroBias Platform"` for the ZB engagement) as the primary content. Three auxiliary surfaces — Org Documents, Engagement Dashboard, Message Center — render as clearly-labeled "Coming Soon" placeholders with honest copy, not half-built functional UI.
+A functional **default project surface** that arriving ZeroBias users land on at the `/projects` route slot reserved by Phase 27 Wave 3. The surface renders the user's default ZeroBias engagement and its depth-2 Project tier Project (D-34 locked name `"ZeroBias Platform"` for the ZB engagement) as the primary content. Three auxiliary surfaces — Org Documents, Engagement Dashboard, Message Center — render as clearly-labeled "Coming Soon" placeholders with honest copy, not half-built functional UI.
 
 Phase 30 does NOT render a literal `platform.Board` UI primitive (Task lists, kanban columns, etc.). That's Phase 32+. Phase 30 = landing dashboard at `/projects` route.
+
+---
+
+## User-flow context (READ FIRST — no signup; SME Mart never authenticates)
+
+**SME Mart never authenticates anyone.** Users are pre-existing ZeroBias platform users arriving from the ZB portal (iframe or direct URL). The W3Geekery-branded login package handles OAuth → ZB platform session; SME Mart piggy-backs on the resulting ZB session.
+
+There is **no SME Mart signup**. Words like "authenticated" and "onboarded" in this brief mean:
+
+- **"Authenticated"** = a valid ZB platform session exists. SME Mart inherits it. Phase 27 verifies the session is live (else bounces back to the branded login URL, which is outside SME Mart's repo).
+- **"Onboarded"** = the user has completed Phase 28's one-time **profile review/confirm** flow at least once. This is NOT data entry — it's review of platform data SME Mart already pulled via Phase 25's SDK audit (Org name, boundaries, role assignments, MarketplaceProfileItem records). The user reviews + confirms + optionally edits; they do not "create an account."
+- **Default ZeroBias engagement** is invariant. Every ZB platform org has at least one engagement with ZeroBias (3PO=Buyer, ZB=Provider) by default. Phase 27's lazy-on-load guard creates it if missing (for orgs that show up after the Phase 26 batch backfill ran). Phase 30 reads this engagement; it never creates one.
+
+**Phase 30 is the SME Mart dashboard / home view** for these pre-existing users. Equivalent to "your projects" landing page in a marketplace UI — not a signup completion screen.
+
+**Plan-author implication:** No identity/auth code in Phase 30. No "create user" / "create org" / "first-time setup" flows. Just consume the existing ZB session (already gated by Phase 27 routing + `onboardingGuard`) and render content from the platform primitives the user already has.
 
 ---
 
@@ -109,7 +125,7 @@ Per Plan 06 empirical verification, the authenticated user is already a Project 
 
 ## Requirements
 
-- **PB-01:** Authenticated onboarded users land on `/projects` (the route slot reserved by Phase 27 Wave 3, commit `3756443`). Phase 30 replaces the placeholder `ComingSoon` component at that route with the full default project surface. Route MUST sit under `AppShell` so `onboardingGuard` continues to gate access.
+- **PB-01:** Arriving ZeroBias users (pre-existing ZB session per User-flow context; no SME Mart signup) land on `/projects` (the route slot reserved by Phase 27 Wave 3, commit `3756443`). Phase 30 replaces the placeholder `ComingSoon` component at that route with the full default project surface. Route MUST sit under `AppShell` so `onboardingGuard` continues to gate access.
 - **PB-02:** Default project surface renders the user's default ZeroBias engagement (depth 1) AND its Project tier child (depth 2). Engagement header uses D-32/D-33 verbiage; Project tier body uses D-34/D-35 verbiage. Both consumed from `engagements.service` (Phase 29.5 dual-read).
 - **PB-03:** 3 "Coming Soon" surfaces exist as components + routes (046 / 066 / 065), each with its own disabled-styled placeholder content.
 - **PB-04:** Coming Soon surfaces are reachable from the board AND deep-linkable.
