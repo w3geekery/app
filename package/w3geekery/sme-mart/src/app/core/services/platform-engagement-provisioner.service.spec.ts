@@ -4,6 +4,9 @@ import { ZerobiasClientApi, ZerobiasClientSessionId } from '@zerobias-com/zerobi
 import { PlatformEngagementProvisioner } from './platform-engagement-provisioner.service';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// UAT bootstrap value mirrored from provisioner.service.ts (D-50 tier-tag).
+const SME_MART_TIER_PROJECT_TAG_ID_UAT = '420b0753-e72c-4b81-8929-70508a119bf0';
+
 describe('PlatformEngagementProvisioner', () => {
   let service: PlatformEngagementProvisioner;
   let snackBarMock: { open: ReturnType<typeof vi.fn> };
@@ -14,31 +17,27 @@ describe('PlatformEngagementProvisioner', () => {
       getTagApi: () => { searchTags: ApiMock; createTag: ApiMock };
     };
     platformClient: {
-      getProjectApi: () => { list: ApiMock; create: ApiMock; addMember: ApiMock };
-      getBoardApi: () => { create: ApiMock; list: ApiMock };
+      getProjectApi: () => { list: ApiMock; create: ApiMock };
     };
   };
 
   const testOrgId = 'org-123';
   const testOrgName = 'Test Org Inc.';
   const testOrgSlug = 'testorginc';
-  const testAdminPrincipalId = 'admin-principal-123';
   const testTagId = 'tag-123';
   const testEngagementProjectId = 'engagement-project-123';
-  const testWorkspaceProjectId = 'workspace-project-123';
-  const testBoardId = 'board-123';
+  const testProjectTierProjectId = 'project-tier-123';
 
   const validInput = () => ({
     currentOrgId: testOrgId,
     currentOrgName: testOrgName,
     currentOrgSlug: testOrgSlug,
-    adminPrincipalId: testAdminPrincipalId,
   });
 
   beforeEach(() => {
     snackBarMock = { open: vi.fn() };
 
-    // Build a minimal mock of ZerobiasClientApi for 5-step recipe
+    // Build a minimal mock of ZerobiasClientApi for v3 recipe (3 SDK calls).
     clientApiMock = {
       toUUID: vi.fn((id: string) => id), // Identity function for test
       hydraClient: {
@@ -51,11 +50,6 @@ describe('PlatformEngagementProvisioner', () => {
         getProjectApi: vi.fn().mockReturnValue({
           list: vi.fn(),
           create: vi.fn(),
-          addMember: vi.fn(),
-        }),
-        getBoardApi: vi.fn().mockReturnValue({
-          create: vi.fn(),
-          list: vi.fn(),
         }),
       },
     };
@@ -72,11 +66,10 @@ describe('PlatformEngagementProvisioner', () => {
     service = TestBed.inject(PlatformEngagementProvisioner);
   });
 
-  describe('ensurePlatformEngagement (5-step recipe)', () => {
-    it('Happy path: all 5 steps succeed → returns created: true with all IDs', async () => {
+  describe('ensurePlatformEngagement (v3 recipe — 3 SDK calls)', () => {
+    it('Happy path: all 3 steps succeed → returns created: true with engagement + project-tier IDs', async () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
       const projectApi = clientApiMock.platformClient.getProjectApi();
-      const boardApi = clientApiMock.platformClient.getBoardApi();
 
       // Step A: Tag probe and create
       tagApi.searchTags.mockResolvedValue({ items: [] });
@@ -86,16 +79,9 @@ describe('PlatformEngagementProvisioner', () => {
       projectApi.list.mockResolvedValueOnce({ items: [] });
       projectApi.create.mockResolvedValueOnce({ id: testEngagementProjectId });
 
-      // Step D: Workspace Project probe and create
+      // Step D: Project-tier Project probe and create
       projectApi.list.mockResolvedValueOnce({ items: [] });
-      projectApi.create.mockResolvedValueOnce({ id: testWorkspaceProjectId });
-
-      // Step F: Default Board probe and create
-      boardApi.list.mockResolvedValue({ items: [] });
-      boardApi.create.mockResolvedValue({ id: testBoardId });
-
-      // Step G: Add member
-      projectApi.addMember.mockResolvedValue(undefined);
+      projectApi.create.mockResolvedValueOnce({ id: testProjectTierProjectId });
 
       // Execute
       const result = await service.ensurePlatformEngagement(validInput());
@@ -105,14 +91,11 @@ describe('PlatformEngagementProvisioner', () => {
       expect(tagApi.createTag).toHaveBeenCalled();
       expect(projectApi.list).toHaveBeenCalledTimes(2); // Steps C and D both probe
       expect(projectApi.create).toHaveBeenCalledTimes(2); // Steps C and D both create
-      expect(boardApi.create).toHaveBeenCalled();
-      expect(projectApi.addMember).toHaveBeenCalled();
 
-      // Assert result shape
+      // Assert result shape (no boardId — auto-Board is accepted; no member call — auto-Lead)
       expect(result.created).toBe(true);
       expect(result.engagementProjectId).toBe(testEngagementProjectId);
-      expect(result.workspaceProjectId).toBe(testWorkspaceProjectId);
-      expect(result.boardId).toBe(testBoardId);
+      expect(result.projectTierProjectId).toBe(testProjectTierProjectId);
     });
 
     it('Idempotency: org already provisioned → returns created: false with empty IDs', async () => {
@@ -132,14 +115,12 @@ describe('PlatformEngagementProvisioner', () => {
       // Assert result
       expect(result.created).toBe(false);
       expect(result.engagementProjectId).toBe('');
-      expect(result.workspaceProjectId).toBe('');
-      expect(result.boardId).toBe('');
+      expect(result.projectTierProjectId).toBe('');
     });
 
     it('Step C idempotency: engagement project exists → probe returns it, skip create', async () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
       const projectApi = clientApiMock.platformClient.getProjectApi();
-      const boardApi = clientApiMock.platformClient.getBoardApi();
 
       // isOrgProvisioned: tag doesn't exist yet
       tagApi.searchTags.mockResolvedValueOnce({ items: [] });
@@ -150,16 +131,9 @@ describe('PlatformEngagementProvisioner', () => {
       projectApi.list.mockResolvedValueOnce({ items: [{ id: testEngagementProjectId }] });
       // Step C create should NOT be called
 
-      // Step D: Workspace project probe and create
+      // Step D: Project-tier probe and create
       projectApi.list.mockResolvedValueOnce({ items: [] });
-      projectApi.create.mockResolvedValueOnce({ id: testWorkspaceProjectId });
-
-      // Step F: Board probe and create
-      boardApi.list.mockResolvedValue({ items: [] });
-      boardApi.create.mockResolvedValue({ id: testBoardId });
-
-      // Step G: Add member
-      projectApi.addMember.mockResolvedValue(undefined);
+      projectApi.create.mockResolvedValueOnce({ id: testProjectTierProjectId });
 
       // Execute
       const result = await service.ensurePlatformEngagement(validInput());
@@ -168,14 +142,10 @@ describe('PlatformEngagementProvisioner', () => {
       expect(projectApi.list).toHaveBeenCalledTimes(2); // C probe + D probe
       expect(projectApi.create).toHaveBeenCalledTimes(1); // D create only
 
-      // Assert other steps fired
-      expect(boardApi.create).toHaveBeenCalled();
-      expect(projectApi.addMember).toHaveBeenCalled();
-
       // Assert result
       expect(result.created).toBe(true);
       expect(result.engagementProjectId).toBe(testEngagementProjectId);
-      expect(result.workspaceProjectId).toBe(testWorkspaceProjectId);
+      expect(result.projectTierProjectId).toBe(testProjectTierProjectId);
     });
 
     it('Step A error: tag create fails → console.warn + snackbar + re-throw', async () => {
@@ -263,11 +233,10 @@ describe('PlatformEngagementProvisioner', () => {
     });
   });
 
-  describe('5-step recipe parameter validation', () => {
+  describe('v3 recipe parameter validation', () => {
     beforeEach(() => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
       const projectApi = clientApiMock.platformClient.getProjectApi();
-      const boardApi = clientApiMock.platformClient.getBoardApi();
 
       // Default successful path
       tagApi.searchTags.mockResolvedValue({ items: [] });
@@ -275,13 +244,10 @@ describe('PlatformEngagementProvisioner', () => {
       projectApi.list.mockResolvedValue({ items: [] });
       // Use mockResolvedValueOnce to return different values for each create call
       projectApi.create.mockResolvedValueOnce({ id: testEngagementProjectId });
-      projectApi.create.mockResolvedValueOnce({ id: testWorkspaceProjectId });
-      boardApi.list.mockResolvedValue({ items: [] });
-      boardApi.create.mockResolvedValue({ id: testBoardId });
-      projectApi.addMember.mockResolvedValue(undefined);
+      projectApi.create.mockResolvedValueOnce({ id: testProjectTierProjectId });
     });
 
-    it('Step C: creates engagement project with locked verbiage (D-32, D-33)', async () => {
+    it('Step C: creates engagement project with locked verbiage (D-32, D-33), no boundaryId', async () => {
       const projectApi = clientApiMock.platformClient.getProjectApi();
 
       await service.ensurePlatformEngagement(validInput());
@@ -299,51 +265,22 @@ describe('PlatformEngagementProvisioner', () => {
       expect(engagementProjectCall.membershipPolicy).toBe('private'); // D-29
       expect(engagementProjectCall.parentId).toBeNull(); // D-04
       expect(engagementProjectCall.tagId).toBe(testTagId); // D-01
+      // boundaryId intentionally omitted (ENGAGEMENT-BOUNDARY-SCOPE-REVISIT-1)
+      expect(engagementProjectCall.boundaryId).toBeUndefined();
     });
 
-    it('Step D: creates workspace project with locked verbiage (D-34, D-35), tagless (D-02)', async () => {
+    it('Step D: creates project-tier project with locked verbiage (D-34, D-35) and tier tag (D-50)', async () => {
       const projectApi = clientApiMock.platformClient.getProjectApi();
 
       await service.ensurePlatformEngagement(validInput());
 
       const createCalls = projectApi.create.mock.calls;
-      // Second create is workspace project (Step D)
-      const workspaceProjectCall = createCalls[1][0];
-      expect(workspaceProjectCall.name).toBe('ZeroBias Platform'); // D-34
-      expect(workspaceProjectCall.description).toContain(`${testOrgName}'s gateway into ZeroBias`); // D-35
-      expect(workspaceProjectCall.parentId).toBe(testEngagementProjectId); // D-01
-      expect(workspaceProjectCall.tagId).toBeUndefined(); // D-02 (tagless)
-    });
-
-    it('Step F: creates default kanban board with locked verbiage (D-06, D-30)', async () => {
-      const boardApi = clientApiMock.platformClient.getBoardApi();
-
-      await service.ensurePlatformEngagement(validInput());
-
-      expect(boardApi.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          projectId: testWorkspaceProjectId,
-          name: 'ZeroBias Platform', // D-06, D-34 locked name
-          status: 'active', // D-30
-          boardType: 'kanban', // D-30
-          isDefault: true, // D-30
-        }),
-      );
-    });
-
-    it('Step G: adds admin principal as project member with admin role', async () => {
-      const projectApi = clientApiMock.platformClient.getProjectApi();
-
-      await service.ensurePlatformEngagement(validInput());
-
-      // addMember is called with (projectId, newProjectMember) as separate args
-      expect(projectApi.addMember).toHaveBeenCalledWith(
-        testEngagementProjectId,
-        expect.objectContaining({
-          principalId: testAdminPrincipalId,
-          role: 'admin',
-        }),
-      );
+      // Second create is project-tier project (Step D)
+      const projectTierCall = createCalls[1][0];
+      expect(projectTierCall.name).toBe('ZeroBias Platform'); // D-34 (locked; depth-2 NOT "Workspace")
+      expect(projectTierCall.description).toContain(`${testOrgName}'s gateway into ZeroBias`); // D-35
+      expect(projectTierCall.parentId).toBe(testEngagementProjectId); // D-01
+      expect(projectTierCall.tagId).toBe(SME_MART_TIER_PROJECT_TAG_ID_UAT); // D-50: tier-identity tag
     });
   });
 
@@ -351,15 +288,11 @@ describe('PlatformEngagementProvisioner', () => {
     beforeEach(() => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
       const projectApi = clientApiMock.platformClient.getProjectApi();
-      const boardApi = clientApiMock.platformClient.getBoardApi();
 
       tagApi.searchTags.mockResolvedValue({ items: [] });
       tagApi.createTag.mockResolvedValue({ id: testTagId });
       projectApi.list.mockResolvedValue({ items: [] });
       projectApi.create.mockResolvedValue({ id: testEngagementProjectId });
-      boardApi.list.mockResolvedValue({ items: [] });
-      boardApi.create.mockResolvedValue({ id: testBoardId });
-      projectApi.addMember.mockResolvedValue(undefined);
     });
 
     it('Tag name uses platform-canonical orgSlug when provided', async () => {
@@ -368,7 +301,6 @@ describe('PlatformEngagementProvisioner', () => {
         currentOrgId: testOrgId,
         currentOrgName: 'Brian Hierholzer Inc.',
         currentOrgSlug: 'brianhierholzer',
-        adminPrincipalId: testAdminPrincipalId,
       });
       const createBody = tagApi.createTag.mock.calls[0][0];
       expect(createBody.name).toBe('sme-mart.eng.zerobias-to-brianhierholzer');
@@ -380,7 +312,6 @@ describe('PlatformEngagementProvisioner', () => {
         currentOrgId: testOrgId,
         currentOrgName: 'Brian Hierholzer Inc.',
         currentOrgSlug: undefined,
-        adminPrincipalId: testAdminPrincipalId,
       });
       const createBody = tagApi.createTag.mock.calls[0][0];
       // slugify("Brian Hierholzer Inc.") -> "brian-hierholzer-inc"
@@ -393,7 +324,6 @@ describe('PlatformEngagementProvisioner', () => {
         currentOrgId: 'd6810036-fbc1-54c2-b01d-1496fc14ed32', // target customer
         currentOrgName: 'Brian Hierholzer Inc.',
         currentOrgSlug: 'brianhierholzer',
-        adminPrincipalId: testAdminPrincipalId,
       });
       const createBody = tagApi.createTag.mock.calls[0][0];
       expect(createBody.ownerId).toBe('cd7105df-523d-5392-9f9a-3f83d3f30107'); // W3Geekery

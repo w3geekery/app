@@ -226,22 +226,22 @@ export class OrgProvisioningTabComponent implements OnInit {
 
     try {
       await this.switchOrgContext(row.id);
-      // Re-resolve at click time in case state changed since dry run.
-      const resolved = await this.resolveInputsInTargetContext(row);
+      // Re-resolve at click time to validate target-context state (throws on
+      // missing admin / unresolvable inputs; surfaces snackbar errors). v3 recipe
+      // no longer consumes the resolved admin party — auto-Lead + D-48 cascade
+      // covers admin membership — but the validation remains useful.
+      await this.resolveInputsInTargetContext(row);
 
       // Switch BACK to original (W3Geekery) context before running the recipe.
-      // Steps C and E call Pipeline.receive against the W3Geekery-owned SME
-      // Marketplace DEV pipeline; that pipeline is not visible from any other
-      // org's scope and the call 404s with "No such Pipeline" if we're still
-      // in target context. The recipe stamps the target org's IDs into the
-      // payload (buyerZerobiasOrgId, etc.) — those are data, not request scope.
+      // v3 recipe issues platform.Project.create against the operator-org scope;
+      // the recipe stamps the target org's IDs into the payload (ownerId, etc.)
+      // — those are data, not request scope.
       await this.switchOrgContext(originalOrgId);
 
       const result = await this.provisioner.ensurePlatformEngagement({
         currentOrgId: row.id,
         currentOrgName: row.name,
         currentOrgSlug: row.slug,
-        adminPrincipalId: resolved.adminUserPrincipalId,
       });
 
       this.snackBar.open(
