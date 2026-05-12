@@ -10,6 +10,513 @@
 
 ---
 
+## 📍 LATEST: 2026-05-12 LATE parkit (7) — Phase 29.5 FULLY CLOSED + cross-fork PR ready to open
+
+**TL;DR:** Wave 4 returned with Plan 06 SDK PASS (5/5 assertions) + Plan 07 PREMISE-MISMATCH routed to Director. Director ran the meta:director checkpoint protocol — filed 4 errata (030/031/032/033, one commit each), D-48 mechanism addendum in DECISIONS.md, 2 new BACKLOG entries (D-49-NAMESPACE-MIGRATE-1 + VETTING-PLATFORM-MIGRATE-1). Wave 5 Tell block dispatched. Plan 08 returned clean — gates 0/0/0/50/50, single commit `41c501c`, ROADMAP marks Phase 29.5 COMPLETE 8/8, 3 organic backlog entries filed. Phase 29.5 closed. Branch sits at 42 ahead of origin pre-EOD-parkit, will be 43 after this parkit commit. Cross-fork PR (`w3geekery/app:poc/sme-mart` → `zerobias-org/app:uat`) is now ready to open — Clark's action.
+
+### Phase 29.5 final status
+
+| Wave | Status | Anchor commit |
+|---|---|---|
+| 1 | ✅ closed 2026-05-11 | `2d9af79` (INVENTORY) |
+| 2 | ✅ closed 2026-05-12 EVE | `488c578` (close summary) + `523e924` (v3 amendment) |
+| 3 | ✅ merged upstream | `e0300af` (schema deprecation PR) + w3geekery-smemart@2.0.2 published |
+| 4 | ✅ closed 2026-05-12 LATE | `7abe246` (Wave 4 close) + 5 Director commits (4 errata + Wave-4-close-batch) |
+| 5 | ✅ closed 2026-05-12 LATE | `41c501c` (Wave 5 close — CLOSURE.md + ROADMAP + 3 organic backlog) |
+
+Phase 29.5 = 8/8 plans, all SUMMARY artifacts, all gates green at HEAD `e39b236` (pre-Plan-08), confirmed clean at Plan 08 commit `41c501c`.
+
+### Wave 4 + Wave 5 outcomes (commits since `2844519`)
+
+```
+41c501c docs(29.5-08): Wave 5 close — Phase 29.5 complete (CLOSURE.md + ROADMAP + backlog)
+e39b236 docs(director,29.5): Wave 4 close batch — D-48 mechanism addendum + 2 BACKLOG entries
+26082db docs(director,29.5): errata 033 — D-48 cascade is eager-materialize, not lazy
+a092ff9 docs(director,29.5): errata 032 — platform.Project.get omits parentId for top-level
+4c8da91 docs(director,29.5): errata 031 — vetting platform.Board not implemented
+731358a docs(director,29.5): errata 030 — D-49 namespace drift code-vs-uat-artifact
+7abe246 docs(29.5): Wave 4 close — Plan 06 SDK PASS + Plan 07 premise-mismatch handoff
+488c578 docs(29.5): Wave 2 close summary — Plans 02/03/04 outcomes + DEVIATION-29.5-02-V3
+523e924 feat(29.5-02): v3 amendment — drop F+G, add tier tag, flip Workspace→Project tier (D-50)
+```
+
+### Errata filed this session
+
+| # | Severity | Status | Carry-forward |
+|---|---|---|---|
+| 030 — D-49 namespace drift | Medium | deferred | BACKLOG `D-49-NAMESPACE-MIGRATE-1` (Phase 31 hard prereq) |
+| 031 — vetting platform.Board not implemented | Medium | deferred | BACKLOG `VETTING-PLATFORM-MIGRATE-1` (v1.5+) |
+| 032 — platform.Project.get omits parentId | Low | placeholder | Touch-It-Fix-It on next provisioner.spec edit |
+| 033 — D-48 cascade is eager-materialize | Low | fixed | DECISIONS.md D-48 Mechanism Addendum; open follow-up on later-add-Lead path |
+
+### Carry-forward open items (post-29.5 closure)
+
+| Item | Type | Trigger |
+|---|---|---|
+| D-49-NAMESPACE-MIGRATE-1 | BACKLOG (Medium) | Hard prereq for Phase 31 |
+| VETTING-PLATFORM-MIGRATE-1 | BACKLOG (Medium) | v1.5+ (vetting modernization prioritized) |
+| Errata 033 open question | Director memory | "Does eager-cascade fire on later add-Lead-to-parent?" — verify at member-mgmt UI work |
+| Phase 30 brief rewrite | Director task | D-46/D-49/D-50 invalidated prior tier-tag assumptions at brief commit `b7f9b80` |
+| Plan 06 UI cross-check | Clark action | 3 staged steps in `29.5-06-SUMMARY.md`; `npm run dev` + browser; independent of 29.5 closure |
+| Catalin alignment handoff | Clark action | Drafted at `.planning/director/catalin-alignment-handoff-2026-05-12.md`; share when convenient |
+| Schema fork main push | Clark call | 111 commits ahead on schema fork main (upstream mirror); low priority |
+
+### Cross-fork PR readiness (Clark's action)
+
+- Source: `w3geekery/app:poc/sme-mart` (this branch, 43 ahead after parkit-7 commit)
+- Target: `zerobias-org/app:uat`
+- Scope: ALL Phase 29.5 commits (Waves 1-5) + earlier in-flight 29.5 work + parkit/EOD commits
+- PR title (draft): `feat(29.5): Platform Model Migration — Engagement-as-Project hierarchy + provisioning recipe + dual-read services`
+- PR body anchors: locked decision triad D-46/D-49/D-50; provisioning recipe 7→5 steps; 4 errata as known follow-ups; Plan 07 PREMISE-OBSOLETE deferred; Plan 06 SDK 5/5 PASS on UAT.
+- Director MUST NOT push or open the PR — Clark opens it (existing project discipline).
+
+### Push-back items for Nic (final state at 29.5 close)
+
+| # | Item | Severity | Status |
+|---|---|---|---|
+| ~~1~~ | ~~`/app/projects` + `/app/boards` UAT deploy~~ | ~~HIGH~~ | RETIRED 2026-05-12 — deployed |
+| ~~2~~ | ~~Boundary subset chain~~ | ~~HIGH~~ | RETIRED 2026-05-12 — Nic owns (D-47) |
+| 3 | Phase 32+ work package bundle | MEDIUM | Active. Transparency primitive + twin_of Task link + per-engagement HierarchyTemplate + scoped ActivityLog + CE10 lateral relations + CE1 linked-engagement. Not v1.4 blocking. |
+
+### Profile + branch posture at parkit-7
+
+- UAT lock: released by Wave 4 + Wave 5 executors at close.
+- Branch: `poc/sme-mart` at 42 ahead pre-parkit-7; becomes 43 after this commit. NO PUSH from Director. Clark opens cross-fork PR.
+- Schema fork: 111 ahead on main (upstream mirror); Clark's call when convenient.
+
+### Next-action sequence (on /parks load if Clark `/clear`s)
+
+1. Verify branch posture: `git log --oneline -10` (expect parkit-7 commit at top; Phase 29.5 commits below; tree clean).
+2. Clark opens cross-fork PR (`gh pr create` against zerobias-org/app:uat). Director provides PR body draft on request — do NOT push or open.
+3. Phase 30 brief rewrite is the next Director-side deliverable. Brief at `b7f9b80` needs substantial rewrite per D-46/D-49/D-50 invalidation. ROADMAP already flagged this with a `⚠ Brief revision needed post-29.5 closure` banner.
+4. Plan 06 UI cross-check stays available for Clark whenever he wants to run `npm run dev` + browse.
+5. Catalin alignment handoff stays ready to share whenever convenient.
+
+### Quick-start prompt (Director Parks reads this first on resume)
+
+You're Director Parks for SME Mart. **Phase 29.5 (Platform Model Migration) is fully closed** as of 2026-05-12 LATE. Both verification waves (4 + 5) returned green. All artifacts captured: 4 errata, 3 D-decisions ratified during the phase (D-46/D-49/D-50), CLOSURE.md, ROADMAP marked COMPLETE 8/8, BACKLOG carries 2 Director-filed entries (D-49-NAMESPACE-MIGRATE-1, VETTING-PLATFORM-MIGRATE-1) + 3 Plan-08-organic entries (PROVIDER-MY-ENGAGEMENTS-1, PROJECT-SVC-RENAME-1, SCHEMA-RETIREMENT-DELETE-1).
+
+**Branch posture:** `poc/sme-mart` 43 ahead of origin/poc/sme-mart. DO NOT PUSH. Clark opens the cross-fork PR (`w3geekery/app:poc/sme-mart` → `zerobias-org/app:uat`) bundling ALL Phase 29.5 commits.
+
+**Next Director-side deliverable:** Phase 30 brief rewrite. Brief at commit `b7f9b80` predates D-46/D-49/D-50 ratification and references tier-tag schema assumptions that those decisions invalidated. ROADMAP already carries a `⚠ Brief revision needed post-29.5 closure` banner. Do this BEFORE `/gsd-discuss-phase 30`.
+
+**Reading order on resume:** this parkit-7 section → `.planning/phases/29.5-platform-model-migration/29.5-CLOSURE.md` → ROADMAP Phase 30 banner → `phase-30-brief.md` (b7f9b80). DECISIONS.md D-46/D-49/D-50 trio carries the locked rules the new brief must respect.
+
+---
+
+## 📍 parkit (6): 2026-05-12 EVE — Wave 2 closed + Plan 02 v3 amendment shipped + UAT walkthrough validated + Wave 4 dispatched
+
+**TL;DR:** Long session. Three new D-decisions landed (D-46/47/48 from backend team, D-49/50 from this session's empirical work). Plan 02 v3 amendment shipped (`523e924`) post-Wave-2-close to correct the depth-2-is-Project-tier framing + drop redundant F/G steps + attach tier tag. UAT walkthrough validated the v3 recipe end-to-end with real artifacts kept as Wave 4 dogfood data. Wave 2 close summary committed (`488c578`). Wave 4 Tell block dispatched — Plans 06 + 07 (UAT smoke) awaiting executor return. Catalin alignment handoff drafted + ready to share. Heavy memory + DECISIONS rewrites to lock the depth-2-is-Project rule that Director got wrong TWICE today.
+
+### Phase 29.5 status (corrected after end-of-session)
+
+| Wave | Status | Notes |
+|---|---|---|
+| 1 | ✅ CLOSED 2026-05-11 | INVENTORY.md (commit `2d9af79`) |
+| 2 | ✅ CLOSED 2026-05-12 EVE | Plans 02/03/04 originally closed 2026-05-11; Plan 02 v3 amendment `523e924` rewrote post-close per D-46/D-50; Wave 2 close summary `488c578` |
+| 3 | ✅ MERGED upstream | Schema deprecation PR `e0300af` on `zerobias-org/schema:main`; w3geekery-smemart@2.0.2 published |
+| 4 | 🟡 DISPATCHED (this turn) | Tell block sent to gsd-execute; Plans 06 + 07 (UAT smoke). Awaiting executor return + Wave 4 close summary |
+| 5 | not started | Plan 08 closure — depends on Wave 4 close |
+
+### Wave 2 close outcomes (commits since `2844519`)
+
+```
+523e924 feat(29.5-02): v3 amendment — drop F+G, add tier tag, flip Workspace→Project tier (D-50)
+488c578 docs(29.5): Wave 2 close summary — Plans 02/03/04 outcomes + DEVIATION-29.5-02-V3
+```
+
+`523e924` touched 3 files (provisioner.service.ts + spec + org-provisioning-tab caller), net −129 lines. 14/14 specs pass (was 16/16; F+G tests removed since recipe is now 3 calls per provisioning: A identity tag + C engagement + D project tier). Gates all green: tsc spec-config clean, lint clean (warnings-as-errors), targeted tests pass.
+
+### UAT walkthrough validated artifacts (KEEP as Wave 4 dogfood)
+
+```
+Engagement Project (depth 1, FIXED tier):
+  ID:          4617e9d7-b7b4-4679-be43-10fc4140295c
+  name:        "W3Geekery <- ZeroBias"
+  description: "Platform Services Engagement: ZeroBias ➡️ W3Geekery"
+  parentId:    null
+  ownerId:     cd7105df-... (W3Geekery, session-derived)
+  tagId:       b39bf3eb-... (sme-mart.engagement.zerobias-to-w3geekery — IDENTITY tag)
+
+  └── Project tier Project (depth 2, FIXED tier — "Project" NOT "Workspace"):
+        ID:          e62b2446-b99f-4160-b7cc-aac9734964eb
+        name:        "ZeroBias Platform"                                  ← D-34 locked, applies to Project tier
+        description: "W3Geekery's gateway into ZeroBias — ..."           ← D-35 locked
+        parentId:    4617e9d7-... (chained to Engagement)
+        tagId:       420b0753-... (sme-mart.tier.project — TIER identity)
+```
+
+UAT bootstrap tier tags (one-time, marketplace-singletons):
+| Tag | UAT UUID | Status |
+|---|---|---|
+| `sme-mart.tier.project` | `420b0753-e72c-4b81-8929-70508a119bf0` | REQUIRED by v1.4 provisioner |
+| `sme-mart.tier.workspace` | `2d7e6b6d-62e1-4691-958c-41cd1b8de043` | Reserved for future Hierarchy Editor extension |
+
+W3Geekery org also has LEGACY artifacts (coexist via dual-read):
+- Legacy tag `a81cd320-243e-44eb-bdd9-9824019ef3dd` (`sme-mart.eng.w3geekery-default-zb`)
+- Legacy Engagement `746010b7-dc99-436b-9142-8c4b85c5e623`
+- Legacy SmeMartProject `ea4db55f-2c57-4567-a1be-6e7fd1a210bf`
+
+### New D-decisions filed this session
+
+- **D-46** (corrected) — Hierarchy NAMING via tags; structural hierarchy STILL uses nested platform.Project. Two orthogonal mechanisms. Reading B+B1 confirmed by Clark after Director floated Reading A (rejected) and B2 (rejected).
+- **D-47** — Boundary subset chain bug owned by Nic. SME Mart drops app-level workaround concern. Push-back item #2 retired.
+- **D-48** — Project Lead inherits down parentId chain. UX implication tracked for future member-management UI.
+- **D-49** — Engagement tag namespace = `sme-mart.engagement.*` (full word, supersedes `sme-mart.eng.*` for NEW tags; legacy stays UUID-stable per D-43 anti-pattern (d)).
+- **D-50** — CANONICAL TIER MAPPING. Depth 1 = Engagement (FIXED, identity tag signals tier). Depth 2 = **Project** tier (FIXED, NOT Workspace; locked name "ZeroBias Platform" via D-34 applies HERE; tier tag = `sme-mart.tier.project`). Depth 3+ = renameable middle tiers NOT v1.4-instantiated. Filed because Director made the depth-2-is-Workspace mistake TWICE today.
+
+### Push-back items for Nic (NARROWED to 2)
+
+| # | Item | Severity | Status |
+|---|---|---|---|
+| ~~1~~ | ~~Deploy `/app/projects` + `/app/boards` to UAT~~ | ~~HIGH~~ | **✅ RETIRED 2026-05-12** — deployed today ~8 AM PT. Verified via MCP probes (both endpoints respond 200; Board.list returns System Org default board) |
+| ~~2~~ | ~~Boundary subset chain~~ | ~~HIGH~~ | **✅ RETIRED 2026-05-12** — Nic owns the fix (D-47). Re-test on CI/UAT after he ships |
+| 3 | Phase 32+ work package bundle | MEDIUM | Active. Transparency primitive + twin_of Task link + per-engagement HierarchyTemplate + scoped ActivityLog + CE10 lateral relations + CE1 linked-engagement. Not v1.4 blocking. |
+
+### Wave 4 invocation state
+
+Tell block was dispatched at end of this session — Plans 06 + 07 in parallel:
+- **Plan 06** — SDK round-trip on the UAT walkthrough artifacts + SME Mart engagement-list/detail UI dual-read cross-check
+- **Plan 07** — vetting Board lazy-create + paired-task (γ) shape + SME Mart Vetting view UI cross-check
+
+No fresh provisioner exercise in Wave 4 (deferred to Phase 31 per Path B chosen by Clark). Verification-only wave.
+
+Awaiting executor return with Wave 4 close summary.
+
+### Catalin alignment handoff (status: drafted, ready to share)
+
+`.planning/director/catalin-alignment-handoff-2026-05-12.md` is self-contained (no Clark-local paths Catalin can't reach). Clark will hand to Catalin alongside `.claude/handoffs/transparency-center-entangled-tasks-2026-04-21.html` (specifically the `data-tab="hier-editor"` tab).
+
+Originating context: Brian's 1:1 with Catalin 2026-05-12 (`.planning/notes/meetings/2026-05-12-catalin-1-1.md`). Brian asked Catalin to align with Clark/Nick/Kevin/Chris/Dan within 30 days on the multi-org / dual-engagement / catalog-publish model. Brian had already given Clark the same model on 2026-05-05 (different vocabulary — "ZeroBias.Org" vs "ZeroBias Guild").
+
+### Memory + artifact rewrites this session
+
+Director made the depth-2-is-Workspace mistake twice today (in parkit-5 RESUME edit; in UAT walkthrough Step D proposal). Heavy rewrites to lock the canonical rule + add Failure-Mode Anchors:
+
+| File | Change |
+|---|---|
+| `memory/project_sme_mart_hierarchy_model.md` | **Fully rewritten.** Top-of-file STOP banner. Tier table with 7 tiers + explicit depths + tier tags. Plan 02 v3 recipe table. Failure-Mode Anchors at end. |
+| `DECISIONS.md` D-46 | Settled-answers section rewritten with corrected reading. Anti-pattern rules added. |
+| `DECISIONS.md` D-49 + D-50 | Filed this session. |
+| `DIRECTOR-PARKS-RESUME.md` parkit-4 + CANONICAL section | Correction banners added pointing forward to parkit-5/6. |
+| `phase-29.5-brief.md` | Correction banner at top makes depth-2-is-Project rule explicit before reading the body. |
+| `catalin-alignment-handoff-2026-05-12.md` | Recipe table + tier-tag section corrected. |
+| `nic-empirical-probe-follow-up-2026-05-11.md` | One row corrected (CI summary row mislabeled "workspace child"). |
+| `BACKLOG.md` | Added `ENGAGEMENT-BOUNDARY-SCOPE-REVISIT-1`. |
+
+### Uncommitted Director artifacts at parkit time
+
+Working tree is dirty with Director-side work that hasn't been atomically committed yet (these would normally batch into a "docs(director,29.5): EOD parkit 2026-05-12" commit):
+
+- `.planning/director/DIRECTOR-PARKS-RESUME.md` — parkit-6 (this section) + multiple parkit-5 edits
+- `.planning/director/DECISIONS.md` — D-46 rewrite + D-49 + D-50
+- `.planning/director/catalin-alignment-handoff-2026-05-12.md` — Catalin handoff doc
+- `.planning/director/phase-29.5-brief.md` — correction banner
+- `.planning/notes/meetings/2026-05-12-catalin-1-1.md` — meeting summary
+- `.planning/notes/meetings/processed/2026-05-12-catalin-1-1-transcript.{docx,txt}` — Teams transcript
+- `.planning/notes/plans/nic-empirical-probe-follow-up-2026-05-11.md` — one-row correction
+- `.planning/BACKLOG.md` — `ENGAGEMENT-BOUNDARY-SCOPE-REVISIT-1`
+- `~/.claude/timetracker/meetings/2026-05-12-catalin-1-1.md` — mirror of meeting summary
+- `~/.claude/projects/.../memory/project_sme_mart_hierarchy_model.md` — full rewrite
+
+These Director-side edits are NOT yet committed. Recommend a single Director EOD commit batching them; or split as Clark prefers.
+
+### Branch posture across all repos
+
+| Repo / Branch | State |
+|---|---|
+| App repo `~/.../app/package/.../sme-mart` on `poc/sme-mart` | 35 ahead of origin/poc/sme-mart (will grow with the EOD Director commit). DO NOT PUSH — accumulating for cross-fork PR to `zerobias-org/app:uat` at 29.5 phase closure. |
+| Schema fork `~/Projects/w3geekery/zb-forks/org/schema` on `main` | 111 commits ahead of origin/main after upstream sync earlier today. Daniel landed `0797686` "refresh gate-stamps with proper sourceHash" — generalizes the stamp source-hash for schemas. Push pending Clark's call. |
+| Schema upstream `~/Projects/zb/zerobias-org/schema` on `feat/sme-mart-schema-deprecation-29-5` | 3 staged files leftover from the merged PR (`Engagement.yml`, `EngagementVettingItem.yml`, `SmeMartProject.yml`). Stale — same content lives in origin/main now. Safe to discard via `git restore --staged + git restore`, then `git checkout main && git pull`. NOT touched this session. |
+
+### Profile lock state
+
+UAT lock released 2026-05-12 EVE. Wave 4 executor will reacquire under "gsd-execute" session.
+
+### Next-action sequence (on /parks load)
+
+1. **Verify clean disk state:** `git status -sb` (expect: ~5 Director-side files modified on `poc/sme-mart`, working tree otherwise stable). `git log --oneline -6` (expect: `488c578` Wave 2 close at top of poc/sme-mart history).
+2. **Decide on EOD Director commit:** the 10 uncommitted Director artifacts (RESUME, DECISIONS, catalin handoff, meeting summary, etc.) should batch into a single `docs(director,29.5): EOD parkit 2026-05-12 ...` commit, or be split per Clark's discipline. Probably ONE commit since they all relate to the same session's work.
+3. **Watch for Wave 4 executor return** with Plan 06 + Plan 07 outcome docs + Wave 4 close summary. When it arrives, Director reviews against the Tell block's `Wave 4 close checkpoint` criteria.
+4. **On Wave 4 close:** dispatch Wave 5 Tell block (Plan 08 closure) OR address any platform/SME-Mart-side findings first.
+5. **On Wave 5 close (Plan 08):** Phase 29.5 fully closed. Then Clark opens cross-fork PR `w3geekery/app:poc/sme-mart` → `zerobias-org/app:uat` bundling ALL 29.5 commits (will be 40+ by then).
+6. **Catalin handoff:** can be shared with Catalin at any point — independent of Wave 4/5 execution.
+7. **Schema fork main push:** Clark's call when convenient — 111 commits behind on fork main (mirroring upstream). Low priority; doesn't affect anything in-flight.
+8. **Phase 30 brief rewrite:** post-29.5 closure. Brief at commit `b7f9b80` needs substantial rewrite because D-46/D-50 invalidated the prior tier-tag schema assumptions.
+
+### Quick-start prompt (Director Parks reads this first on resume)
+
+You're Director Parks for SME Mart. Phase 29.5 Wave 4 was dispatched at end of 2026-05-12 — Plans 06 + 07 (UAT smoke, verification-only) are running under gsd-execute. You're awaiting Wave 4 close summary (Plan 06 + 07 outcome docs).
+
+**Current state:** Wave 2 fully closed including a Plan 02 v3 amendment (`523e924`) that landed post-close to correct the depth-2-is-Project framing per D-50. UAT walkthrough today validated the v3 recipe end-to-end with real artifacts kept on UAT as Wave 4 dogfood (Engagement Project `4617e9d7-...` + Project tier Project `e62b2446-...` for W3Geekery). UAT deploy of `/app/projects` + `/app/boards` landed today, unblocking Wave 4 (push-back item #1 retired).
+
+**Three new locked decisions to internalize before any code work:** D-46 (hierarchy = nesting + tier tags), D-49 (`sme-mart.engagement.*` full-word namespace), D-50 (CANONICAL tier mapping — depth 2 is "Project" NOT "Workspace"; this rule is the failure mode Director got wrong TWICE on 2026-05-12; D-50 has Failure-Mode Anchors).
+
+**Director-side EOD commit pending** — 10 artifacts including this parkit need to land in a single (or split) `docs(director,29.5): EOD parkit 2026-05-12 ...` commit on `poc/sme-mart`. Branch is 35 ahead of origin; will grow. DO NOT PUSH — accumulating for 29.5 phase-closure cross-fork PR.
+
+**Next action when Wave 4 close arrives:** review Plan 06 + 07 outcome docs against the Tell block's checkpoint criteria; greenlight Wave 5 (Plan 08 closure) OR route any platform-side findings to push-back tracker first.
+
+**Catalin handoff** at `.planning/director/catalin-alignment-handoff-2026-05-12.md` is ready to share whenever Clark wants — independent of Wave 4/5.
+
+---
+
+## 📍 parkit (5): 2026-05-12 mid-session — backend hierarchy direction (clarified to B+B1) + boundary bug + Project Lead inheritance
+
+**TL;DR:** Three new D-decisions from backend team. Initial D-46 framing was over-aggressive (Director floated "tags-only, no nesting"); Clark corrected: **B+B1 — use nesting for STRUCTURE, tags for tier NAMING**. Both mechanisms operate together. Plan 02's existing 2-Project recipe is structurally correct; only needs a tier-tag addition. Push-back item #2 retired (Nic owns the fix).
+
+### D-46 final (corrected reading)
+
+**Two orthogonal concerns, two mechanisms:**
+
+| Concern | Mechanism |
+|---|---|
+| Structural containment (boundary cascade per D-47; Project Lead inheritance per D-48; task scope) | `parentId` chain between `platform.Project` rows |
+| Tier identity / display name ("this Project is a Workspace") | Tag on the Project (`tier.*` namespace, schema TBD) |
+
+**Rejected readings (don't relitigate):**
+- Reading A (flat Projects only, all tier identity via tags) — REJECTED by Clark.
+- Reading B2 (Aperture/Thread collapsed to Task-tag grouping on one Workspace board) — REJECTED by Clark.
+
+**Confirmed reading B1:** Engagement (depth 1) -> Project (depth 2) -> Workspace (depth 3, customer-extension only) -> Aperture (depth 4) -> Thread (depth 5) are nested `platform.Project` rows. The two FIXED top tiers (Engagement + Project) are what v1.4 instantiates; Workspace/Aperture/Thread are RENAMEABLE MIDDLE tiers customers add via Hierarchy Editor. Each row carries a tier-identity tag so the UI knows what to call it. Customer renaming a tier = changing the tag's display label; structural depth untouched.
+
+### D-47 — boundary subset chain bug, Nic owns
+
+Push-back item #2 RETIRED. Multi-boundary on a Project is `resourceLink` (`projectmemberofboundary`); the platform should reject child-Project boundary out-of-subset and Nic will fix. SME Mart drops app-level workaround concern.
+
+### D-48 — Project Lead inherits down parentId chain
+
+In v1.4's 2-Project shape (Engagement -> Project tier), engagement-Lead automatically has Lead permissions on the Project tier. UX implication tracked for whenever SME Mart builds member-management UI.
+
+### What changes in v1.4 right now
+
+- **Plan 02 amendment v3 (CORRECTED 2026-05-12 PM — supersedes both parkit-4 retraction and earlier v2):**
+  - The canonical sketch's depth-2 tier is "**Project**" (FIXED), not "Workspace." Earlier Director framing of "Workspace child Project at depth 2" was WRONG twice today; corrected here.
+  - A unchanged (identity tag)
+  - C unchanged — Engagement Project (depth 1, parentId=null, tagId=engagement-identity-tag)
+  - D unchanged shape, CORRECTED naming — depth-2 **Project tier** Project (parentId=engagement.id, name="ZeroBias Platform" per D-34, tagId=`sme-mart.tier.project`)
+  - F unchanged (Board.update to rename auto-board per D-06, if still applicable)
+  - G DELETED (auto-add covers creator; D-48 cascade covers parent-Lead inheritance)
+  - Net: 5 calls. Same call count as v2 but `tagId` value on Step D is now `sme-mart.tier.project`, not `sme-mart.tier.workspace`.
+  - `sme-mart.tier.workspace` (UAT `2d7e6b6d-...`) was bootstrapped today and is KEPT for FUTURE Hierarchy Editor use (when customer extends to depth-3 Workspace tier). NOT used by v1.4 provisioner.
+  - `sme-mart.tier.project` STILL NEEDS BOOTSTRAP on UAT (pending — was confused with workspace).
+- **Wave 2 amendments unaffected** — Plans 03 Task 0 pre-flight, Plan 01 deviation log entry, Plan 04 Task 0 outcome reporting all stand. Wave 2 can be invoked in gsd-execute independently.
+- **Wave 3 unaffected** — schema deprecation PR targets GQL class retirement, doesn't depend on Project-row count.
+
+### Updated push-back items for Nic
+
+| # | Item | Severity | Status |
+|---|---|---|---|
+| 1 | Deploy `/app/projects` + `/app/boards` to UAT | HIGH | Active. Blocks Plan 06/07 + Phase 31. |
+| ~~2~~ | ~~Boundary subset chain~~ | ~~HIGH~~ | **RETIRED 2026-05-12** — Nic owns (D-47). Re-test on CI after deploy. |
+| 3 | Phase 32+ work package bundle | MEDIUM | Active. Not v1.4 blocking. |
+
+### Remaining open questions (narrowed to 1)
+
+1. **Hierarchy Editor template persistence shape** — likely per-engagement hydra tag with serialized template. NOT v1.4 scope; documented for the design-track but doesn't block any current plan.
+
+Tier-tag schema LOCKED 2026-05-12: `sme-mart.tier.{label}` namespace. Engagement does NOT get a separate tier tag (identity tag itself signals tier via `sme-mart.engagement.*` namespace prefix). `sme-mart.tier.project` for depth-2 Project tier (REQUIRED by v1.4 provisioner). `sme-mart.tier.workspace`/`aperture`/`thread` for renameable middle tiers (depths 3-5; bootstrap on demand).
+
+### Files modified this parkit
+
+- `.planning/director/DECISIONS.md` — D-46 (corrected), D-47, D-48
+- `~/.claude/projects/.../memory/project_sme_mart_hierarchy_model.md` — corrected to B+B1: nested Projects + tier tag; Plan 02 v2 amendment shape
+- `.planning/director/DIRECTOR-PARKS-RESUME.md` — this section
+
+### Next-action sequence
+
+1. ✅ DONE — bootstrap + walkthrough complete on UAT 2026-05-12 PM.
+2. ✅ DONE — D-49 (engagement namespace) + D-50 (tier-tag schema + depth-2 anchor) filed.
+3. ✅ DONE — BACKLOG entry `ENGAGEMENT-BOUNDARY-SCOPE-REVISIT-1` filed.
+4. Wave 2 (Plans 02 v3 / 03 / 04) can be invoked in gsd-execute anytime — when Wave 2's Plan 02 runs, the new code should reflect D-49 namespace + D-50 tier-tag pattern + the validated UAT UUIDs as env-specific constants.
+5. Provisioner.service.ts rewrite (Plan 02 v3) uses the validated UAT recipe captured below.
+
+### Walkthrough validated artifacts on UAT (2026-05-12, KEEP as Wave 2 dogfood data)
+
+```
+Engagement Project (depth 1, FIXED tier):
+  ID:          4617e9d7-b7b4-4679-be43-10fc4140295c
+  name:        "W3Geekery <- ZeroBias"
+  description: "Platform Services Engagement: ZeroBias ➡️ W3Geekery"
+  parentId:    null
+  ownerId:     cd7105df-... (W3Geekery, session-derived)
+  tagId:       b39bf3eb-... (sme-mart.engagement.zerobias-to-w3geekery, IDENTITY)
+  auto:        1 board ("W3Geekery <- ZeroBias Board"), 1 member (Clark as Project Lead)
+
+  └── Project tier Project (depth 2, FIXED tier — "Project" per canonical sketch):
+        ID:          e62b2446-b99f-4160-b7cc-aac9734964eb
+        name:        "ZeroBias Platform"
+        description: "W3Geekery's gateway into ZeroBias — tasks, notes, and communication tied to the ZeroBias ➡️ W3Geekery platform engagement live here."
+        parentId:    4617e9d7-... (Engagement, chained)
+        ownerId:     cd7105df-... (session-derived)
+        tagId:       420b0753-... (sme-mart.tier.project, TIER identity)
+        auto:        1 board ("ZeroBias Platform Board"), 1 member (Clark as Project Lead; D-48 also makes him inherited Lead via Engagement parent)
+```
+
+### Bootstrapped UAT marketplace-singleton tier tags
+
+| Tag | UUID | Status |
+|---|---|---|
+| `sme-mart.tier.project` | `420b0753-e72c-4b81-8929-70508a119bf0` | REQUIRED by v1.4 provisioner (depth 2) |
+| `sme-mart.tier.workspace` | `2d7e6b6d-62e1-4691-958c-41cd1b8de043` | Reserved for future Hierarchy Editor extension (depth 3); NOT used by v1.4 |
+
+All tier tags: ownerId=`cd7105df-523d-5392-9f9a-3f83d3f30107` (W3Geekery), type=`marketplace`, scope=`org`.
+
+### Plan 02 v3 final recipe (4 calls per provisioning + one-time tier-tag bootstrap)
+
+```
+(Bootstrap once per env, not per provisioning)
+hydra.Tag.createTag × N — sme-mart.tier.project (REQUIRED); sme-mart.tier.workspace/aperture/thread (on demand)
+
+(Per provisioning)
+A: hydra.Tag.createTag        — identity tag sme-mart.engagement.{supply}-to-{demand}
+C: platform.Project.create    — Engagement Project (parentId=null, tagId=A.id, status=active/visibility=internal/membershipPolicy=private)
+                                AUTO-CREATES default Board + auto-Lead. NO boundaryId for v1.4 (org-level).
+D: platform.Project.create    — Project tier Project (parentId=C.id, name="ZeroBias Platform", tagId=sme-mart.tier.project)
+                                AUTO-CREATES default Board ("ZeroBias Platform Board" — accepted, no rename) + auto-Lead.
+~F~ skipped — accept auto-board name
+~G~ deleted — auto-Lead + D-48 cascade covers admin membership
+```
+
+Locked verbiage per D-32..D-35; tier-tag schema per D-50; namespace per D-49.
+
+### Wave 2 unblock state
+
+Wave 2 amendments (Plan 03 Task 0 pre-flight, Plan 01 deviation log entry, Plan 04 Task 0 outcome reporting) all stand. Wave 2 can be invoked in gsd-execute now. Plan 02's v3 rewrite consumes the recipe above; Plan 03's dual-read service refactor will make the UAT artifacts visible in SME Mart UI alongside the legacy artifacts.
+
+---
+
+## 📍 PARKIT (4): 2026-05-11 PM — CI empirical probe + ~~Plan 02 simplification~~ (RETRACTED per D-46) + Nic gap doc
+
+> **⚠️ HISTORICAL — labels in this section are wrong.** The "child Project (Workspace tier)" references below were Director's misread of the canonical sketch (which places "Project" at depth 2 fixed and "Workspace" at depth 3 renameable). Corrected understanding lives in parkit (5) above. Read parkit (5) first; treat the CI tree labels below as "engagement Project (depth 1)" + "child Project (depth 2 = Project tier)" mapped to what was empirically tested.
+
+**TL;DR:** Probed Nic's released `platform.Project.*` + `platform.Board.*` endpoints on CI (UI Development org, Test Boundary1). Verified the new platform model works; identified ONE platform-level push-back (boundary subset chain not enforced) and ONE deploy issue (UAT 404). Wrote `nic-empirical-probe-follow-up-2026-05-11.md` capturing the gap map. **Plan 02 corrective work simplified significantly** — Step G is now FULLY redundant (not just creator-redundant), Step F becomes Board.update-not-create, and a middle Project tier needs inserting. Memory + RESUME updated with canonical sources for the hierarchy model.
+
+### CI test data on `ci-ui-dev` profile (uses `ci.zerobias.com`, UI Development org `a721530c-...`)
+
+**SHOW THIS ON LOAD — Clark wants this for standup tomorrow (no UI to demo):**
+
+```
+Engagement Project (85e75721-048a-4489-bdac-3899e34be4a6)
+  name: "Test Project 29.5 (Director Parks probe)"
+  ownerId: UI Development (a721530c-...)
+  parentId: null  (top tier)
+  status: active, visibility: internal, membershipPolicy: private
+  │
+  ├── projectmemberofboundary → Test Boundary1 (8da98909-...)  [auto from boundaryId on create]
+  ├── projectmemberofboundary → TAC Test (9ccd3700-...)        [manually added via linkResources at 00:20:57]
+  │       └── proves: multi-boundary on Project IS supported via repeatable hydra links
+  │
+  ├── auto-Board (2c7f8d7a-289f-4d47-91e8-4cb3187176b1)
+  │   name: "ZeroBias Platform"  [originally "Test Project 29.5 (...) Board"; renamed via Board.update]
+  │   boardType: kanban, isDefault: true
+  │       └── proves: Board.update can rename auto-created boards cleanly
+  │
+  └── child Project (4d882085-198a-4bda-b966-95f0051f795c)  [Workspace tier]
+        name: "ZeroBias Platform"
+        parentId: 85e75721-... (engagement)
+        │
+        ├── projectmemberofboundary → Test Boundary1 (8da98909-...)  [auto from boundaryId on create]
+        ├── projectmemberofboundary → Platform (751f2381-...)         [manually added 00:28:16]
+        │       └── proves: tighten-never-loosen IS NOT ENFORCED.
+        │           Platform boundary is NOT in the parent engagement's set, but the
+        │           link was accepted. App-level discipline required, not platform-side.
+        │           Strongest push-back item for Nic.
+        │
+        └── auto-Board (9123bb6a-7304-4da6-812d-4f305f9ab2b8)
+              name: "ZeroBias Platform Board"  [auto from project name, untouched]
+              boardType: kanban, isDefault: true
+              parentId: 4d882085-... (workspace project)
+              taskCount: 0
+```
+
+**Auto-behaviors confirmed on every Project.create:**
+1. Default kanban Board auto-created, `isDefault: true`, name = `"<projectName> Board"`
+2. Creator auto-added as project member with "Project Lead" role (UUID `7dc84215-45e9-4976-9486-4cba7edc5284`)
+3. ownerId derived from session org context (NOT a body parameter)
+
+### Push-back items for Nic (final list — from empirical probe)
+
+| # | Item | Severity | Notes |
+|---|---|---|---|
+| 1 | **Deploy `/app/projects` + `/app/boards` to UAT** | 🔴 HIGH | Currently 404 on UAT (tested both `uat-zb` + `uat-clark@w3geekery` profiles). Blocks Plans 06/07 + Phase 31 entirely. Pure deploy-timing issue, not feature work. |
+| 2 | **Enforce boundary subset chain on the API** | 🔴 HIGH | Security invariant from your handoff CE12 ("tighten-never-loosen"). Empirically demonstrated leak path on CI: added a `projectmemberofboundary` link from a child Project to a boundary the parent isn't in — platform accepted with no error. Three options ranked: (A) enforce on `Project.create` + `linkResources`, (B) provide `Project.canAddBoundary()` helper, (C) status quo (worst — invites consumer drift). **Strong preference: A.** |
+| 3 | **Phase 32+ work package — coherent bundle** | 🟡 MEDIUM | Transparency primitive + `twin_of` Task link + per-engagement HierarchyTemplate storage + scoped ActivityLog (CE11 hash-chained) + CE10 lateral relations on Project (`depends_on`, `relates_to`, `blocked_by`, `supersedes`, `derives_from`, `requires`) + CE1 linked-engagement mechanism. These are coherent only as a bundle; piecemeal asks will fragment. Not v1.4 blocking. |
+
+**Items struck during the probe** (saved Nic's time on non-issues):
+- Project Lead role discoverability gap — STRUCK; SME Mart has no use case for the UUID. Auto-add covers the creator; Org Admin cascades cover everyone else.
+- Tier discriminator (`Project.type` hypothesis) — VERIFIED locked to `"project"` by API; not user-settable. Using tag-based pattern (`tier.*` hydra tags) for v1.4.
+- "anonymous by default" — likely subsumed by Transparency primitive (item 3).
+
+### Plan 02 corrective recipe — RETRACTED 2026-05-12 per D-46
+
+The "insert middle Project tier" amendment proposed in this parkit is **withdrawn**. Backend team's 2026-05-12 directive: hierarchy via tags, NOT nested Project primitives (see D-46). Plan 02 re-shape pending Clark direction on D-46's 5 open questions. See parkit (5) section at top of this file for the current state.
+
+### Files modified/created this session (working tree state at parkit)
+
+**Committed:**
+- `8cde3c5` — D-45 + Plans 06/07 rescope + schema-repo gap inventory bundle (9 files)
+- Schema fork: `7141035` (PR #54 at zerobias-org/schema/pull/54)
+
+**Uncommitted at parkit time:**
+- `.planning/director/DIRECTOR-PARKS-RESUME.md` — this section + CANONICAL hierarchy section added earlier in session
+- `.planning/notes/plans/nic-empirical-probe-follow-up-2026-05-11.md` — NEW (the gap doc Clark wants to take to Nic)
+
+**Memory entries added:**
+- `project_sme_mart_hierarchy_model.md` (canonical hierarchy with HTML sketch + Nic brief as authoritative sources)
+- `feedback_always_scope_gate.md` (scope `zbb gate` / `./gradlew gate` explicitly, never unscoped)
+- MEMORY.md index updated for both
+
+### Next-action sequence (on /parks load)
+
+1. **Show the CI data tree** (above) so Clark can present at standup.
+2. **Show the push-back items table** (above) — final list of 3 (was 4 nebulous, now 3 concrete) plus 3 items struck during empirical work.
+3. Stand by for Clark's direction — likely either (a) go to Nic with the gap doc, (b) start building the SME Mart admin test harness, or (c) commit the uncommitted Director artifacts.
+
+### CI test data — cleanup or keep?
+
+Resources on CI that I created during the probe (UI Development org, Test Boundary1):
+- 2 Projects (`85e75721-...` engagement, `4d882085-...` workspace child)
+- 2 auto-boards (`2c7f8d7a-...` renamed, `9123bb6a-...` untouched)
+- 4 manually-created links (2 extra boundary memberships, including the invariant-violating one to "Platform" boundary)
+
+Clark can either delete these via MCP (Project.delete cascades to children + auto-boards per `toOnDelete: soft_delete` on the link type metadata), OR keep them as seed data for the SME Mart admin test harness build.
+
+### Profile lock state
+
+- `~/.claude/scripts/zb-mcp-profile-lock.sh` — acquired `ci-ui-dev` for empirical work after switching from `uat-zb` and `uat-clark@w3geekery`. Lock will be stale by next session; safe-to-reacquire.
+
+---
+
+## 🔑 CANONICAL: Hierarchy model — read the sketch FIRST, not Plan 02
+
+> **⚠️ READ PARKIT (5) FIRST.** Hierarchy framing in this section was further refined 2026-05-12 PM. The CORRECT mapping is: depth 1 = Engagement (fixed), depth 2 = **Project** (fixed, NOT "Workspace"), depth 3 = Workspace (renameable, NOT instantiated by v1.4). The "D-34 belongs on Workspace tier" claim later in this section is WRONG — D-34 belongs on the Project tier at depth 2. The canonical-sketch summary in this section otherwise stands.
+
+**Authoritative sources for the Engagement / Project / Workspace hierarchy (read in this order, ALWAYS):**
+
+1. **`.claude/handoffs/transparency-center-entangled-tasks-2026-04-21.html`** — **Hierarchy Editor tab** (`data-tab="hier-editor"`, lines ~2145-2239). Brian's 2026-04-30 directive. MOST RECENT. Canonical.
+2. **`.planning/notes/plans/hierarchy-brief-for-nic.md`** — consolidated brief for Nic.
+3. Memory: `project_sme_mart_hierarchy_model.md` (synthesis with empirical CI verification 2026-05-11).
+
+**The model:** nested `platform.Project` rows. Fixed top tiers = `Engagement` + `Project`. Fixed bottom tiers = `Task` + `Sub-Task`. Anything in between is **user-named + nestable** (default template `Workspace → Aperture → Thread`, per-engagement editable). All non-Task tiers are `platform.Project` differentiated only by `parentId` depth + display label. Single backing class.
+
+**⚠️ Plan 02's distilled recipe's LABELING is wrong.** The Plan 02 5-step recipe creates 2 Projects at depths 1 + 2, which is STRUCTURALLY CORRECT (matches Brian's canonical sketch's two fixed top tiers: Engagement + Project). But Plan 02 labels the depth-2 child as "Workspace" — that label is wrong. The canonical sketch puts "Workspace" at depth 3 as the FIRST RENAMEABLE MIDDLE tier; depth 2 is the FIXED "Project" tier.
+
+**Corrected understanding 2026-05-12 PM (after Director got this wrong TWICE):**
+- D-34's locked `"ZeroBias Platform"` name belongs on the **Project tier at depth 2** (the FIXED second tier).
+- Workspace (depth 3) is a RENAMEABLE MIDDLE tier and is NOT auto-instantiated by v1.4.
+- v1.4 provisioner instantiates the two FIXED top tiers only: Engagement + Project. Customers extend to Workspace/Aperture/Thread via Hierarchy Editor.
+- The depth-2 child's tier-identity tag is `sme-mart.tier.project`, NOT `sme-mart.tier.workspace`.
+
+**Don't paraphrase Plan 02 in any future planning artifact without citing the sketch first.** If a recipe or plan talks about "engagement → workspace" as a 2-tier shape, the structure is right but the LABEL is wrong — the depth-2 child is the Project tier.
+
+**Empirical findings from CI smoke test 2026-05-11:**
+- Every `platform.Project.create` auto-creates a default kanban Board (`isDefault: true`, name `"{projectName} Board"`).
+- Creator is auto-added as project member with **Project Lead** role (`7dc84215-45e9-4976-9486-4cba7edc5284`).
+- `ownerId` is session-derived; NOT a body parameter.
+- `/app/projects` and `/app/boards` are NOT deployed to UAT yet (404). Only CI/dev has them. Plans 06/07 + Phase 31 are blocked on platform service deploy to UAT — flag to Nic / Kevin.
+
+---
+
 ## ⚠️ Director directive 2026-05-01 — Deployment paths LOCKED
 
 3P customer apps in `zerobias-org/app` deploy ONLY to **uat, qa, prod**. `dev` and `ci` are valid ZB **platform** environments (ZB itself runs there) but are NOT deploy targets for 3P apps in this repo. Encoded permanently in sme-mart `CLAUDE.md` "Deployment Paths" section (commit `240edda`). BACKLOG `DEV-CI-PURGE-1` tracks the broader sweep (strip `build:dev`/`build:ci` script variants, branch→env mapping docs at app-root, any GH workflow targeting dev/ci).
@@ -1136,7 +1643,15 @@ PR #54 cycle (2026-05-05/06):
 
 ## Quick-start prompt for the next Director Parks session
 
-Resume Director Parks. Read `.planning/director/DIRECTOR-PARKS-RESUME.md` FIRST — start with the **"2026-05-11 PM parkit (2)"** section at the top, which captures: Wave 1 (Plan 01) CLOSED at `2d9af79` shipping INVENTORY.md (761 lines, 15-service partition, 6 MCP describes pinned, 4 backlog entries, no deviations from 43 locked decisions); ONE partial-meet on D-23 (member-filter param names TBD); Director dispatched 3 Wave 2 amendments via gsd-execute relay (Plan 03 Task 0 pre-flight for D-23 resolution, Plan 01 deviation log entry for the partial-meet, Plan 04 Task 0 outcome surfacing requirement); Wave 2 awaits Clark's invocation in the gsd-execute shell. Then read the older **"2026-05-11 parkit"** section for full Phase 29.5 architectural lock-in context (Path C Engagement-as-Project, 5-step recipe, locked verbiage verbatim, locked enum values, GSD 1.38.5 errata 029, tell-block trigger). Working tree clean. Branch `poc/sme-mart`, ~12 ahead of origin, DO NOT PUSH (accumulate for 29.5-closure cross-fork PR).
+Resume Director Parks. Read `.planning/director/DIRECTOR-PARKS-RESUME.md` FIRST — start with the **"📍 LATEST: 2026-05-11 PM parkit (4)"** section at the top of the file. **On `/parks load`, IMMEDIATELY surface to Clark:**
+
+**(1) The CI test data tree** (from parkit-4 section) — Clark needs this for standup tomorrow since there's no UI to demo yet. Resources sit on `ci-ui-dev` profile (`ci.zerobias.com`, UI Development org), proving multi-boundary works via repeatable hydra links + the empirically-demonstrated boundary subset enforcement gap.
+
+**(2) The push-back items table for Nic** (3 final items: UAT deploy gap, boundary subset enforcement, Phase 32+ work package). Plus the 3 items that got struck during empirical work (Project Lead discoverability, tier discriminator hypothesis, "anonymous by default").
+
+**(3) Plan 02 simplified recipe** — Step G is fully redundant (delete), Step F is rename-not-create. Net 5 calls (was 5; same count but correct hierarchy depth). Still need D-XX for middle Project tier locked name + description.
+
+Then for context, also reference older parkit (2) section for full Phase 29.5 architectural lock-in context (Path C Engagement-as-Project, locked verbiage verbatim, locked enum values, GSD 1.38.5 errata 029, tell-block trigger). Then read the older **"2026-05-11 parkit"** section for full Phase 29.5 architectural lock-in context (Path C Engagement-as-Project, 5-step recipe, locked verbiage verbatim, locked enum values, GSD 1.38.5 errata 029, tell-block trigger). Working tree clean. Branch `poc/sme-mart`, ~12 ahead of origin, DO NOT PUSH (accumulate for 29.5-closure cross-fork PR).
 
 **CRITICAL FIRST ACTIONS on resume:**
 

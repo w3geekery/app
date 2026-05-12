@@ -1,5 +1,7 @@
 # Phase 29.5 Brief — Platform Model Migration
 
+> **⚠️ 2026-05-12 PM CORRECTION — tier labels in this brief use "workspace Project" for the depth-2 child. That label is WRONG per the canonical Brian-2026-04-30 Hierarchy Editor sketch.** Depth 2 is the FIXED "**Project**" tier (Brian: *"Project is fixed... here there be dragons"*). "Workspace" is depth 3 and is a RENAMEABLE MIDDLE tier that v1.4 does NOT auto-instantiate. The STRUCTURE described in this brief (2 nested platform.Project rows for the v1.4 provisioning recipe) is correct; only the LABEL on the depth-2 child is wrong. D-34's locked `"ZeroBias Platform"` name attaches to the **Project tier at depth 2**, not to a "Workspace." The depth-2 child's tier-identity tag is `sme-mart.tier.project`, NOT `sme-mart.tier.workspace`. See DECISIONS.md D-46 (corrected) + memory file `project_sme_mart_hierarchy_model.md` for the authoritative current understanding. Wave 2 onward consumes the corrected mental model. The merged Wave 3 (schema deprecation PR) is unaffected — it targets GQL class names, not tier labels.
+
 **Director note 2026-05-08 (path locked 2026-05-08 PM):** Drafted in response to Nic's 2026-05-08 SDK release announcing real platform Project / Board / scoped-role primitives. Discuss-phase pre-flight (Director + Clark, 2026-05-08 PM) resolved the major architectural question — **Path (C) Engagement-as-Project hierarchy is locked** — and folded the resolution into this brief before insertion. The remaining open questions are tactical, not directional.
 
 **Trigger source:**
