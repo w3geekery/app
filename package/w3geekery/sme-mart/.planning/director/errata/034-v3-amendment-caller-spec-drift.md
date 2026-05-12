@@ -3,7 +3,9 @@ id: "034"
 severity: medium
 phase: 29.5
 found: 2026-05-12
-status: open
+fixed: 2026-05-12
+status: fixed
+fix-commit: 1b5649f
 ---
 
 # Errata 034 — v3 Amendment Caller-Spec Drift: `org-provisioning-tab.component.spec.ts` Still Expects Pre-v3 Signature
@@ -72,8 +74,9 @@ This is the same shape as **errata 027** (e178215 dropped public-API params, bro
 
 ## Disposition
 
-- **Fix-forward:** Director hand-edit + targeted re-test + commit. Single-line spec change.
-- **Status: open** until the fix lands and full suite passes. Will flip to **fixed** after re-run.
+- **Fix landed:** commit `1b5649f` ("fix(29.5): drop stale RACI fields from org-provisioning-tab spec assertion"). 3-line deletion from the assertion; RACI constants + dry-run-result assertions untouched.
+- **Full suite verified green post-fix:** 1762/1762 passing (130 files). Same gate the pre-push hook will run.
+- **Status: fixed.**
 - **No new BACKLOG entry.** Plan-08-class targeted-gate scope is the recurring pattern; the durable fix is the pre-push hook, which already exists and just worked.
 
 ## Related
