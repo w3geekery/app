@@ -1,16 +1,18 @@
 import { Routes } from '@angular/router';
 import { AppShell } from './layout/app-shell.component';
 import { Home } from './pages/home/home.component';
-import { ProviderList } from './pages/providers/provider-list.component';
-import { ProviderDetail } from './pages/providers/provider-detail.component';
-import { ServiceCatalog } from './pages/services/service-catalog.component';
-import { RfpList } from './pages/rfps/rfp-list.component';
-import { RfpDetail } from './pages/rfps/rfp-detail.component';
+// Phase 31-A: imports removed alongside hidden route components. Re-import
+// when restoring post-BACKLOG-099 architectural decision + errata 039 fix.
+// import { ProviderList } from './pages/providers/provider-list.component';
+// import { ProviderDetail } from './pages/providers/provider-detail.component';
+// import { ServiceCatalog } from './pages/services/service-catalog.component';
+// import { RfpList } from './pages/rfps/rfp-list.component';
+// import { RfpDetail } from './pages/rfps/rfp-detail.component';
+// import { RfpWizard } from './pages/rfps/rfp-wizard/rfp-wizard.component';
+// import { BidWizard } from './pages/rfps/bid-wizard/bid-wizard.component';
+// import { BidComparisonPage } from './pages/rfps/bid-comparison-page.component';
 import { EngagementDetail } from './pages/engagements/engagement-detail.component';
 import { ENGAGEMENT_TAB_ROUTES } from './pages/engagements/engagement.routes';
-import { RfpWizard } from './pages/rfps/rfp-wizard/rfp-wizard.component';
-import { BidWizard } from './pages/rfps/bid-wizard/bid-wizard.component';
-import { BidComparisonPage } from './pages/rfps/bid-comparison-page.component';
 import { ComingSoon } from './pages/coming-soon/coming-soon.component';
 import { CompanyProfileFormComponent } from './onboarding/company-profile-form.component';
 import { onboardingGuard } from './core/guards/onboarding.guard';
@@ -25,16 +27,25 @@ export const routes: Routes = [
     canActivate: [onboardingGuard],
     children: [
       { path: '', component: Home },
-      { path: 'providers', component: ProviderList },
-      { path: 'providers/:id', component: ProviderDetail },
-      { path: 'services', component: ServiceCatalog },
-      { path: 'rfps', component: RfpList },
-      { path: 'rfps/new', component: RfpWizard },
-      { path: 'rfps/:id', component: RfpDetail },
-      { path: 'rfps/:id/edit', component: RfpWizard },
-      { path: 'rfps/:id/compare', component: BidComparisonPage },
-      { path: 'rfps/:id/bid', component: BidWizard },
-      { path: 'rfps/:id/bid/:bidId', component: BidWizard },
+      // Phase 31-A: surfaces hidden/Coming Soon for v1.4 dogfood. Original
+      // routes preserved as comments for one-line restoration post-BACKLOG-099
+      // architectural decision + errata 039 fix.
+      // { path: 'providers', component: ProviderList },
+      // { path: 'providers/:id', component: ProviderDetail },
+      // { path: 'services', component: ServiceCatalog },
+      // { path: 'rfps', component: RfpList },
+      // { path: 'rfps/new', component: RfpWizard },
+      // { path: 'rfps/:id', component: RfpDetail },
+      // { path: 'rfps/:id/edit', component: RfpWizard },
+      // { path: 'rfps/:id/compare', component: BidComparisonPage },
+      // { path: 'rfps/:id/bid', component: BidWizard },
+      // { path: 'rfps/:id/bid/:bidId', component: BidWizard },
+      { path: 'providers', component: ComingSoon, data: { title: 'Browse Providers' } },
+      { path: 'providers/:id', component: ComingSoon, data: { title: 'Provider Detail' } },
+      { path: 'services', component: ComingSoon, data: { title: 'Services' } },
+      { path: 'rfps', component: ComingSoon, data: { title: 'RFPs' } },
+      { path: 'rfps/:id', redirectTo: 'rfps' },
+      { path: 'rfps/:id/:tail', redirectTo: 'rfps' },
       { path: 'engagements/:id', component: EngagementDetail, children: ENGAGEMENT_TAB_ROUTES },
       {
         path: 'templates/:id',
@@ -91,16 +102,22 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./pages/orgs/orgs.routes').then((m) => m.ORGS_ROUTES),
       },
-      {
-        path: 'my/engagements',
-        loadChildren: () =>
-          import('./pages/my-engagements/my-engagements.routes').then((m) => m.MY_ENGAGEMENTS_ROUTES),
-      },
-      {
-        path: 'my/projects',
-        loadChildren: () =>
-          import('./pages/my-projects/my-projects.routes').then((m) => m.MY_PROJECTS_ROUTES),
-      },
+      // Phase 31-A: my/engagements + my/projects hidden for v1.4 dogfood.
+      // Direct-URL hits land on ComingSoon. Restore loadChildren post-099.
+      // {
+      //   path: 'my/engagements',
+      //   loadChildren: () =>
+      //     import('./pages/my-engagements/my-engagements.routes').then((m) => m.MY_ENGAGEMENTS_ROUTES),
+      // },
+      // {
+      //   path: 'my/projects',
+      //   loadChildren: () =>
+      //     import('./pages/my-projects/my-projects.routes').then((m) => m.MY_PROJECTS_ROUTES),
+      // },
+      { path: 'my/engagements', component: ComingSoon, data: { title: 'My Engagements' } },
+      { path: 'my/engagements/:id', redirectTo: 'my/engagements' },
+      { path: 'my/projects', component: ComingSoon, data: { title: 'My Projects' } },
+      { path: 'my/projects/:id', redirectTo: 'my/projects' },
       {
         path: 'my/invitations',
         loadChildren: () =>

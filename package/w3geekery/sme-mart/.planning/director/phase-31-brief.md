@@ -1,73 +1,138 @@
-# Phase 31 — W3Geekery as First Customer + Production Smoke Test
+# Phase 31 — W3Geekery as First Customer + Production Smoke Test (v2)
 
 **Milestone:** v1.4 "3P Onboarding & Default Engagement" (closing phase)
-**Est:** 4–6 hrs (dogfood walkthrough + smoke test report)
-**Repos:** `app/` (no code — this phase USES what phases 24–30 built).
-**Origin:** Errata 022 (3p-plan-missing-w3geekery-as-first-customer-dogfood). Closes the v1.4 loop: the walkthrough engagement we created 2026-04-23 becomes the real production smoke-test target.
+**Est:** 8–12 hrs (was 4–6 hrs in v1; v2 absorbs 31-A nav cleanup + 31-B profile auto-populate)
+**Repos:** `app/`
+**Origin:** Errata 022 (`3p-plan-missing-w3geekery-as-first-customer-dogfood`). Closes the v1.4 loop with W3Geekery as the first real customer.
+
+**v2 rationale:** Phase 31 pre-walkthrough on local dev 2026-05-13 surfaced two structural problems for the v1.4 milestone goal (customer logs in → populates profile → lands on board):
+
+1. **Cross-contamination** of engagement Projects into `/rfps`, `/my/engagements`, `/my/projects` list pages (errata 039). Customer sees the platform-engagement artifacts as RFP cards — confusing + clicking them mis-routes.
+2. **Empty org profile.** `/org/profile` renders 6 empty section cards with "Add item" buttons. Worst possible first impression (BACKLOG-098).
+
+Fixing the architectural root cause of (1) requires the RFP-as-`platform.Project` decision in BACKLOG-099 — out of v1.4 scope. The pragmatic v1.4 answer is to **hide the non-dogfood nav surfaces** (31-A) and **promote profile auto-populate from BACKLOG-098 Stream 1** (31-B) into Phase 31. v1 brief deliverables 1-5 become 31-C.
 
 ## Goal
 
-Log into SME Mart as a W3Geekery user on UAT (and then on prod, once promoted), walk the full onboarding + default-project-board flow end-to-end, and produce a smoke-test report. No new features; this phase is purely verification that v1.4 delivers the intended experience for the first real customer. Failures here become immediate errata/hotfix items, not deferred.
+Customer logs in (W3Geekery user) → onboarding-guard routes correctly → profile is review-ready (auto-populated from ZB Org fields) → land on Phase 30 default project board. No new feature work; this phase is verification + the minimum cleanup to make the dogfood path clean.
 
-## Architecture
+## Scope — three sub-phases
 
-### Starting state
-- Phases 24–28, 30 have all shipped.
-- Default ZB engagement + SmeMartProject for W3Geekery exist on UAT (created 2026-04-23 via walkthrough; retroactively tagged in Phase 26).
-- ZeroBias seeded as marketplace provider (Phase 26).
-- Lazy guard (Phase 27) will detect the existing engagement and skip creation.
-- Demo data visibility gate (Phase 24) hides seeded demo providers from non-admin users.
-- Branded login deployed; `https://w3geekery.uat.zerobias.com` subdomain may or may not be live (Andrey-dependent; fallback to default ZB login URL works).
+### 31-A: Nav cleanup (hide stub surfaces; Coming Soon for placeholder routes)
 
-### Deliverables
+The v1.4 critical path uses: login → org session → onboarding routing → `/org/profile` → `/` (Phase 30 board). Everything else is hidden or marked Coming Soon.
 
-1. **End-to-end dogfood walkthrough on UAT.** Clark (as W3Geekery user) logs in through the branded login, gets routed by Phase 27's logic, hits Phase 28's company-profile form, reviews/confirms, lands on Phase 30's default project board. Every step recorded in a walkthrough report with screenshots.
-2. **Smoke-test report** at `.planning/director/v1.4-smoke-test-report.md`. Sections:
-   - Environment + session details (UAT, user id, org id, browser, build SHA)
-   - Per-phase observations (one subsection per phase 24–28, 30)
-   - Pass / Fail / Partial verdict per phase
-   - Friction log (anything surprising, unclear, or annoying — bugs + UX concerns separately)
-   - List of follow-up actions: errata to file, hotfix phase candidates, v1.5 backlog adds
-3. **Errata filing for any failures.** If something blocks the flow (crash, missing field, wrong route), file an errata immediately + prep a hotfix phase. If it's cosmetic or UX-only, file to v1.5 backlog.
-4. **Production promotion checklist.** Once UAT smoke passes, a brief for promoting the same flow to production (`.planning/director/v1.4-production-promotion.md` — 1-page checklist). NOT a phase — promotion involves:
-   - Merge cross-fork PR `w3geekery/app:poc/sme-mart` → `zerobias-org/app:main` (or the right prod branch).
-   - Batch-prime default engagements for existing prod customer Orgs (separate director brief that gets run after promotion).
-   - Production smoke-test pass by Clark (repeat of the UAT walkthrough but on `https://app.zerobias.com/sme-mart`).
-5. **Close v1.4.** Once UAT + prod smoke both pass, v1.4 is closed. `/gsd:complete-milestone` runs (Clark's call, not Director's).
+| Surface | Action | File |
+|---|---|---|
+| Main nav: **Services** | Coming Soon (route component swap) | `app.routes.ts` |
+| Main nav: **RFPs** | Coming Soon (route component swap) | `app.routes.ts` |
+| Dropdown: **Browse Providers** | Remove menu item | `user-profile-dropdown.component.html` |
+| Dropdown: **Browse Catalog** | Remove menu item (route stays as ComingSoon for direct-URL hits) | `user-profile-dropdown.component.html` |
+| Dropdown: **My Engagements** | Remove menu item (cross-contamination per errata 039) | `user-profile-dropdown.component.html` |
+| Dropdown: **My Projects** | Remove menu item (cross-contamination per errata 039) | `user-profile-dropdown.component.html` |
+| My Profile tabs: **Overview, Expertise, Services, Reviews, Moderate** | Coming Soon (child route component swap) | `my-profile.routes.ts` |
+| My Profile tab: **Settings** | Stays functional (role + theme) | unchanged |
 
-## Requirements
+What stays in nav: Switch Organization, My Organizations, My Profile (Settings only), Request Assistance, Site Feedback, Admin.
 
-- **V14-01:** UAT smoke walkthrough executed end-to-end; `v1.4-smoke-test-report.md` exists.
-- **V14-02:** All 6 active phases (24, 25, 26, 27, 28, 30) have a pass/fail verdict in the report.
-- **V14-03:** Any blockers have errata filed + hotfix phase queued.
-- **V14-04:** Production promotion checklist exists as a separate director brief.
-- **V14-05:** Friction log populated honestly — not a "everything's fine" whitewash.
+**Reuse existing `ComingSoon` component** at `src/app/pages/coming-soon/coming-soon.component.ts` (Phase 30 pattern; same component used for `/catalog`, `/request-assistance`, `/feedback`).
+
+**Reversibility:** comment out the original route components rather than deleting — restore is one-line per surface when the underlying feature is ready (post-BACKLOG-099 for /rfps + my-engagements + my-projects; post-product-decision for Services + My Profile tabs).
+
+### 31-B: Auto-populate Org Profile from ZB platform Org fields (BACKLOG-098 Stream 1)
+
+Goal: customer's first view of `/org/profile` is NOT empty cards. At minimum, the **Corporate Identity** section is pre-filled from data already available on `platform.Org`:
+
+- Name → from `Org.name`
+- Slug → from `Org.slug`
+- Website → from `Org.website` if available (verify via Phase 25 audit)
+- Address → from any Org address fields (verify)
+- Year founded, EIN, leadership — if available on Org or hydra metadata (verify)
+
+**Out of scope for 31-B (deferred to v1.5+):**
+- LLM-prompt internet-gathering preflight (BACKLOG-098 Stream 2)
+- Vetting Board fold (BACKLOG-098 Stream 3)
+- Other 5 sections (Attestation, Insurance, Personnel, Financial, Reference) — leave empty for v1.4; they're already labeled "0 items" so customer understands they're additive
+
+**Welcome-flash sub-issue** (`vendor-profile-tab.component.ts:152`) — the auto-dismiss-when-items-load logic causes a flash. Resolve as part of 31-B: either fix the mapping bug (items return with wrong section field) or gate the welcome card on `!isLoading()` to prevent the flash.
+
+**Dependency:** Phase 25 (Platform Data Audit) — must reference its SDK inventory to know what Org fields exist.
+
+### 31-C: Dogfood walkthrough + smoke test (original v1 scope)
+
+**Pass 1: W3Geekery happy path**
+- Log in as Clark/W3Geekery via branded login (or default ZB login fallback)
+- Onboarding guard: probes both namespaces (post-`3a42e90`) → finds NEW tag → verifies Engagement Project exists → returns `true` → admin gets escape-to-`/` (post-errata 037)
+- Lands on Phase 30 default project board
+- Navigate to `/org/profile` → Corporate Identity section pre-filled (31-B)
+- Verify D-32..D-35 verbiage on the default board
+- Verify hidden nav surfaces are gone (31-A)
+- Friction log populated
+
+**Pass 2: Brian's-Org orphan recovery (real-data proof that errata 039 cross-contamination is dormant for hidden surfaces; D-49 dual-namespace probe verification)**
+- Admin tab → re-provision Brian's-Org
+- Onboarding guard: finds orphan legacy tag `fbf92e6e-...` → looks up Engagement Project by that tagId → none found → returns `false` (would have been false-positive `true` before D-49-MIGRATE)
+- Provisioner runs: creates fresh NEW-namespace tag + Engagement Project + depth-2 Project tier
+- Orphan legacy tag remains untouched per D-43 (d)
+
+**Smoke-test report:** `.planning/director/v1.4-smoke-test-report.md` per v1 brief.
+
+**Production promotion checklist:** `.planning/director/v1.4-production-promotion.md` per v1 brief.
+
+## Requirements (refreshed)
+
+- **V14-01:** UAT W3Geekery walkthrough end-to-end; report exists.
+- **V14-02:** Per-phase verdict (24, 25, 26, 27, 28, 29.5, 30) in report.
+- **V14-03:** Brian's-Org orphan re-provision verified — provisioner creates fresh NEW-namespace artifacts.
+- **V14-04:** Any blockers → errata + hotfix phase queued.
+- **V14-05:** Production promotion checklist drafted.
+- **V14-06:** Friction log populated honestly.
+- **V14-07 (NEW):** All 31-A nav cleanup landed; dogfood surfaces verified gone.
+- **V14-08 (NEW):** `/org/profile` Corporate Identity section auto-populated from ZB Org fields on first load (no empty cards in the customer's primary onboarding tab).
 
 ## Dependencies
 
-- Phases 24–28, 30 shipped + merged.
-- UAT environment healthy (pipeline, auth, GQL all green).
-- Clark available for the walkthrough (cannot be automated — this is a human UAT).
+- Phases 24–28, 29.5, 30 shipped + merged. ✓
+- PRECOMMIT-TSC-GATE-1 landed (`5e9e1b4`). ✓
+- D-49-NAMESPACE-MIGRATE-1 + errata 036 fixes landed (`3a42e90`). ✓
+- Errata 037 + 038 fixes landed (`80fff24`). ✓
+- Tab reorder + default landing landed (`f830588`). ✓
+- BACKLOG-098 Stream 1 (auto-populate ZB Org fields) — to be implemented as part of 31-B.
+
+## Out of scope (deferred to v1.5+)
+
+- BACKLOG-098 Stream 2 (LLM-prompt internet-gathering)
+- BACKLOG-098 Stream 3 (Vetting Board fold evaluation)
+- BACKLOG-099 (RFP-as-`platform.Project` architecture decision A/B/C — pending Nic's `setMetadata` response)
+- Errata 039 fix (cross-contamination resolution depends on 099)
+- Restoration of hidden surfaces (Services, RFPs, My Engagements, My Projects, Browse Providers, Browse Catalog, My Profile tabs) — restored phase-by-phase post-099
+- Synthetic ACME demo seeder (v1.5 backlog)
+- Automated smoke suite (v1.5+ test-infra milestone)
+- Prod promotion execution itself — Phase 31 produces the checklist; actual promotion is Clark-driven
 
 ## Verification
 
-- **This phase IS the verification** for v1.4. Verdict is the smoke-test report.
-- Meta-verification: re-run any Phase 24 (visibility gate) tests against the smoke-test user — non-admin must not see demo data in any listing.
-- Meta-verification: re-run Phase 27 guard on a test Org that has NO default engagement yet (synthetic, not W3Geekery) — confirm guard creates Engagement + SmeMartProject with `tag` populated at ingest.
-
-## Out of scope
-
-- New feature work (Phase 31 is verification only).
-- Batch-priming default engagements for ALL existing prod Orgs (separate director brief, runs after prod promotion).
-- Synthetic ACME demo seeder (per SESSION-STATE — deferred to v1.5 backlog; Phase 31 IS the real verification so ACME is redundant for v1.4).
-- Automated smoke suite (v1.5+ test-infra milestone per `feedback_unit_tests_default_test_infra_deferred.md`).
-- Prod promotion execution itself — Phase 31 produces the checklist; actual promotion is a separate commit + PR + smoke-test cycle that Clark drives.
+- This phase IS the verification for v1.4 (verdict = smoke-test report).
+- Meta-verification: replay Phase 24 visibility-gate against smoke-test user.
+- Meta-verification: Brian's-Org Pass 2 is the live D-49-MIGRATE + errata 036 verification.
+- 31-A cleanup verification: Chrome DevTools walk-through confirming all hidden surfaces unreachable from nav; Coming Soon pages render.
+- 31-B verification: log in as a user in a fresh org (or Brian's-Org post Pass 2) and confirm Corporate Identity section is pre-filled, NOT empty.
 
 ## References
 
 - Errata 022 (`.planning/director/errata/022-3p-plan-missing-w3geekery-as-first-customer-dogfood.md`)
-- `.planning/director/bootstrap-w3geekery-engagement.md` (walkthrough artifacts + UUIDs; Phase 31 consumes them)
-- DECISIONS.md "Default ZB Engagement Bootstrap — W3Geekery" (4 canonical UUIDs + retroactive tag plan)
-- DECISIONS.md "v1.4 Test-Infra Deferral and Unit-Test Default" (why Phase 31 is manual and not automated)
-- Future: `.planning/director/v1.4-production-promotion.md` (written during Phase 31, consumed by Clark to promote)
-- Future: `.planning/director/batch-prime-engagements-for-existing-orgs.md` (separate brief — prereq for prod smoke-pass to be meaningful across all customer Orgs)
+- Errata 039 (`.planning/director/errata/039-platform-project-list-no-filter-cross-contamination.md`) — operational mitigation in 31-A
+- BACKLOG-098 (Org Profile revamp — Stream 1 promoted into 31-B)
+- BACKLOG-099 (RFP-as-`platform.Project` architecture decision — gating errata 039 fix)
+- Phase 30 SUMMARY + VERIFICATION
+- D-49 (engagement namespace), D-50 (tier mapping), D-46 (multi-engagement future state)
+- `.planning/director/bootstrap-w3geekery-engagement.md` (walkthrough artifacts + UUIDs)
+- DECISIONS.md "Default ZB Engagement Bootstrap — W3Geekery"
+- DECISIONS.md "v1.4 Test-Infra Deferral and Unit-Test Default"
+- Future: `.planning/director/v1.4-production-promotion.md`
+- Future: `.planning/director/batch-prime-engagements-for-existing-orgs.md`
+
+---
+
+**Brief version:** v2 (refresh 2026-05-13 — absorbs 31-A nav cleanup + 31-B profile auto-populate)
+**Brief v1 archived in git history (predecessor of this file)**
