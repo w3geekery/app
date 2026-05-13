@@ -53,12 +53,12 @@ Requirements for v1.4 "3P Onboarding & Default Engagement". Each maps to roadmap
 
 ### Project Board (Phase 30)
 
-- [ ] **PB-01**: Authenticated onboarded users land on default project board route per Phase 27 routing
-- [ ] **PB-02**: Default project content (name, description, SmeMartProject widgets) renders for the seeded default project
-- [ ] **PB-03**: 3 "Coming Soon" surfaces exist as components + routes (Org Documents 046, Engagement Dashboard 066, Message Center 065)
-- [ ] **PB-04**: Coming Soon surfaces reachable from board AND deep-linkable
-- [ ] **PB-06**: No half-built functional UI in the 3 Coming Soon surfaces -- honest placeholders only
-- [ ] **PB-07**: Unit tests for board + each placeholder component rendering
+- [x] **PB-01**: Authenticated onboarded users land on default project board route per Phase 27 routing — SATISFIED (Phase 30, 2026-05-13; `app.routes.ts` `/projects` → `DefaultProjectBoardComponent`)
+- [x] **PB-02**: Default project content (name, description, depth-2 Project tier per D-50) renders for the seeded default project — SATISFIED (Phase 30, 2026-05-13; engagement + Project tier cards with D-32..D-35 verbatim verbiage, live UAT verified)
+- [x] **PB-03**: 3 "Coming Soon" surfaces exist as components + routes (Org Documents 046, Engagement Dashboard 066, Message Center 065) — SATISFIED (Phase 30, 2026-05-13; `FeatureComingSoonComponent` + 3 routes)
+- [x] **PB-04**: Coming Soon surfaces reachable from board AND deep-linkable — SATISFIED (Phase 30, 2026-05-13; sibling routes under `AppShell` with `onboardingGuard`)
+- [x] **PB-06**: No half-built functional UI in the 3 Coming Soon surfaces -- honest placeholders only — SATISFIED (Phase 30, 2026-05-13; `ZbEmptyStateContainerComponent` shell, no API calls, no persistence)
+- [x] **PB-07**: Unit tests for board + each placeholder component rendering — SATISFIED (Phase 30, 2026-05-13; 32 total spec cases: 21 in `engagements.service.spec.ts` + 4 in `feature-coming-soon.component.spec.ts` + 7 in `default-project-board.component.spec.ts`)
 
 ### Verification (Phase 31)
 
@@ -159,12 +159,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CP-06 | Phase 28 | Complete |
 | CP-07 | Phase 28 | Complete |
 | CP-08 | Phase 28 | Complete |
-| PB-01 | Phase 30 | Pending |
-| PB-02 | Phase 30 | Pending |
-| PB-03 | Phase 30 | Pending |
-| PB-04 | Phase 30 | Pending |
-| PB-06 | Phase 30 | Pending |
-| PB-07 | Phase 30 | Pending |
+| PB-01 | Phase 30 | Complete |
+| PB-02 | Phase 30 | Complete |
+| PB-03 | Phase 30 | Complete |
+| PB-04 | Phase 30 | Complete |
+| PB-06 | Phase 30 | Complete |
+| PB-07 | Phase 30 | Complete |
 | V14-01 | Phase 31 | Pending |
 | V14-02 | Phase 31 | Pending |
 | V14-03 | Phase 31 | Pending |

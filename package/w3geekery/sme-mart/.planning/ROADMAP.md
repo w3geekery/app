@@ -87,12 +87,12 @@
   - [x] **Plan 05 (Wave 5)** — Routing Integration Test: CP-07 getCompletionStatus test + CP-08 flow coverage map (completed 2026-04-30)
 - [ ] **Phase 29: DEFERRED TO v1.5** — Tier display, Terms of Service, ZB branding (intentionally skipped in v1.4)
 - [x] **Phase 29.5: Platform Model Migration (INSERTED)** (8 plans, ALL COMPLETE 2026-05-12) — Replaced SmeMart GQL classes with `platform.Project` / `platform.Board` / `platform.Task` primitives. Engagement-as-Project hierarchy locked (D-46); provisioning recipe collapsed 7→5 steps; auto-Board + auto-Lead cascade (D-48) validated on UAT. See `.planning/phases/29.5-platform-model-migration/29.5-CLOSURE.md`.
-- [ ] **Phase 30: Default Project Board + Coming Soon Placeholders** (5 plans, ALL PLANNED 2026-05-12) — Authenticated users land on /projects showing default engagement + project-tier cards; 3 coming-soon placeholders. Requirements: PB-01..PB-04, PB-06..PB-07 (PB-05 dropped). Locked decisions: G1 lightweight new component, G2 engagements.service helpers + tier-tags hoist, G3 feature-coming-soon co-located, G4 Material card grid, G5 defensive UX, G6 150-line ceiling, G7 D-32..D-35 verbiage-only exit criterion.
-  - [ ] **Plan 01 (Wave 1)** — Hoist SME_MART_TIER_PROJECT_TAG_ID constant to tier-tags.ts; re-export from provisioner for backward compat
-  - [ ] **Plan 02 (Wave 2)** — Add getDefaultEngagement() + getProjectTierProject() helpers to EngagementsService (dual-read, defensive nulls, unit tests)
-  - [ ] **Plan 03 (Wave 2 parallel)** — Create FeatureComingSoonComponent (thin ~40-line placeholder, route-data driven, ZbEmptyStateContainer, theme CSS variables)
-  - [ ] **Plan 04 (Wave 2 parallel)** — Create DefaultProjectBoardComponent (Material card grid, engagement + project-tier discovery, ~100 lines, respects G6 ceiling)
-  - [ ] **Plan 05 (Wave 3)** — Wire routes in app.routes.ts (/projects → DefaultProjectBoard, /org-documents/engagement-dashboard/message-center → FeatureComingSoon); checkpoint verifying D-32..D-35 verbiage + comprehensive gates (tsc, lint, tests, G6 line-count)
+- [x] **Phase 30: Default Project Board + Coming Soon Placeholders** (5 plans, ALL COMPLETE 2026-05-13) — Authenticated users land on /projects showing default engagement + project-tier cards (D-32..D-35 verbiage); 3 coming-soon placeholders. PB-01..PB-04, PB-06, PB-07 all SATISFIED. Human-verify checkpoint APPROVED 2026-05-13 (live UAT W3Geekery context). G1 lightweight new component held; G6 150-line ceiling honored (default-project-board.component.ts = 73 LOC). See `.planning/phases/30-default-project-board-coming-soon-placeholders/30-VERIFICATION.md`.
+  - [x] **Plan 01 (Wave 1)** — Hoist SME_MART_TIER_PROJECT_TAG_ID constant to tier-tags.ts; re-export from provisioner for backward compat
+  - [x] **Plan 02 (Wave 2)** — Add getDefaultEngagement() + getProjectTierProject() helpers to EngagementsService (dual-read, defensive nulls, 6 new unit tests)
+  - [x] **Plan 03 (Wave 2 parallel)** — Create FeatureComingSoonComponent (34 LOC, route-data driven via `toSignal`, ZbEmptyStateContainer, theme CSS variables)
+  - [x] **Plan 04 (Wave 2 parallel)** — Create DefaultProjectBoardComponent (73 LOC, well under G6 ceiling; ZerobiasClientApp.getCurrentOrgId, Material `<mat-progress-spinner>`, retry() method, defensive null checks per G5)
+  - [x] **Plan 05 (Wave 3)** — Routes wired in app.routes.ts (/projects → DefaultProjectBoard, /org-documents/engagement-dashboard/message-center → FeatureComingSoon); D-32..D-35 verbiage checkpoint approved by Clark on live UAT
 
 - [ ] **Phase 31: W3Geekery Dogfood + Production Smoke Test** (TBD plans) — End-to-end validation and production readiness (est. 4-6 hrs)
 
