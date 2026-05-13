@@ -3,12 +3,13 @@ import { DefaultProjectBoardComponent } from './default-project-board.component'
 import { EngagementsService } from '../../core/services/engagements.service';
 import { ZerobiasClientApp } from '@zerobias-com/zerobias-client';
 import type { ProjectExtended } from '@zerobias-com/platform-sdk';
+import { describe, it, beforeEach, expect, vi } from 'vitest';
 
 describe('DefaultProjectBoardComponent', () => {
   let component: DefaultProjectBoardComponent;
   let fixture: ComponentFixture<DefaultProjectBoardComponent>;
-  let engagementsService: jasmine.SpyObj<EngagementsService>;
-  let app: jasmine.SpyObj<ZerobiasClientApp>;
+  let engagementsService: Partial<EngagementsService>;
+  let app: Partial<ZerobiasClientApp>;
 
   const mockEngagement = {
     id: 'eng-uuid-1',
@@ -20,7 +21,7 @@ describe('DefaultProjectBoardComponent', () => {
     status: 'active',
     created: new Date(),
     updated: new Date(),
-  } as ProjectExtended;
+  } as unknown as ProjectExtended;
 
   const mockProjectTier = {
     id: 'proj-uuid-1',
@@ -32,15 +33,16 @@ describe('DefaultProjectBoardComponent', () => {
     status: 'active',
     created: new Date(),
     updated: new Date(),
-  } as ProjectExtended;
+  } as unknown as ProjectExtended;
 
   beforeEach(async () => {
-    const mockEngagementsService = jasmine.createSpyObj<EngagementsService>('EngagementsService', [
-      'getDefaultEngagement',
-      'getProjectTierProject',
-    ]);
-    const mockApp = jasmine.createSpyObj<ZerobiasClientApp>('ZerobiasClientApp', ['getCurrentOrgId']);
-    mockApp.getCurrentOrgId.and.returnValue('org-uuid');
+    const mockEngagementsService = {
+      getDefaultEngagement: vi.fn(),
+      getProjectTierProject: vi.fn(),
+    };
+    const mockApp = {
+      getCurrentOrgId: vi.fn().mockReturnValue('org-uuid'),
+    };
 
     await TestBed.configureTestingModule({
       imports: [DefaultProjectBoardComponent],
@@ -50,8 +52,8 @@ describe('DefaultProjectBoardComponent', () => {
       ],
     }).compileComponents();
 
-    engagementsService = TestBed.inject(EngagementsService) as jasmine.SpyObj<EngagementsService>;
-    app = TestBed.inject(ZerobiasClientApp) as jasmine.SpyObj<ZerobiasClientApp>;
+    engagementsService = mockEngagementsService;
+    app = mockApp;
     fixture = TestBed.createComponent(DefaultProjectBoardComponent);
     component = fixture.componentInstance;
   });
@@ -61,8 +63,8 @@ describe('DefaultProjectBoardComponent', () => {
   });
 
   it('should load engagement and project tier on init', async () => {
-    engagementsService.getDefaultEngagement.and.returnValue(Promise.resolve(mockEngagement));
-    engagementsService.getProjectTierProject.and.returnValue(Promise.resolve(mockProjectTier));
+    engagementsService.getDefaultEngagement.mockResolvedValue(mockEngagement);
+    engagementsService.getProjectTierProject.mockResolvedValue(mockProjectTier);
 
     await component.ngOnInit();
 
@@ -75,7 +77,7 @@ describe('DefaultProjectBoardComponent', () => {
   });
 
   it('should set error when current org is unavailable', async () => {
-    app.getCurrentOrgId.and.returnValue('');
+    app.getCurrentOrgId.mockReturnValue('');
 
     await component.ngOnInit();
 
@@ -84,7 +86,7 @@ describe('DefaultProjectBoardComponent', () => {
   });
 
   it('should set error when default engagement is missing', async () => {
-    engagementsService.getDefaultEngagement.and.returnValue(Promise.resolve(null));
+    engagementsService.getDefaultEngagement.mockResolvedValue(null);
 
     await component.ngOnInit();
 
@@ -93,8 +95,8 @@ describe('DefaultProjectBoardComponent', () => {
   });
 
   it('should set error when project tier is missing', async () => {
-    engagementsService.getDefaultEngagement.and.returnValue(Promise.resolve(mockEngagement));
-    engagementsService.getProjectTierProject.and.returnValue(Promise.resolve(null));
+    engagementsService.getDefaultEngagement.mockResolvedValue(mockEngagement);
+    engagementsService.getProjectTierProject.mockResolvedValue(null);
 
     await component.ngOnInit();
 
@@ -104,8 +106,8 @@ describe('DefaultProjectBoardComponent', () => {
   });
 
   it('should render success state when both engagement and project tier are loaded', async () => {
-    engagementsService.getDefaultEngagement.and.returnValue(Promise.resolve(mockEngagement));
-    engagementsService.getProjectTierProject.and.returnValue(Promise.resolve(mockProjectTier));
+    engagementsService.getDefaultEngagement.mockResolvedValue(mockEngagement);
+    engagementsService.getProjectTierProject.mockResolvedValue(mockProjectTier);
 
     await component.ngOnInit();
     fixture.detectChanges();
@@ -119,7 +121,7 @@ describe('DefaultProjectBoardComponent', () => {
   });
 
   it('should expose retry() that calls window.location.reload()', () => {
-    const reloadSpy = spyOn(window.location, 'reload');
+    const reloadSpy = vi.spyOn(window.location, 'reload');
     component.retry();
     expect(reloadSpy).toHaveBeenCalled();
   });
