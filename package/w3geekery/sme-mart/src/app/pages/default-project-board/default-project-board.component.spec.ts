@@ -8,8 +8,13 @@ import { describe, it, beforeEach, expect, vi } from 'vitest';
 describe('DefaultProjectBoardComponent', () => {
   let component: DefaultProjectBoardComponent;
   let fixture: ComponentFixture<DefaultProjectBoardComponent>;
-  let engagementsService: Partial<EngagementsService>;
-  let app: Partial<ZerobiasClientApp>;
+  let engagementsService: {
+    getDefaultEngagement: ReturnType<typeof vi.fn>;
+    getProjectTierProject: ReturnType<typeof vi.fn>;
+  };
+  let app: {
+    getCurrentOrgId: ReturnType<typeof vi.fn>;
+  };
 
   const mockEngagement = {
     id: 'eng-uuid-1',
@@ -36,24 +41,22 @@ describe('DefaultProjectBoardComponent', () => {
   } as unknown as ProjectExtended;
 
   beforeEach(async () => {
-    const mockEngagementsService = {
+    engagementsService = {
       getDefaultEngagement: vi.fn(),
       getProjectTierProject: vi.fn(),
     };
-    const mockApp = {
+    app = {
       getCurrentOrgId: vi.fn().mockReturnValue('org-uuid'),
     };
 
     await TestBed.configureTestingModule({
       imports: [DefaultProjectBoardComponent],
       providers: [
-        { provide: EngagementsService, useValue: mockEngagementsService },
-        { provide: ZerobiasClientApp, useValue: mockApp },
+        { provide: EngagementsService, useValue: engagementsService },
+        { provide: ZerobiasClientApp, useValue: app },
       ],
     }).compileComponents();
 
-    engagementsService = mockEngagementsService;
-    app = mockApp;
     fixture = TestBed.createComponent(DefaultProjectBoardComponent);
     component = fixture.componentInstance;
   });
@@ -110,7 +113,14 @@ describe('DefaultProjectBoardComponent', () => {
     engagementsService.getProjectTierProject.mockResolvedValue(mockProjectTier);
 
     await component.ngOnInit();
+    await fixture.whenStable();
     fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(component.loading()).toBe(false);
+    expect(component.hasEngagement()).toBe(true);
+    expect(component.hasProjectTier()).toBe(true);
 
     const cards = fixture.nativeElement.querySelectorAll('mat-card');
     expect(cards.length).toBe(2);
@@ -121,8 +131,10 @@ describe('DefaultProjectBoardComponent', () => {
   });
 
   it('should expose retry() that calls window.location.reload()', () => {
-    const reloadSpy = vi.spyOn(window.location, 'reload');
+    const reloadSpy = vi.fn();
+    vi.stubGlobal('location', { reload: reloadSpy });
     component.retry();
     expect(reloadSpy).toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });
