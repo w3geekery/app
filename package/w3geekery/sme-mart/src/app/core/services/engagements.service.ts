@@ -16,6 +16,7 @@ import type {
 } from '../models';
 import type { RequestStatus } from '../models/enums';
 import type { GqlEngagementResponse } from '../gql-types';
+import { SME_MART_TIER_PROJECT_TAG_ID } from '../constants/tier-tags';
 
 // D-15: Dual-read window timeout values (primary 5s, fallback 5s)
 const PRIMARY_READ_TIMEOUT_MS = 5000;
@@ -142,6 +143,102 @@ export class EngagementsService {
       return PagedResults.fromArray(items, pageNumber, pageSize, totalCount);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  /**
+   * Get the default engagement (depth-1 platform.Project) for a given org.
+   * D-15: Dual-read window (platform.Project.list primary, 5s timeout, no fallback).
+   * Returns null if no default engagement exists or if the read times out.
+   *
+   * Used by: DefaultProjectBoardComponent to hydrate engagement header + breadcrumb.
+   */
+  async getDefaultEngagement(orgId: string): Promise<ProjectExtended | null> {
+    try {
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('PRIMARY_READ_TIMEOUT')), PRIMARY_READ_TIMEOUT_MS)
+      );
+
+      const projects = await Promise.race([
+        this.clientApi.platformClient
+          .getProjectApi()
+          .list(1, 100, undefined, orgId as never), // pageNumber, pageSize, _, buyerOrgId
+        timeout,
+      ]);
+
+      if (!projects || !projects.items || projects.items.length === 0) {
+        console.warn('[ENGAGEMENTS:GET_DEFAULT_ENGAGEMENT]', { orgId, reason: 'no_projects_found' });
+        return null;
+      }
+
+      // Get the first (depth-1) project (default engagement) — parentId = null or undefined
+      const defaultEngagement = projects.items.find((p) => !p.parentId) as ProjectExtended | undefined;
+      if (!defaultEngagement) {
+        console.warn('[ENGAGEMENTS:GET_DEFAULT_ENGAGEMENT]', { orgId, reason: 'no_root_project_found' });
+        return null;
+      }
+
+      return defaultEngagement;
+    } catch (err) {
+      console.warn('[ENGAGEMENTS:GET_DEFAULT_ENGAGEMENT_ERROR]', {
+        orgId,
+        error: (err as Error).message,
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Get the Project-tier child (depth-2 platform.Project) of an engagement.
+   * D-15: Dual-read window (platform.Project.list primary, 5s timeout, no fallback).
+   * Returns null if the project-tier child does not exist.
+   *
+   * Per D-50 canonical tier mapping: depth 2 = Project tier (FIXED name).
+   * The returned project has parentId = engagement.id and tagId = SME_MART_TIER_PROJECT_TAG_ID.
+   *
+   * Used by: DefaultProjectBoardComponent to hydrate project-tier section.
+   */
+  async getProjectTierProject(engagementId: string): Promise<ProjectExtended | null> {
+    try {
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('PRIMARY_READ_TIMEOUT')), PRIMARY_READ_TIMEOUT_MS)
+      );
+
+      const projects = await Promise.race([
+        this.clientApi.platformClient
+          .getProjectApi()
+          .list(1, 100, undefined, undefined as never), // pageNumber, pageSize, _, buyerOrgId (undefined = all orgs accessible to user)
+        timeout,
+      ]);
+
+      if (!projects || !projects.items || projects.items.length === 0) {
+        console.warn('[ENGAGEMENTS:GET_PROJECT_TIER_PROJECT]', { engagementId, reason: 'no_projects_found' });
+        return null;
+      }
+
+      // Find the project-tier child: parentId = engagementId AND tagId = SME_MART_TIER_PROJECT_TAG_ID
+      const projectTier = projects.items.find(
+        (p) =>
+          String(p.parentId) === engagementId &&
+          String(p.tagId) === SME_MART_TIER_PROJECT_TAG_ID
+      ) as ProjectExtended | undefined;
+
+      if (!projectTier) {
+        console.warn('[ENGAGEMENTS:GET_PROJECT_TIER_PROJECT]', {
+          engagementId,
+          reason: 'project_tier_not_found',
+          expectedTagId: SME_MART_TIER_PROJECT_TAG_ID,
+        });
+        return null;
+      }
+
+      return projectTier;
+    } catch (err) {
+      console.warn('[ENGAGEMENTS:GET_PROJECT_TIER_PROJECT_ERROR]', {
+        engagementId,
+        error: (err as Error).message,
+      });
+      return null;
     }
   }
 
