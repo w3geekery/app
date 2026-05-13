@@ -321,3 +321,7 @@ export class PlatformEngagementProvisioner {
     }
   }
 }
+
+// Re-export SME_MART_TIER_PROJECT_TAG_ID from new constants file for caller stability
+// (engagements.service and feature-coming-soon need this constant)
+export { SME_MART_TIER_PROJECT_TAG_ID } from '../constants/tier-tags';
