@@ -15,6 +15,8 @@ import { ComingSoon } from './pages/coming-soon/coming-soon.component';
 import { CompanyProfileFormComponent } from './onboarding/company-profile-form.component';
 import { onboardingGuard } from './core/guards/onboarding.guard';
 import { PlatformEngagementSetupComponent } from './onboarding/platform-engagement-setup.component';
+import { DefaultProjectBoardComponent } from './pages/default-project-board/default-project-board.component';
+import { FeatureComingSoonComponent } from './pages/default-project-board/feature-coming-soon.component';
 
 export const routes: Routes = [
   {
@@ -48,8 +50,35 @@ export const routes: Routes = [
           { path: 'company-profile', component: CompanyProfileFormComponent },
         ],
       },
-      // Projects board placeholder (Phase 30 will replace with full board)
-      { path: 'projects', component: ComingSoon, data: { title: 'Projects' } },
+      // Phase 30: Default project board + honest coming-soon placeholders
+      { path: 'projects', component: DefaultProjectBoardComponent },
+      {
+        path: 'org-documents',
+        component: FeatureComingSoonComponent,
+        data: {
+          title: 'Org Documents — Coming Soon',
+          description: 'Centralized document management and sharing for your organization is on the roadmap. Once available, you\'ll be able to upload, organize, and share documents across engagements.',
+          featureKey: '046',
+        },
+      },
+      {
+        path: 'engagement-dashboard',
+        component: FeatureComingSoonComponent,
+        data: {
+          title: 'Engagement Dashboard — Coming Soon',
+          description: 'Aggregated metrics and progress views across all your engagements are coming soon. You\'ll see status, milestones, and key activity at a glance.',
+          featureKey: '066',
+        },
+      },
+      {
+        path: 'message-center',
+        component: FeatureComingSoonComponent,
+        data: {
+          title: 'Message Center — Coming Soon',
+          description: 'Cross-party messaging across all your engagements is coming soon. Today, conversations live within individual engagements.',
+          featureKey: '065',
+        },
+      },
       // Legacy redirects
       { path: 'engagements', redirectTo: 'rfps', pathMatch: 'full' },
       {
