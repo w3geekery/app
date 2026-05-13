@@ -10,7 +10,146 @@
 
 ---
 
-## 📍 LATEST: 2026-05-13 parkit (9) — Phase 30 FULLY CLOSED; verifier PASSED 6/6; SDK bumped; UAT data tree diagnosed; ready for /clear
+## 📍 LATEST: 2026-05-13 parkit (10) — Director-side hardening sprint: PRECOMMIT-TSC-GATE-1 + D-49-MIGRATE + errata 036/037/038/039 + Phase 31-A nav cleanup + Phase 31 brief v2 + BACKLOG-099 architectural decision captured
+
+**TL;DR:** Post-parkit-9 session focused on Director-side hardening + Phase 31 pre-walkthrough Chrome DevTools triage. **5 commits since parkit-9** (`b5b4c03`). Highlights: (1) PRECOMMIT-TSC-GATE-1 hook-enforced full-project tsc on every SME Mart commit (`5e9e1b4`); (2) D-49-NAMESPACE-MIGRATE-1 closed (`3a42e90`) — dual-namespace probe in `isOrgProvisioned` + Engagement Project verification (defends against orphan-tag false-positive — Brian's-Org case) + 3 SDK shape bugs fixed alongside (errata 036: probe-shape `as never`, ownerId-dropped-on-create, object-cast-instead-of-NewProject-constructor); (3) errata 037 (admin stuck on `/onboarding/*`) + 038 (stale-session-org black hole) co-fixed in `80fff24` after Chrome DevTools surfaced both during pre-walkthrough; (4) Org tab reorder — Corporate Profile is first + default landing for `/org` (`f830588`) + BACKLOG-098 filed for full Org Profile revamp; (5) Phase 31-A nav cleanup (`b74dc69`) — hid Browse Providers / Browse Catalog / My Engagements / My Projects from dropdown; Services + RFPs → Coming Soon; My Profile tabs except Settings → Coming Soon; default redirect from `overview` → `settings`. Also filed errata 039 (cross-contamination on /rfps + /my/engagements + /my/projects via `platform.Project.list()`-no-filter — same as-never pattern as errata 036(a) at different call sites; deferred to v1.5+ post-099 decision) + BACKLOG-099 (RFP-as-`platform.Project` architecture decision A/B/C — Clark pref B, spike C first via Nic's `setMetadata` response). Phase 31 brief refreshed to v2 absorbing 31-A (nav cleanup, done) + 31-B (auto-populate Org Profile from ZB Org fields — next deliverable) + 31-C (original W3Geekery walkthrough + Brian's-Org orphan recovery scope).
+
+### Commits since parkit-9 (`b5b4c03`)
+
+```
+b74dc69 feat(phase-31-a): hide non-dogfood nav surfaces for v1.4; brief v2 + errata 039 + BACKLOG-099
+f830588 feat(org): make Corporate Profile the first tab + default landing; BACKLOG-098 follow-up
+80fff24 fix(onboarding-guard): errata 037 + 038 — admin escape from /onboarding/* + stale-session-org recovery
+3a42e90 fix(provisioner): D-49-NAMESPACE-MIGRATE-1 + errata 036 — dual-namespace probe + SDK shape fixes
+5e9e1b4 feat(infra): land PRECOMMIT-TSC-GATE-1 — full-project tsc gate in pre-commit
+```
+
+Branch at parkit-10: `poc/sme-mart` @ `b74dc69`, **39 ahead of `origin/poc/sme-mart`**, clean tree. **DO NOT PUSH** — Clark deferred all UAT deployment pending the routing-error investigation that drove this whole sprint.
+
+### Errata filed this session
+
+| # | Severity | Status | Notes |
+|---|---|---|---|
+| 036 — provisioner.service `as never` cast pattern (3 bugs) | Medium | **fixed** (`3a42e90`) | (a) `Project.list({...})` filters silently ignored; (b) `Project.create` payload's `ownerId` silently dropped (NewProject DTO has no ownerId field); (c) object-literal-with-cast instead of `new NewProject(...)`. All three fixed alongside D-49-MIGRATE. |
+| 037 — admin stuck on /onboarding/* holding page | Medium | **fixed** (`80fff24`) | Guard returned `true` for admin on any URL including /onboarding/*; admin can stay there. Fix: `escapeOnboardingIfHappy()` helper redirects /onboarding/* to `/` for admin AND post-completion-status. |
+| 038 — stale sessionStorage org-id (non-member) black hole | Medium | **fixed** (`80fff24`) | When `sessionStorage['zb-current-dana-org-id']` points at an org user isn't a member of, listMyOrgs.find returns undefined → orgName='' → isOrgProvisioned short-circuits → holding page with no recovery. Fix: detect mismatch + `app.selectOrg(orgs[0])` + redirect to `/`; zero-orgs → /login. |
+| 039 — `platform.Project.list` no-filter cross-contamination | Medium | **deferred** (v1.5+) | Engagement Projects (D-32..D-35 verbiage) leak into /rfps, /my/engagements, /my/projects list pages as "RFP" cards. Sibling to errata 036(a). Fix gated on BACKLOG-099 architectural decision. v1.4 mitigation: Phase 31-A hides the affected surfaces. |
+
+### BACKLOG additions this session
+
+| # | Priority | Notes |
+|---|---|---|
+| **098** Org Profile revamp | Medium | Auto-populate from ZB platform Org fields (Stream 1) + LLM-prompt internet-gathering preflight skill (Stream 2) + evaluate folding into Vetting Board (Stream 3). **Stream 1 promoted into Phase 31-B.** Streams 2+3 deferred to v1.5+. |
+| **099** RFP-as-`platform.Project` architecture decision (A/B/C) | High (architectural; blocks errata 039 fix) | Captures Clark-Director discussion verbatim. **A:** SmeMartProject GQL stays. **B (Clark pref):** platform.Project + GQL extension class for rich fields. **C (cleaner endpoint, depends on hydra):** platform.Project + hydra Resource metadata. Clark asked Nic about `setMetadata()` capability — **pending Nic's response.** Spike C feasibility after Nic responds. |
+| **PROVISIONER-PROBE-PAGINATION-1** | Low | Switch `Project.list` probes to pagination loop when D-46 multi-engagement future state lands (current `PROBE_PAGE_SIZE = 100` covers v1.4 single-engagement orgs). Filed alongside errata 036 closure. |
+
+### Phase 31 brief v2 — what landed and what's next
+
+**Brief at `.planning/director/phase-31-brief.md` refreshed to v2 (2026-05-13).** Absorbs:
+
+- **31-A: Nav cleanup** — ✅ DONE (`b74dc69`). Verified live in Chrome.
+- **31-B: Auto-populate Org Profile from ZB Org fields** — NEXT. BACKLOG-098 Stream 1 promoted. Needs to reference Phase 25 (Platform Data Audit) SDK inventory for available Org fields.
+- **31-C: Original v1 walkthrough scope** — W3Geekery Pass 1 happy path + Brian's-Org Pass 2 orphan recovery + smoke-test report + production promotion checklist. Pending 31-A + 31-B completion.
+
+### Phase 31-A nav cleanup — final mapping (post-`b74dc69`)
+
+**Hidden / Coming Soon for v1.4:**
+
+| Surface | Mechanism |
+|---|---|
+| Main nav: Services, RFPs | Route component swapped to `ComingSoon` |
+| Dropdown: Browse Providers, Browse Catalog, My Engagements, My Projects | Menu items removed |
+| Direct URLs: /providers, /providers/:id, /services, /rfps + sub-routes, /my/engagements + :id, /my/projects + :id | Route component swapped to `ComingSoon` |
+| My Profile tabs: Overview, Expertise, Services, Reviews, Moderate | Child route component swapped to `ComingSoon` |
+| My Profile default landing | Redirect changed from `overview` → `settings` |
+
+**Functional v1.4 dogfood surface:**
+
+| Surface | Status |
+|---|---|
+| `/` (marketplace welcome with 3 onboarding cards) | Works — all 3 cards route to functional pages post-31-A |
+| `/projects` (Phase 30 default board) | Renders 2 engagement cards (Engagement + Project-tier). Read-only — cards NOT clickable (no drill-down). |
+| `/org` → `/org/profile` (Corporate Profile tab) | Works structurally — empty content (needs 31-B fix) |
+| `/my-profile` → `/my-profile/settings` | Works — Role + Theme radio controls functional |
+| `/admin` | Works — Users + Categories + Reviews + Provisioning + Settings tabs. Phase 31 Pass 2 uses Provisioning tab. |
+| `/onboarding/*` | Works post-errata 037 + 038 |
+| `/org-documents`, `/engagement-dashboard`, `/message-center` (Phase 30 placeholder routes) | Render but **unreachable from any UI** — deep-linkable only. Not a v1.4 concern. |
+
+### Survey findings (Chrome DevTools drill, parkit-10)
+
+1. **Default project board cards have NO click handlers.** parkit-9 RESUME mentioned an "Open project workspace" link from depth-2 Project card to `/project/:id/overview` but it's not in the rendered template. For v1.4 dogfood this is OK (read-only display of engagement structure is sufficient). Drill-down restoration is post-BACKLOG-099 work.
+2. **3 Phase 30 placeholder routes are deep-link-only.** No nav entry points anywhere. Customers won't accidentally land on them. Decide post-099 whether to surface them on the default board or kill the routes.
+3. **Org Profile is empty.** Six section cards (Corporate Identity, Attestation, Insurance, Personnel, Financial, Reference) all "0 items" with Add buttons. Welcome-card flashes briefly on load then auto-dismisses despite items being empty (suggests `items.length > 0` is true even though section filters return 0 — data-shape drift on the `section` field; track inside BACKLOG-098).
+4. **`/projects` vs `/my/projects` are conceptually redundant.** Both represent "user's `platform.Project` rows" at different presentation depths. /projects = Phase 30 2-card dashboard; /my/projects = was the list view (now Coming Soon). Consolidation is a v1.5+ IA decision downstream of BACKLOG-099.
+5. **Cross-contamination bugs (errata 039) are confirmed dormant** for hidden surfaces — every leak path is behind a Coming Soon now.
+
+### Hooks + tests in good standing
+
+- `.husky/pre-commit` enforces both `tsc -p tsconfig.app.json` + `tsc -p tsconfig.spec.json` after `lint-staged`. ~9 sec worst-case wall-clock. Verified live on every commit this session.
+- `set -e` added during PRECOMMIT-TSC-GATE-1 landing — propagates lint-staged failure properly (was a latent bug masked by the original hook structure).
+- Provisioner spec: 20/20 pass. Onboarding-guard spec: 22/22 pass (14 existing + 8 new for errata 037 + 038). Org-provisioning-tab spec: 11/11 pass.
+
+### Carry-forward open items
+
+| Item | Type | Trigger |
+|---|---|---|
+| **Phase 31-B: auto-populate Org Profile from ZB Org fields** | Next Director-side deliverable | After /clear + parkit-10 load. Reference Phase 25 audit. Start with Corporate Identity section. Address welcome-card flash too. |
+| **Nic's response on `hydra.Resource.setMetadata()`** | Architectural unblock | When received → spike C feasibility → decide A/B/C for RFP-as-Project → file Phase for v1.5+. |
+| **Cross-fork PR `w3geekery/app:poc/sme-mart` → `zerobias-org/app:uat`** | Clark's action; deferred | Pending more routing-error investigation per Clark. **DO NOT PUSH.** Bundle Phase 29.5 + 30 + Phase 31-A + all hardening commits when ready. |
+| **Phase 31-C dogfood walkthroughs** | Last Director-side work in v1.4 | After 31-B lands. Pass 1 = W3Geekery happy path; Pass 2 = Brian's-Org orphan recovery (live D-49-MIGRATE + errata 036 verification). |
+| **errata 029 (GSD 1.38.5 state-frontmatter)** | Status check | Flip to `fixed` if state subsystem ran clean during 30 closure — verify on next /gsd-* command. |
+| **Welcome-card flash on /org/profile** | UX bug, sub-issue of BACKLOG-098 | Fix as part of Phase 31-B implementation OR file separate errata if it ends up wider than expected. |
+| **`/projects` vs `/my/projects` redundancy** | Watch item, v1.5+ IA decision | Resolve as part of BACKLOG-099 architectural work. |
+
+### Director-side findings for Brian/Kevin meetings (carry from parkit-9 + add new)
+
+1. (parkit-9 carry) Portal service not in ZB MCP index.
+2. (parkit-9 carry) `searchTasks` lives on portal client.
+3. (parkit-9 carry) Pre-commit hook is ESLint-only, not tsc — **RESOLVED this session** (PRECOMMIT-TSC-GATE-1 landed).
+4. (parkit-9 carry) `platform.Project.tagId` vs hydra resourceLink discovery mismatch.
+5. **NEW**: `NewProject` DTO has no `ownerId` field. Server derives owner from session context (`Dana-Org-Id` header). For cross-org provisioning (operator re-provisions a different org through admin UI), the SDK needs either a NewProject.ownerId field OR an explicit "create-on-behalf-of-org" mechanism. Currently the admin tab requires session-switching to the target org before provisioning works correctly. Ask Kevin / Nic whether NewProject.ownerId is a feature request.
+6. **NEW**: `platform.Project.list()` positional signature exposes only boundaryId/ownerId/status/visibility as server-side filters. No `tagId` or `parentId` filter. Forced client-side filtering pattern in provisioner probes. Ask whether server-side tagId/parentId filters are a feature request (would obviate the page-size + client-filter pattern).
+7. **NEW**: `hydra.Resource.setMetadata()` (or equivalent metadata-attach API) — does it exist? If yes, BACKLOG-099 architecture C becomes viable (RFP rich fields live as hydra metadata, no GQL extension class needed). **Clark already asked Nic** — pending response.
+
+### Memory updates this session
+
+None new. parkit-9's `feedback_sdk_shape_verify_source_provenance` was used heavily during the errata 036 investigation.
+
+### Next-action sequence (on /parks load after /clear)
+
+1. **Verify branch posture:** `git log --oneline -6` (expect `b74dc69` at top), `git status -sb` (expect clean tree on `poc/sme-mart`, 39 ahead of origin). DO NOT push.
+2. **Read this parkit-10 section** for full context. Phase 31-A is done; Phase 31-B is the next deliverable.
+3. **Phase 31-B start:** auto-populate Org Profile Corporate Identity section from ZB platform Org fields.
+   - Reference Phase 25 audit at `.planning/phases/25-platform-data-audit/` for the SDK Org-field inventory (which fields exist, which are reliably populated).
+   - Target file: `src/app/pages/org/tabs/vendor-profile-tab.component.ts` (and probably `vendor-profile-form.component.ts`).
+   - Stream 1 scope: at minimum Name + Slug + Website (if present); audit others (address, year founded, etc.).
+   - Also resolve welcome-card flash (`vendor-profile-tab.component.ts:152` auto-dismiss + section-filter mismatch).
+4. **Verify live in Chrome** — same dev server still running on port 4200; same W3Geekery session.
+5. **Then Phase 31-C dogfood:** W3Geekery Pass 1 + Brian's-Org Pass 2.
+
+### Quick-start prompt (Director Parks reads this first on resume — parkit-10)
+
+You're Director Parks for SME Mart. v1.4 milestone goal = **3P Onboarding & Default Engagement** (customer logs in → populates org profile → lands on default project board). All 6 prior phases (24, 25, 26, 27, 28, 29.5, 30) are closed. **Phase 31 is in progress** with three sub-phases per brief v2:
+
+- **31-A: Nav cleanup** — ✅ DONE at `b74dc69`. Browse/My-Engagements/My-Projects hidden from dropdown; Services/RFPs/My-Profile-tabs-except-Settings → Coming Soon; verified live in Chrome.
+- **31-B: Auto-populate Org Profile from ZB Org fields** — NEXT. Target: `/org/profile` Corporate Identity section pre-filled from `Org.name`/`Org.slug`/etc. Reference Phase 25 audit for available fields. Also address the welcome-card flash sub-issue.
+- **31-C: Dogfood walkthroughs** — pending 31-B. W3Geekery happy path + Brian's-Org orphan recovery (real-data verification of D-49-MIGRATE + errata 036 fixes).
+
+**Branch posture:** `poc/sme-mart` @ `b74dc69`, **39 ahead** of `origin/poc/sme-mart`, clean tree. **DO NOT PUSH** — Clark deferred all UAT deployment pending continued routing-error investigation. Cross-fork PR will bundle Phase 29.5 + 30 + all v1.4 hardening commits when ready.
+
+**Major unblockers this session:** PRECOMMIT-TSC-GATE-1 (hook-enforced tsc gate landed at `5e9e1b4`); D-49-NAMESPACE-MIGRATE-1 closed at `3a42e90` alongside 3 SDK shape fixes (errata 036); errata 037 (admin escape) + 038 (stale-session-org recovery) co-fixed at `80fff24`.
+
+**Reading order on resume:** this parkit-10 section → `.planning/director/phase-31-brief.md` (v2) → `.planning/director/errata/036-*.md`, `037-*.md`, `038-*.md`, `039-*.md` (recent context). Then `.planning/BACKLOG.md` for entries 098 + 099 + PROVISIONER-PROBE-PAGINATION-1. Then DECISIONS.md tail.
+
+**Major open architectural question:** BACKLOG-099 RFP-as-`platform.Project` decision (A/B/C). Blocks errata 039 fix. **Pending Nic's response** on `hydra.Resource.setMetadata()` availability — that answers C feasibility. Clark already messaged Nic.
+
+**Errata 035 carry-forward:** when next running `/gsd-plan-phase` under GSD 1.41.2, expect the auto-commit + STATE.md corruption + untracked PATTERNS pattern. Director cleanup commit pattern documented in errata 035.
+
+**Dev server state at parkit-10:** Angular dev server running on port 4200; Chrome DevTools MCP attached with W3Geekery session active. Likely still alive on resume; verify with `lsof -iTCP -sTCP:LISTEN -n -P | grep 4200`.
+
+---
+
+## 📍 parkit (9): 2026-05-13 — Phase 30 FULLY CLOSED; verifier PASSED 6/6; SDK bumped; UAT data tree diagnosed; ready for /clear
 
 **TL;DR:** Massive session. Started post-parkit-8 mid-flight at the UI-spec gate. Walked Phase 30 from UI-spec → plan → execute → close end-to-end. `gsd-verifier` returned **PASSED 6/6** on PB-* requirements. Phase 30 marked COMPLETE on ROADMAP. Branch 33 ahead of `origin/poc/sme-mart`. 29 commits since parkit-8 (`ddd54f2`). Plus: `@zerobias-com/zerobias-angular-client` 1.1.39 → 1.1.41 wrapper bump; comprehensive UAT data-tree diagnosis for W3Geekery + Brian's-Org via ZB MCP queries; errata 035 filed for GSD 1.41.2 `/gsd-plan-phase` aftermath bugs (commit_docs:false ignored + STATE.md corruption + PATTERNS untracked); Director-side hand-fixes on planner output for 30-03/30-04 (SDK + modernization defects planner introduced); Wave 2 spec-typing remediation `d518073` after executor's Vitest translation hit a `Partial<T>` mock-collapse bug ESLint can't catch; worktree cleanup (11 stale dirs removed); new memory entry for SDK shape provenance trap.
 
