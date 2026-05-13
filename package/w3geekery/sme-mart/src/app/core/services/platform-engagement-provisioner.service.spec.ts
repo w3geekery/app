@@ -28,6 +28,10 @@ describe('PlatformEngagementProvisioner', () => {
   const testEngagementProjectId = 'engagement-project-123';
   const testProjectTierProjectId = 'project-tier-123';
 
+  // D-49 namespace constants mirrored from provisioner.service.ts.
+  const NEW_NAMESPACE_TAG_NAME = `sme-mart.engagement.zerobias-to-${testOrgSlug}`;
+  const LEGACY_NAMESPACE_TAG_NAME = `sme-mart.eng.zerobias-to-${testOrgSlug}`;
+
   const validInput = () => ({
     currentOrgId: testOrgId,
     currentOrgName: testOrgName,
@@ -71,7 +75,7 @@ describe('PlatformEngagementProvisioner', () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
       const projectApi = clientApiMock.platformClient.getProjectApi();
 
-      // Step A: Tag probe and create
+      // isOrgProvisioned dual-namespace probe + ensureTag probe all return empty.
       tagApi.searchTags.mockResolvedValue({ items: [] });
       tagApi.createTag.mockResolvedValue({ id: testTagId });
 
@@ -83,16 +87,13 @@ describe('PlatformEngagementProvisioner', () => {
       projectApi.list.mockResolvedValueOnce({ items: [] });
       projectApi.create.mockResolvedValueOnce({ id: testProjectTierProjectId });
 
-      // Execute
       const result = await service.ensurePlatformEngagement(validInput());
 
-      // Assert all steps executed
       expect(tagApi.searchTags).toHaveBeenCalled();
       expect(tagApi.createTag).toHaveBeenCalled();
       expect(projectApi.list).toHaveBeenCalledTimes(2); // Steps C and D both probe
       expect(projectApi.create).toHaveBeenCalledTimes(2); // Steps C and D both create
 
-      // Assert result shape (no boardId — auto-Board is accepted; no member call — auto-Lead)
       expect(result.created).toBe(true);
       expect(result.engagementProjectId).toBe(testEngagementProjectId);
       expect(result.projectTierProjectId).toBe(testProjectTierProjectId);
@@ -100,19 +101,22 @@ describe('PlatformEngagementProvisioner', () => {
 
     it('Idempotency: org already provisioned → returns created: false with empty IDs', async () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
+      const projectApi = clientApiMock.platformClient.getProjectApi();
 
-      // isOrgProvisioned probe: tag exists
+      // isOrgProvisioned probe: tag exists in both namespaces (mockResolvedValue applies to all calls)
       tagApi.searchTags.mockResolvedValue({ items: [{ id: testTagId }] });
+      // Engagement Project exists with matching tagId — verification check passes.
+      projectApi.list.mockResolvedValue({
+        items: [{ id: testEngagementProjectId, parentId: null, tagId: testTagId }],
+      });
 
-      // Execute
       const result = await service.ensurePlatformEngagement(validInput());
 
-      // Assert recipe was not executed (only probe ran)
-      expect(tagApi.searchTags).toHaveBeenCalled(); // isOrgProvisioned probe
-      expect(tagApi.createTag).not.toHaveBeenCalled(); // Step A create skipped
-      expect(clientApiMock.platformClient.getProjectApi().list).not.toHaveBeenCalled();
+      expect(tagApi.searchTags).toHaveBeenCalled();
+      expect(tagApi.createTag).not.toHaveBeenCalled(); // recipe skipped
+      expect(projectApi.list).toHaveBeenCalledTimes(1); // only the isOrgProvisioned verify call
+      expect(projectApi.create).not.toHaveBeenCalled();
 
-      // Assert result
       expect(result.created).toBe(false);
       expect(result.engagementProjectId).toBe('');
       expect(result.projectTierProjectId).toBe('');
@@ -122,27 +126,23 @@ describe('PlatformEngagementProvisioner', () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
       const projectApi = clientApiMock.platformClient.getProjectApi();
 
-      // isOrgProvisioned: tag doesn't exist yet
-      tagApi.searchTags.mockResolvedValueOnce({ items: [] });
-      // Step A: Create tag
+      // isOrgProvisioned: tags don't exist; ensureTag probe also empty.
+      tagApi.searchTags.mockResolvedValue({ items: [] });
       tagApi.createTag.mockResolvedValue({ id: testTagId });
 
-      // Step C: Engagement project exists via probe
-      projectApi.list.mockResolvedValueOnce({ items: [{ id: testEngagementProjectId }] });
-      // Step C create should NOT be called
-
-      // Step D: Project-tier probe and create
+      // Step C probe finds existing Engagement Project tagged with testTagId.
+      projectApi.list.mockResolvedValueOnce({
+        items: [{ id: testEngagementProjectId, parentId: null, tagId: testTagId }],
+      });
+      // Step D probe finds nothing → creates new.
       projectApi.list.mockResolvedValueOnce({ items: [] });
       projectApi.create.mockResolvedValueOnce({ id: testProjectTierProjectId });
 
-      // Execute
       const result = await service.ensurePlatformEngagement(validInput());
 
-      // Assert Step C probe fired but create did not
       expect(projectApi.list).toHaveBeenCalledTimes(2); // C probe + D probe
       expect(projectApi.create).toHaveBeenCalledTimes(1); // D create only
 
-      // Assert result
       expect(result.created).toBe(true);
       expect(result.engagementProjectId).toBe(testEngagementProjectId);
       expect(result.projectTierProjectId).toBe(testProjectTierProjectId);
@@ -152,14 +152,12 @@ describe('PlatformEngagementProvisioner', () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
       const testError = new Error('Tag creation failed');
 
-      // isOrgProvisioned: tag doesn't exist
-      tagApi.searchTags.mockResolvedValueOnce({ items: [] });
-      // Step A: create fails
+      // All tag probes return empty (not-provisioned + no existing tag to reuse).
+      tagApi.searchTags.mockResolvedValue({ items: [] });
       tagApi.createTag.mockRejectedValue(testError);
 
       const warnSpy = vi.spyOn(console, 'warn');
 
-      // Execute and expect rejection
       let caught = false;
       try {
         await service.ensurePlatformEngagement(validInput());
@@ -170,7 +168,6 @@ describe('PlatformEngagementProvisioner', () => {
 
       expect(caught).toBe(true);
 
-      // Assert snackbar and warning
       expect(snackBarMock.open).toHaveBeenCalledWith(
         'Setup in progress — please retry in a moment.',
         'Dismiss',
@@ -193,17 +190,14 @@ describe('PlatformEngagementProvisioner', () => {
       const projectApi = clientApiMock.platformClient.getProjectApi();
       const testError = new Error('Project creation failed');
 
-      // isOrgProvisioned: tag doesn't exist
       tagApi.searchTags.mockResolvedValue({ items: [] });
-      // Step A: create tag
       tagApi.createTag.mockResolvedValue({ id: testTagId });
-      // Step C: project create fails
+      // Step C probe returns empty → triggers create which fails.
       projectApi.list.mockResolvedValueOnce({ items: [] });
       projectApi.create.mockRejectedValue(testError);
 
       const warnSpy = vi.spyOn(console, 'warn');
 
-      // Execute and expect rejection
       let caught = false;
       try {
         await service.ensurePlatformEngagement(validInput());
@@ -214,7 +208,6 @@ describe('PlatformEngagementProvisioner', () => {
 
       expect(caught).toBe(true);
 
-      // Assert snackbar and warning
       expect(snackBarMock.open).toHaveBeenCalledWith(
         'Setup in progress — please retry in a moment.',
         'Dismiss',
@@ -238,7 +231,7 @@ describe('PlatformEngagementProvisioner', () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
       const projectApi = clientApiMock.platformClient.getProjectApi();
 
-      // Default successful path
+      // Default successful path: empty everywhere → recipe runs fully.
       tagApi.searchTags.mockResolvedValue({ items: [] });
       tagApi.createTag.mockResolvedValue({ id: testTagId });
       projectApi.list.mockResolvedValue({ items: [] });
@@ -247,26 +240,27 @@ describe('PlatformEngagementProvisioner', () => {
       projectApi.create.mockResolvedValueOnce({ id: testProjectTierProjectId });
     });
 
-    it('Step C: creates engagement project with locked verbiage (D-32, D-33), no boundaryId', async () => {
+    it('Step C: creates engagement project with locked verbiage (D-32, D-33), no boundaryId, no ownerId field', async () => {
       const projectApi = clientApiMock.platformClient.getProjectApi();
 
       await service.ensurePlatformEngagement(validInput());
 
-      // Find the Step C create call (first call to create after list probe)
       const createCalls = projectApi.create.mock.calls;
       expect(createCalls.length).toBeGreaterThanOrEqual(1);
 
-      // First create is engagement project (Step C)
+      // First create is engagement project (Step C). Constructed via new NewProject(...).
       const engagementProjectCall = createCalls[0][0];
       expect(engagementProjectCall.name).toBe(`${testOrgName} <- ZeroBias`); // D-32
       expect(engagementProjectCall.description).toContain('Platform Services Engagement: ZeroBias ➡️'); // D-33
       expect(engagementProjectCall.status).toBe('active'); // D-29
       expect(engagementProjectCall.visibility).toBe('internal'); // D-29
       expect(engagementProjectCall.membershipPolicy).toBe('private'); // D-29
-      expect(engagementProjectCall.parentId).toBeNull(); // D-04
+      expect(engagementProjectCall.parentId).toBeNull(); // D-04 (top-level)
       expect(engagementProjectCall.tagId).toBe(testTagId); // D-01
       // boundaryId intentionally omitted (ENGAGEMENT-BOUNDARY-SCOPE-REVISIT-1)
       expect(engagementProjectCall.boundaryId).toBeUndefined();
+      // ownerId field NOT set on NewProject — server derives from session (errata 036 (b))
+      expect((engagementProjectCall as { ownerId?: unknown }).ownerId).toBeUndefined();
     });
 
     it('Step D: creates project-tier project with locked verbiage (D-34, D-35) and tier tag (D-50)', async () => {
@@ -281,10 +275,11 @@ describe('PlatformEngagementProvisioner', () => {
       expect(projectTierCall.description).toContain(`${testOrgName}'s gateway into ZeroBias`); // D-35
       expect(projectTierCall.parentId).toBe(testEngagementProjectId); // D-01
       expect(projectTierCall.tagId).toBe(SME_MART_TIER_PROJECT_TAG_ID_UAT); // D-50: tier-identity tag
+      expect((projectTierCall as { ownerId?: unknown }).ownerId).toBeUndefined();
     });
   });
 
-  describe('Tag naming: slug source', () => {
+  describe('Tag naming: D-49 NEW namespace + slug source', () => {
     beforeEach(() => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
       const projectApi = clientApiMock.platformClient.getProjectApi();
@@ -295,7 +290,7 @@ describe('PlatformEngagementProvisioner', () => {
       projectApi.create.mockResolvedValue({ id: testEngagementProjectId });
     });
 
-    it('Tag name uses platform-canonical orgSlug when provided', async () => {
+    it('Tag created in NEW namespace (sme-mart.engagement.*) — uses platform-canonical orgSlug when provided', async () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
       await service.ensurePlatformEngagement({
         currentOrgId: testOrgId,
@@ -303,7 +298,8 @@ describe('PlatformEngagementProvisioner', () => {
         currentOrgSlug: 'brianhierholzer',
       });
       const createBody = tagApi.createTag.mock.calls[0][0];
-      expect(createBody.name).toBe('sme-mart.eng.zerobias-to-brianhierholzer');
+      // D-49: full-word "engagement" namespace for new tags.
+      expect(createBody.name).toBe('sme-mart.engagement.zerobias-to-brianhierholzer');
     });
 
     it('Tag name falls back to slugify(orgName) when orgSlug missing', async () => {
@@ -315,7 +311,7 @@ describe('PlatformEngagementProvisioner', () => {
       });
       const createBody = tagApi.createTag.mock.calls[0][0];
       // slugify("Brian Hierholzer Inc.") -> "brian-hierholzer-inc"
-      expect(createBody.name).toBe('sme-mart.eng.zerobias-to-brian-hierholzer-inc');
+      expect(createBody.name).toBe('sme-mart.engagement.zerobias-to-brian-hierholzer-inc');
     });
 
     it('Tag ownerId is the marketplace operator org (W3Geekery), not the target customer org', async () => {
@@ -329,46 +325,125 @@ describe('PlatformEngagementProvisioner', () => {
       expect(createBody.ownerId).toBe('cd7105df-523d-5392-9f9a-3f83d3f30107'); // W3Geekery
       expect(createBody.ownerId).not.toBe('d6810036-fbc1-54c2-b01d-1496fc14ed32');
     });
+
+    it('ensureTag probe scans NEW namespace only — legacy orphan tags ignored on create path', async () => {
+      const tagApi = clientApiMock.hydraClient.getTagApi();
+      // Simulate: legacy tag exists, new namespace empty → probe should still create new.
+      tagApi.searchTags.mockImplementation((_p, _ps, _u, body: { name: string }) => {
+        if (body.name.startsWith('sme-mart.engagement.')) return Promise.resolve({ items: [] });
+        if (body.name.startsWith('sme-mart.eng.')) return Promise.resolve({ items: [{ id: 'legacy-tag-id' }] });
+        return Promise.resolve({ items: [] });
+      });
+
+      await service.ensurePlatformEngagement(validInput());
+
+      // createTag fires (legacy orphan ignored by ensureTag); new tag created in NEW namespace.
+      expect(tagApi.createTag).toHaveBeenCalledTimes(1);
+      const createdName = tagApi.createTag.mock.calls[0][0].name;
+      expect(createdName).toMatch(/^sme-mart\.engagement\./);
+    });
   });
 
-  describe('isOrgProvisioned (idempotency probe)', () => {
-    it('Returns true when tag exists', async () => {
+  describe('isOrgProvisioned (dual-namespace probe + Project verification)', () => {
+    const newTagId = 'new-tag-id-uuid';
+    const legacyTagId = 'legacy-tag-id-uuid';
+
+    // Helper: route searchTags by namespace prefix.
+    function mockSearchTagsByNamespace(opts: {
+      new?: Array<{ id: string }>;
+      legacy?: Array<{ id: string }>;
+    }) {
       const tagApi = clientApiMock.hydraClient.getTagApi();
-      tagApi.searchTags.mockResolvedValue({ items: [{ id: testTagId }] });
+      tagApi.searchTags.mockImplementation((_p, _ps, _u, body: { name: string }) => {
+        if (body.name === NEW_NAMESPACE_TAG_NAME) {
+          return Promise.resolve({ items: opts.new || [] });
+        }
+        if (body.name === LEGACY_NAMESPACE_TAG_NAME) {
+          return Promise.resolve({ items: opts.legacy || [] });
+        }
+        return Promise.resolve({ items: [] });
+      });
+    }
 
+    it('NEW namespace tag exists AND Engagement Project exists → true', async () => {
+      mockSearchTagsByNamespace({ new: [{ id: newTagId }] });
+      clientApiMock.platformClient.getProjectApi().list.mockResolvedValue({
+        items: [{ id: 'eng-id', parentId: null, tagId: newTagId }],
+      });
       const result = await service.isOrgProvisioned(testOrgId, testOrgName, testOrgSlug);
-
       expect(result).toBe(true);
-      expect(tagApi.searchTags).toHaveBeenCalled();
     });
 
-    it('Returns false when tag does not exist', async () => {
-      const tagApi = clientApiMock.hydraClient.getTagApi();
-      tagApi.searchTags.mockResolvedValue({ items: [] });
-
+    it('NEW namespace tag exists but Engagement Project missing → false (orphan tag)', async () => {
+      mockSearchTagsByNamespace({ new: [{ id: newTagId }] });
+      clientApiMock.platformClient.getProjectApi().list.mockResolvedValue({ items: [] });
       const result = await service.isOrgProvisioned(testOrgId, testOrgName, testOrgSlug);
-
       expect(result).toBe(false);
     });
 
-    it('Uses provided orgSlug in tag name', async () => {
+    it('LEGACY namespace tag exists AND Engagement Project exists → true', async () => {
+      mockSearchTagsByNamespace({ legacy: [{ id: legacyTagId }] });
+      clientApiMock.platformClient.getProjectApi().list.mockResolvedValue({
+        items: [{ id: 'eng-id', parentId: null, tagId: legacyTagId }],
+      });
+      const result = await service.isOrgProvisioned(testOrgId, testOrgName, testOrgSlug);
+      expect(result).toBe(true);
+    });
+
+    it("LEGACY namespace tag exists but Engagement Project missing → false (Brian's-Org orphan case)", async () => {
+      mockSearchTagsByNamespace({ legacy: [{ id: legacyTagId }] });
+      clientApiMock.platformClient.getProjectApi().list.mockResolvedValue({ items: [] });
+      const result = await service.isOrgProvisioned(testOrgId, testOrgName, testOrgSlug);
+      expect(result).toBe(false);
+    });
+
+    it('Neither namespace has a tag → false (and Project list NOT called)', async () => {
+      mockSearchTagsByNamespace({});
+      const result = await service.isOrgProvisioned(testOrgId, testOrgName, testOrgSlug);
+      expect(result).toBe(false);
+      expect(clientApiMock.platformClient.getProjectApi().list).not.toHaveBeenCalled();
+    });
+
+    it('searchTags throws → false (no crash; warns)', async () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
-      tagApi.searchTags.mockResolvedValue({ items: [] });
+      tagApi.searchTags.mockRejectedValue(new Error('Hub timeout'));
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const result = await service.isOrgProvisioned(testOrgId, testOrgName, testOrgSlug);
+      expect(result).toBe(false);
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[PLATFORM_ENGAGEMENT_PROBE_FAILED]',
+        expect.objectContaining({ orgId: testOrgId }),
+      );
+      warnSpy.mockRestore();
+    });
 
+    it('Empty orgId or orgName → false (no SDK calls)', async () => {
+      const tagApi = clientApiMock.hydraClient.getTagApi();
+      expect(await service.isOrgProvisioned('', testOrgName)).toBe(false);
+      expect(await service.isOrgProvisioned(testOrgId, '')).toBe(false);
+      expect(tagApi.searchTags).not.toHaveBeenCalled();
+    });
+
+    it('Probes BOTH namespaces with the provided orgSlug', async () => {
+      const tagApi = clientApiMock.hydraClient.getTagApi();
+      mockSearchTagsByNamespace({});
       await service.isOrgProvisioned(testOrgId, 'Some Org Name', 'customslug');
-
-      const searchBody = tagApi.searchTags.mock.calls[0][3];
-      expect(searchBody.name).toBe('sme-mart.eng.zerobias-to-customslug');
+      const probedNames = tagApi.searchTags.mock.calls.map((c) => c[3].name);
+      expect(probedNames).toEqual([
+        'sme-mart.engagement.zerobias-to-customslug',
+        'sme-mart.eng.zerobias-to-customslug',
+      ]);
     });
 
     it('Falls back to slugify(orgName) when orgSlug missing', async () => {
       const tagApi = clientApiMock.hydraClient.getTagApi();
-      tagApi.searchTags.mockResolvedValue({ items: [] });
-
+      mockSearchTagsByNamespace({});
       await service.isOrgProvisioned(testOrgId, 'Some Org Name');
-
-      const searchBody = tagApi.searchTags.mock.calls[0][3];
-      expect(searchBody.name).toBe('sme-mart.eng.zerobias-to-some-org-name');
+      const probedNames = tagApi.searchTags.mock.calls.map((c) => c[3].name);
+      expect(probedNames).toEqual([
+        'sme-mart.engagement.zerobias-to-some-org-name',
+        'sme-mart.eng.zerobias-to-some-org-name',
+      ]);
     });
   });
 });
