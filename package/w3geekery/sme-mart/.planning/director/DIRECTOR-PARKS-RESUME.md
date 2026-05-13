@@ -10,7 +10,146 @@
 
 ---
 
-## 📍 LATEST: 2026-05-12 LATER parkit (8) — Phase 30 brief + discuss done, awaiting UI-spec; GSD updated to 1.41.2; about to /clear
+## 📍 LATEST: 2026-05-13 parkit (9) — Phase 30 FULLY CLOSED; verifier PASSED 6/6; SDK bumped; UAT data tree diagnosed; ready for /clear
+
+**TL;DR:** Massive session. Started post-parkit-8 mid-flight at the UI-spec gate. Walked Phase 30 from UI-spec → plan → execute → close end-to-end. `gsd-verifier` returned **PASSED 6/6** on PB-* requirements. Phase 30 marked COMPLETE on ROADMAP. Branch 33 ahead of `origin/poc/sme-mart`. 29 commits since parkit-8 (`ddd54f2`). Plus: `@zerobias-com/zerobias-angular-client` 1.1.39 → 1.1.41 wrapper bump; comprehensive UAT data-tree diagnosis for W3Geekery + Brian's-Org via ZB MCP queries; errata 035 filed for GSD 1.41.2 `/gsd-plan-phase` aftermath bugs (commit_docs:false ignored + STATE.md corruption + PATTERNS untracked); Director-side hand-fixes on planner output for 30-03/30-04 (SDK + modernization defects planner introduced); Wave 2 spec-typing remediation `d518073` after executor's Vitest translation hit a `Partial<T>` mock-collapse bug ESLint can't catch; worktree cleanup (11 stale dirs removed); new memory entry for SDK shape provenance trap.
+
+### Phase 30 status
+
+| Wave | Plans | Status | Anchor |
+|---|---|---|---|
+| 1 | 30-01 (tier-tag hoist) | ✅ closed | `47b7b74` (SUMMARY) |
+| 2 | 30-02 + 30-03 + 30-04 | ✅ closed → close-repaired | `d518073` (spec-typing fix, final) |
+| 3 | 30-05 (route wiring + human-verify) | ✅ closed | `4205f18` (SUMMARY) |
+| close | verifier + ROADMAP + REQUIREMENTS + 30-04 SUMMARY backfill + 30-VERIFICATION + worktree cleanup | ✅ closed | `f0c179f` |
+
+Verifier `gsd-verifier` subagent ran and returned **PASSED 6/6**: PB-01 (routing), PB-02 (default project content with D-32..D-35 verbiage), PB-03 (3 coming-soon surfaces), PB-04 (deep-linkable), PB-06 (honest placeholders), PB-07 (32 spec cases: 21+4+7). `30-VERIFICATION.md` landed (16550 bytes).
+
+Human-verify checkpoint for D-32..D-35 verbiage: **APPROVED by Clark 2026-05-13** on live UAT W3Geekery context.
+
+### Errata since parkit-8
+
+| # | Severity | Status | Notes |
+|---|---|---|---|
+| 035 — GSD 1.41.2 `/gsd-plan-phase` aftermath | Medium | fixed (`5ba9926`) | Three drift modes: (1) `commit_docs:false` ignored — plans auto-committed in `0e7ab8e` + ROADMAP `d51190e`; (2) Plan-checker round-2 fixes left uncommitted; (3) STATE.md `milestone_name` corrupted to literal placeholder `"milestone"`. 30-PATTERNS.md also left untracked. All four fixed in single Director cleanup commit. Carry-forward: expect this aftermath pattern in future `/gsd-plan-phase 1.41.2` runs. |
+
+### Commits since parkit-8 (`ddd54f2`)
+
+29 commits — see `git log --oneline ddd54f2..HEAD`. Highlights:
+
+```
+f0c179f docs(director,30): Phase 30 CLOSE — verifier PASSED 6/6, ROADMAP + REQUIREMENTS
+4205f18 docs(30-05): complete phase 30 plan 05 summary
+edf0454 feat(30-05): wire phase 30 routes — default board + 3 coming-soon placeholders
+855ff60 chore(deps): bump @zerobias-com/zerobias-angular-client 1.1.39 -> 1.1.41
+d518073 fix(30-04): drop Partial<T> on spec mock holders — preserve vi.fn type
+3830ded docs(30-04): complete default-project-board plan summary
+[6 more 30-04 wave commits: a712c1b 32e0293 aba24e6 7691eec ad0c5fb]
+4e38290 docs(30-02): complete phase 30 plan 02 — engagements discovery helpers summary
+[5 more 30-02 + 30-03 wave commits: f2cb511 f80a981 5a8f2c0 04bdfde 44060c9 84dde3e 9b5f9d9]
+47b7b74 docs(phase-30-plan-01): complete execution summary — constants hoist + re-export
+b10ac9f feat(phase-30): add re-export of SME_MART_TIER_PROJECT_TAG_ID for backward compat
+a82a221 feat(phase-30): create tier-tags constants module with Project-tier UUID (D-50)
+3e12639 docs(director,30): hand-fix 30-03 + 30-04 PLAN.md — SDK + modernization defects
+ac71a46 docs(director,30): errata 035 — GSD 1.41.2 plan-phase aftermath bugs
+5ba9926 docs(director,30): clean up planner aftermath — round-2 plan fixes + PATTERNS + STATE
+d51190e docs(30): update ROADMAP.md with Phase 30 planning completion  (auto by gsd-plan-phase)
+0e7ab8e docs(phase-30): create 5-plan set for default board + coming-soon placeholders  (auto)
+45f8b49 docs(director,30): UI-SPEC approved + Stitch mocks + theme-awareness rule
+```
+
+### SDK / dependency state at parkit-9
+
+| Package | Installed | Notes |
+|---|---|---|
+| `@zerobias-com/zerobias-angular-client` | `1.1.41` | bumped from 1.1.39 in `855ff60` |
+| `@zerobias-com/zerobias-client` | `1.1.42` | transitive bump |
+| `@zerobias-com/platform-sdk` | `1.1.17` | latest published, unchanged |
+| `@zerobias-com/portal-sdk` | `1.1.16` | latest published, unchanged — **has `boardIds[]` + `projectIds[]` in `SearchTaskBody` (Discovered: this was always there; Director earlier misread from a stale `~/Projects/zb/clients` source clone at 1.1.14)** |
+| `@zerobias-com/hydra-sdk` | `1.0.7` | latest published, unchanged |
+
+### UAT data state (NEW — diagnosed via ZB MCP this session)
+
+**W3Geekery** (`cd7105df-523d-5392-9f9a-3f83d3f30107`):
+- Engagement Project (depth 1) `4617e9d7-b7b4-4679-be43-10fc4140295c` "W3Geekery <- ZeroBias" — TAG `b39bf3eb-...` (new D-49 namespace `sme-mart.engagement.zerobias-to-w3geekery`)
+- Project tier (depth 2) `e62b2446-b99f-4160-b7cc-aac9734964eb` "ZeroBias Platform" — `tagId = 420b0753-...` (`sme-mart.tier.project` singleton)
+- Legacy tag `a81cd320-...` (`sme-mart.eng.w3geekery-default-zb`) coexists per D-43 — pre-directional naming (`{slug}-default-zb`), distinct from the post-2026-05-07 `sme-mart.eng.zerobias-to-{slug}` pattern
+- Legacy task `2c95bc18-...` "Engagement coordination — W3Geekery <- ZeroBias" linked via legacy tag
+
+**Brian Hierholzer Inc.** (`d6810036-fbc1-54c2-b01d-1496fc14ed32`):
+- **ONLY an orphan legacy tag** `fbf92e6e-b0a6-43fd-95f0-74a9d8c8b4df` (`sme-mart.eng.zerobias-to-brianhierholzer`, 2026-05-08, operator-owned by W3Geekery, no resources linked)
+- **Engagement Project + depth-2 child are GONE** (planning record cited `6c24f487-...` + `ac87802f-...`; both return "No such Project" on UAT today)
+- **Inverted admin tab UI** explained: `isOrgProvisioned()` probes `sme-mart.eng.zerobias-to-{slug}` pattern → matches Brian's tag (false-positive: tag exists, Projects gone) but NOT W3Geekery (both legacy `{slug}-default-zb` AND new `sme-mart.engagement.*` namespace fail the probe regex)
+- Resolution: BACKLOG `D-49-NAMESPACE-MIGRATE-1` (Medium, Phase 31 hard prereq) — probe both namespaces + verify Engagement Project exists; AFTER landing, re-provision Brian's org via admin tab to create fresh v3 artifacts in D-49 namespace
+
+### Discovery mechanism caveat (worth a Director memory if useful)
+
+`platform.Project.tagId` (Project-side field set by v3 recipe) is **NOT** the same as `hydra.Resource.linkResources` (cross-entity resource→tag link). Tag-based discovery via `hydra.Resource.searchResources(tags=[...])` returns 0 resources for the W3Geekery new-namespace tag even though 2 Projects reference it via `tagId`. Different mechanism. Implication: code that wants to discover Projects by tag must use `platform.Project.list({ownerId})` + filter by `tagId` field, NOT `hydra.Resource.searchResources`.
+
+### Backlog additions this session
+
+| # | Priority | Notes |
+|---|---|---|
+| MODERN-CLEANUP-4 (filed earlier this session at 2026-05-12) | Medium | Lint rule banning hex literals in `*.component.scss` + inline templates (companion enforcement to MODERN-CLEANUP-3 migration scope) |
+| PLAN-VERIFY-SCOPE-ALIGN-1 | Low | Plan verification commands should scope ESLint to `*.{ts,html}` only (matches `.lintstagedrc.json`) — never use directory globs that pull in `.scss` |
+
+### New memory entries this session
+
+| Entry | Description |
+|---|---|
+| `feedback_sdk_shape_verify_source_provenance` | When checking SDK class/field shape: prefer `npm pack @scope/pkg@version` > version-matched `node_modules` > source clone (only after `git pull` AND version-field check). Source clone at `~/Projects/zb/clients` drifts fast; bit Director 2026-05-13 on `portal.Task.search` `boardIds` field absent-from-clone-at-1.1.14 but present-in-installed-1.1.16 |
+| (existing) `feedback_handoff_must_include_modernization_rules` | EXTENDED with theme-awareness rule (UI-SPEC's Theme Awareness Directive carried into the modernization-rules block that gets pasted verbatim in BOTH gsd-plan and gsd-execute handoffs) |
+
+### Carry-forward open items (post-Phase-30 closure)
+
+| Item | Type | Trigger |
+|---|---|---|
+| **Cross-fork PR open** (`w3geekery/app:poc/sme-mart` → `zerobias-org/app:uat`) bundling Phase 29.5 + Phase 30 | **Clark's action** — Director MUST NOT push or `gh pr create` per project discipline | Anytime. 33 commits ahead of origin |
+| **PRECOMMIT-TSC-GATE-1** (HIGH, existing BACKLOG) | Director — next post-Phase-30 work | Land BEFORE next agent dispatch on TS-touching phases. Per backlog: "do NOT add it under duress of finishing another phase" — Phase 30 is now closed, so the moment for this is now |
+| **D-49-NAMESPACE-MIGRATE-1** (Medium, existing BACKLOG) | Phase 31 hard prereq | Engagement tag probe + create must understand both `sme-mart.eng.*` (legacy) and `sme-mart.engagement.*` (D-49 new) namespaces; verify Engagement Project exists before declaring provisioned; allows re-provisioning Brian's org cleanly |
+| **Brian's-Org orphan tag cleanup** | Director-side `hydra.Tag.deleteTag` on UAT (or leave per D-43) | Before re-provisioning Brian's org in Phase 31. Optional — leaving is also fine |
+| **2 non-this-session worktrees + sme-mart-dp2 parallel-Director worktree** still on disk | Not this session's to clean | Leave for next Director session OR Clark's call |
+| **PR review notes** for the eventual cross-fork PR | Director can draft on request | Anytime Clark wants a draft body |
+
+### Director-side findings worth surfacing in Brian/Kevin meetings if relevant
+
+1. **Portal service not in ZB MCP index** — `portal.*` endpoints (Product/Framework/Vendor/Task search) are SDK-only. ZB MCP gap. Clark's call whether to ask Kevin/Catalin for prioritization. Recipe at `.planning/docs/ZB_PORTAL_CURL_FALLBACK.md`.
+2. **`searchTasks` lives on portal client** (POST `/taskSearch` with rich `SearchTaskBody` — RACI-split filters + `boardIds[]` + `projectIds[]` + custom fields). Not on `platform.*`. SME Mart `catalog.service.ts` already uses portal via `clientApi.portalClient.get*Api().search(...)`.
+3. **Pre-commit hook is ESLint-only, not tsc** — `.husky/pre-commit` invokes lint-staged → eslint. Commit `ad0c5fb` passed its hook with 16 spec-tsc errors because eslint doesn't catch type errors of the `Partial<T>` mock-collapse shape. PRECOMMIT-TSC-GATE-1 is the structural fix.
+4. **`platform.Project.tagId` vs hydra.Resource.linkResources** discovery mismatch (above) — possible Kevin/Catalin ask to bridge or document.
+
+### Branch posture at parkit-9
+
+- `poc/sme-mart` @ `f0c179f` — 33 ahead of `origin/poc/sme-mart`
+- Working tree CLEAN
+- Worktrees: 3 unrelated remain (2 non-this-session agent dirs at `02607e9` + `sme-mart-dp2/director-parks-2-phase20`) — NOT this session's to clean
+- No PR open; no push; ROADMAP marked complete; verification artifacts committed
+
+### Next-action sequence (on /parks load after /clear)
+
+1. **Verify branch posture:** `git log --oneline -5` (expect `f0c179f` at top), `git status -sb` (expect clean tree on `poc/sme-mart`, 33 ahead of origin).
+2. **Read this parkit-9 section** + `30-VERIFICATION.md` + `30-CLOSURE` (note: there's no CLOSURE.md for Phase 30 — closure record is in this RESUME + VERIFICATION.md + the close commit body of `f0c179f`).
+3. **Clark's call**: open the cross-fork PR now bundling Phase 29.5 + 30, or hold for next useful code drop.
+4. **Director next work — PRECOMMIT-TSC-GATE-1**: implement `tsc -p tsconfig.app.json && tsc -p tsconfig.spec.json` in `.husky/pre-commit` (or via `lint-staged`). Backlog item already lays out the trade-off (~3-5 sec per commit acceptable given 5+ tsc-skip errata cost). Test the hook itself thoroughly per the backlog item's caveat.
+5. **Phase 31 prep** (after PRECOMMIT-TSC-GATE-1): D-49-NAMESPACE-MIGRATE-1 first (probe both namespaces + verify Engagement Project exists). Then Phase 31 brief.
+
+### Quick-start prompt (Director Parks reads this first on resume — parkit-9)
+
+You're Director Parks for SME Mart. **Phase 30 (Default Project Board + Coming Soon Placeholders) is fully closed** as of 2026-05-13. All 5 plans landed across 3 waves; `gsd-verifier` returned PASSED 6/6 on PB-* requirements; ROADMAP marked COMPLETE; Clark human-verified D-32..D-35 verbiage on live UAT W3Geekery context.
+
+**Branch posture:** `poc/sme-mart` @ `f0c179f`, 33 ahead of `origin/poc/sme-mart`. Working tree clean. DO NOT PUSH. Cross-fork PR (`w3geekery/app:poc/sme-mart` → `zerobias-org/app:uat`) bundling Phases 29.5 + 30 is **Clark's action** — Director provides PR body draft on request only.
+
+**Next Director-side deliverable: PRECOMMIT-TSC-GATE-1** (HIGH priority, existing BACKLOG entry). Pre-commit hook is ESLint-only today; Phase 30 Wave 2 had a 16-spec-tsc-error commit (`ad0c5fb`) that passed the hook because ESLint doesn't catch `Partial<T>` mock-collapse type errors. Backlog item proposes adding `tsc -p tsconfig.app.json && tsc -p tsconfig.spec.json` to the hook. Land this BEFORE next agent dispatch on TS-touching phases.
+
+**Then Phase 31 prep**: `D-49-NAMESPACE-MIGRATE-1` (Medium, hard prereq). Brian's-Org UAT state today is an orphan legacy tag with no Engagement Project (planning notes claimed Engagement `6c24f487-...` exists; ZB MCP probe returns "No such Project" — deleted at some point). W3Geekery's UAT state is correct (depth-1 + depth-2 Projects + new-namespace tag). Provisioner code uses legacy `sme-mart.eng.zerobias-to-{slug}` pattern — Wave-2 of the migrate item updates to probe both namespaces + verify Project existence.
+
+**Reading order on resume:** this parkit-9 section → `30-VERIFICATION.md` → `BACKLOG.md` (look for PRECOMMIT-TSC-GATE-1 + D-49-NAMESPACE-MIGRATE-1 + PLAN-VERIFY-SCOPE-ALIGN-1 + MODERN-CLEANUP-4) → recent DECISIONS.md tail. New memory: `feedback_sdk_shape_verify_source_provenance` (read from `node_modules`, not source clone, when checking SDK class shape).
+
+**Errata 035 carry-forward**: when next running `/gsd-plan-phase` under GSD 1.41.2, expect the auto-commit + STATE.md corruption + untracked PATTERNS pattern. Director cleanup commit pattern documented in errata 035.
+
+---
+
+## parkit (8): 2026-05-12 LATER — Phase 30 brief + discuss done, awaiting UI-spec; GSD updated to 1.41.2; about to /clear
 
 **TL;DR:** Since parkit-7: Phase 30 brief v2 + User-flow addendum written and committed (`a529fa7` + `bacd2c8`). gsd-discuss-phase 30 ran, Director locked all 8 gray areas (A + G1–G7), CONTEXT.md v2 + DISCUSSION-LOG committed by gsd-plan agent (`91e41af`). gsd-plan exited at the UI-spec gate (won't nest UI-phase due to AskUserQuestion bug #1009). Pre-push gate caught a spec drift defect (errata 034 — v3 amendment missed updating `org-provisioning-tab.component.spec.ts`); Director hand-fixed + verified full suite 1762/1762, errata flipped to `fixed`. Branch pushed to `origin/poc/sme-mart` (1762-test pre-push hook passed). meta:director adapter synced from upstream meta-harness (v2 guardrails: errata step + brief_handoff step + GSD-artifacts boundary expansion + required-reading additions). GSD itself updated 1.38.5 → 1.41.2; local patches on `verify-phase.md` backed up to `gsd-local-patches/` pending reapply.
 
