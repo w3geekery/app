@@ -1,0 +1,42 @@
+<div class="board-container">
+  <!-- Loading state -->
+  @if (loading()) {
+    <div class="loading-state">
+      <mat-progress-spinner mode="indeterminate" diameter="48"></mat-progress-spinner>
+      <p>Loading your project board...</p>
+    </div>
+  } @else if (hasError()) {
+    <!-- Error state -->
+    <div class="error-state">
+      <p class="error-message">{{ error() }}</p>
+      <button mat-raised-button color="primary" (click)="retry()">
+        Retry
+      </button>
+    </div>
+  } @else if (hasEngagement(); as eng) {
+    @if (hasProjectTier(); as tier) {
+      <!-- Success: Render engagement + project-tier cards -->
+      <div class="board-grid">
+        <!-- Engagement card (depth-1) -->
+        <mat-card class="engagement-card">
+          <mat-card-header>
+            <mat-card-title>{{ engagement()?.name }}</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <p class="card-description">{{ engagement()?.description }}</p>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Project-tier card (depth-2) -->
+        <mat-card class="project-tier-card">
+          <mat-card-header>
+            <mat-card-title>{{ projectTier()?.name }}</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <p class="card-description">{{ projectTier()?.description }}</p>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    }
+  }
+</div>
