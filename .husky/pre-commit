@@ -1,6 +1,11 @@
 #!/usr/bin/env sh
+set -e
 if ! git diff --cached --name-only | grep -q '^package/w3geekery/sme-mart/'; then
   exit 0
 fi
 cd package/w3geekery/sme-mart
 npx lint-staged
+# PRECOMMIT-TSC-GATE-1: run full-project tsc on both configs after lint-staged.
+# Always-on for SME Mart commits; both configs sequential. See BACKLOG.md.
+echo "Running tsc gate (app + spec)..."
+npx tsc -p tsconfig.app.json --noEmit && npx tsc -p tsconfig.spec.json --noEmit
