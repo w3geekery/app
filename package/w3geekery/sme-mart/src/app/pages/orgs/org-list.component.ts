@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ZbSearchInputComponent, ZbEmptyStateContainerComponent, ZbResourceStatusComponent } from '@zerobias-org/ngx-library';
+import { ZbSearchInputComponent, ZbEmptyStateContainerComponent } from '@zerobias-org/ngx-library';
 import { ZerobiasClientApi, ZerobiasClientApp } from '@zerobias-com/zerobias-client';
 import { UserPreferencesService } from '../../core/services/user-preferences.service';
 import { GraphqlReadService } from '../../core/services/graphql-read.service';
@@ -27,8 +27,6 @@ interface OrgMetrics {
 }
 
 interface OrgWithMetadata extends OrgListItem {
-  isInternal: boolean;
-  badgeLabel: 'INTERNAL' | 'EXTERNAL';
   metrics: OrgMetrics;
 }
 
@@ -43,7 +41,6 @@ interface OrgWithMetadata extends OrgListItem {
     MatDividerModule,
     ZbSearchInputComponent,
     ZbEmptyStateContainerComponent,
-    ZbResourceStatusComponent,
   ],
   templateUrl: './org-list.component.html',
   styleUrl: './org-list.component.scss',
@@ -72,12 +69,9 @@ export class OrgListComponent {
 
     const all = this.allOrgs();
     const metrics = this.orgMetrics();
-    const ownerIdStr = whoAmI.ownerId?.toString() || '';
 
     return all.map((org: OrgListItem): OrgWithMetadata => ({
       ...org,
-      isInternal: ownerIdStr === org.id,
-      badgeLabel: ownerIdStr === org.id ? 'INTERNAL' : 'EXTERNAL',
       metrics: metrics[org.id] || { engagementCount: 0, projectCount: 0 },
     }));
   });

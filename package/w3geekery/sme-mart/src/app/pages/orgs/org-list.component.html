@@ -48,7 +48,9 @@
         >
           <div class="card-header">
             <h3 class="org-name">{{ org.name }}</h3>
-            <zb-resource-status [label]="org.badgeLabel" />
+            @if (isActive(org.id)) {
+              <span class="active-chip">Active</span>
+            }
           </div>
 
           @if (org.description) {
@@ -80,7 +82,7 @@
         <thead>
           <tr>
             <th class="col-name">Organization Name</th>
-            <th class="col-badge">Type</th>
+            <th class="col-badge"></th>
             <th class="col-metrics">Metrics</th>
             <th class="col-members">Members</th>
           </tr>
@@ -94,7 +96,9 @@
             >
               <td class="col-name">{{ org.name }}</td>
               <td class="col-badge">
-                <zb-resource-status [label]="org.badgeLabel" />
+                @if (isActive(org.id)) {
+                  <span class="active-chip">Active</span>
+                }
               </td>
               <td class="col-metrics">
                 {{ org.metrics.engagementCount }} E · {{ org.metrics.projectCount }} P

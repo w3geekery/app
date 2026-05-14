@@ -4,6 +4,19 @@
   margin: 0 auto;
 }
 
+/* "Active" chip on the currently-selected org (card + table view) */
+.active-chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background-color: var(--mat-sys-tertiary-container, var(--mat-sys-primary-container));
+  color: var(--mat-sys-on-tertiary-container, var(--mat-sys-on-primary-container));
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
 /* Header */
 .org-list-header {
   margin-bottom: 24px;
