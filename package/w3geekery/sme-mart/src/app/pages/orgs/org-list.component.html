@@ -42,7 +42,7 @@
     <div class="org-cards-grid">
       @for (org of filteredOrgs(); track org.id) {
         <div
-          [routerLink]="['/orgs', org.id]"
+          [routerLink]="['/orgs', org.slug || org.id]"
           class="org-card"
           [class.active]="isActive(org.id)"
         >
@@ -88,7 +88,7 @@
         <tbody>
           @for (org of filteredOrgs(); track org.id) {
             <tr
-              [routerLink]="['/orgs', org.id]"
+              [routerLink]="['/orgs', org.slug || org.id]"
               class="org-row"
               [class.active-row]="isActive(org.id)"
             >

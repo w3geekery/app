@@ -1,7 +1,6 @@
 import {
   Component, inject, signal, computed, ChangeDetectionStrategy,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,6 +14,7 @@ import { GraphqlReadService } from '../../core/services/graphql-read.service';
 
 interface OrgListItem {
   id: string;
+  slug?: string;
   name: string;
   description?: string;
   hidden?: boolean;
@@ -36,7 +36,6 @@ interface OrgWithMetadata extends OrgListItem {
   selector: 'app-org-list',
   standalone: true,
   imports: [
-    CommonModule,
     RouterLink,
     MatButtonModule,
     MatIconModule,
@@ -105,8 +104,17 @@ export class OrgListComponent {
     try {
       this.isLoading.set(true);
       const orgs = await this.clientApi.danaClient.getMeApi().listMyOrgs();
-      const orgList = (orgs || []).map((org: any) => ({
-        id: org.id?.toString() || org.id,
+      type RawOrg = {
+        id?: { toString(): string } | string;
+        slug?: string;
+        name?: string;
+        description?: string;
+        hidden?: boolean;
+        memberCount?: number;
+      };
+      const orgList = ((orgs || []) as unknown as RawOrg[]).map((org) => ({
+        id: typeof org.id === 'string' ? org.id : (org.id?.toString() ?? ''),
+        slug: org.slug,
         name: org.name || '',
         description: org.description,
         hidden: org.hidden,
@@ -136,7 +144,7 @@ export class OrgListComponent {
   private async loadOrgMetrics(orgId: string): Promise<void> {
     try {
       // Query engagements (org scoping handled by dana-org-id header, not filter)
-      const engagements = await this.graphqlRead.query<any>(
+      const engagements = await this.graphqlRead.query<{ id: string }>(
         'Engagement',
         ['id'],
         { pageSize: 1, pageNumber: 1 }
@@ -144,7 +152,7 @@ export class OrgListComponent {
       const engagementCount = engagements.page.totalCount || 0;
 
       // Query projects (org scoping handled by dana-org-id header, not filter)
-      const projects = await this.graphqlRead.query<any>(
+      const projects = await this.graphqlRead.query<{ id: string }>(
         'SmeMartProject',
         ['id'],
         { pageSize: 1, pageNumber: 1 }
