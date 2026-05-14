@@ -371,6 +371,39 @@ export class SmeMartProjectService {
     const pageNumber = options?.pageNumber ?? 1;
     const pageSize = options?.pageSize ?? 50;
 
+    // D-15 dual-read: primary platform.Project.list (depth-2 Project-tier
+    // children of this engagement), fallback GQL SmeMartProject filtered by
+    // engagementId scalar (legacy data during the deprecation window).
+    try {
+      const platformList = await this.clientApi.platformClient
+        .getProjectApi()
+        .list(pageNumber, pageSize);
+
+      if (platformList) {
+        // Children of the requested engagement Project, tier=Project (D-50).
+        // platform.Project.list has no server-side parentId or tagId filter
+        // (parkit-10 SDK note), so we filter client-side.
+        const children = platformList.items.filter(p => {
+          const proj = p as ProjectExtended;
+          return String(proj.parentId ?? '') === engagementId
+            && String(proj.tagId ?? '') === SME_MART_TIER_PROJECT_TAG_ID;
+        });
+
+        if (children.length > 0) {
+          const transformed = children.map(p => this.transformPlatformProjectToSmeMartProject(p as ProjectExtended));
+          const filtered = this.demoVisibility.applyVisibility(transformed) as SmeMartProject[];
+          const paged = new PagedResults<SmeMartProject>();
+          paged.items = filtered;
+          paged.pageNumber = pageNumber;
+          paged.pageSize = pageSize;
+          paged.count = filtered.length;
+          return paged;
+        }
+      }
+    } catch (err) {
+      console.debug('[LIST_PROJECTS_BY_ENGAGEMENT:PLATFORM_MISS]', { engagementId, error: (err as Error).message });
+    }
+
     const gqlOptions: GqlQueryOptions = {
       pageNumber,
       pageSize,
