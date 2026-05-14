@@ -11,7 +11,7 @@ import { SME_MART_TIER_PROJECT_TAG_ID } from '../constants/tier-tags';
 import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
 import type { ProjectExtended, Tag } from '@zerobias-com/platform-sdk';
 import type { QueryOptions } from '@zerobias-org/data-utils';
-import { PagedResults } from '@zerobias-org/types-core-js';
+import { PagedResults, UUID } from '@zerobias-org/types-core-js';
 import type {
   SmeMartProject,
   CreateSmeMartProjectRequest,
@@ -116,15 +116,31 @@ export class SmeMartProjectService {
    */
   @Memoize(30000)
   async getProject(id: string): Promise<SmeMartProject | null> {
-    const project = await this.graphqlRead.getById<GqlSmeMartProjectResponse>(
+    // D-15 dual-read: primary platform.Project.get (handles new platform-Project
+    // rows like the depth-2 Project-tier records), fallback GQL SmeMartProject
+    // (legacy class still in use during the deprecation window).
+    try {
+      const projectApi = this.clientApi.platformClient.getProjectApi();
+      const projectIdUuid = new UUID(id);
+      const platformProject = await projectApi.get(projectIdUuid);
+      if (platformProject) {
+        return this.transformPlatformProjectToSmeMartProject(platformProject as ProjectExtended);
+      }
+    } catch (err) {
+      // 404 / not-found on platform path → try GQL fallback. Other errors also
+      // fall through (network/timeout/etc); the GQL path will surface its own.
+      console.debug('[GET_PROJECT:PLATFORM_MISS]', { id, error: (err as Error).message });
+    }
+
+    const gql = await this.graphqlRead.getById<GqlSmeMartProjectResponse>(
       'SmeMartProject',
       id,
       this.scalarFields,
     );
 
-    if (!project) return null;
+    if (!gql) return null;
 
-    return mapGqlToNeon<SmeMartProject>(project, SME_MART_PROJECT_FIELD_MAPPING.gqlToNeon);
+    return mapGqlToNeon<SmeMartProject>(gql, SME_MART_PROJECT_FIELD_MAPPING.gqlToNeon);
   }
 
   /**

@@ -110,21 +110,18 @@ describe('EngagementDetail', () => {
       expect(mockCtx.setCurrentProviderId).toHaveBeenCalledWith('prov-001');
     });
 
-    it('should redirect to /rfps if not found', async () => {
+    it('should redirect to /engagements if not found', async () => {
       mockWorkRequests.getEngagement.mockResolvedValue(null);
       await component.ngOnInit();
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/rfps']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/engagements']);
     });
 
-    it('should redirect to RFP route if no engagement_tag', async () => {
-      mockWorkRequests.getEngagement.mockResolvedValue(
-        makeEngagement({ engagement_tag: null }),
-      );
+    it('should load engagement normally even when engagement_tag is null (legacy RFP heuristic removed)', async () => {
+      const tagless = makeEngagement({ engagement_tag: null });
+      mockWorkRequests.getEngagement.mockResolvedValue(tagless);
       await component.ngOnInit();
-      expect(mockRouter.navigate).toHaveBeenCalledWith(
-        ['/rfps', 'wr-001'],
-        { replaceUrl: true },
-      );
+      expect(mockRouter.navigate).not.toHaveBeenCalled();
+      expect(mockCtx.setEngagement).toHaveBeenCalledWith(tagless);
     });
 
     it('should build breadcrumbs', async () => {

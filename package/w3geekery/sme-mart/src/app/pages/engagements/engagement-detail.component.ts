@@ -80,15 +80,13 @@ export class EngagementDetail implements OnInit, OnDestroy {
 
       if (!eng) {
         this.snackBar.open('Engagement not found', 'OK', { duration: 3000 });
-        this.router.navigate(['/rfps']);
+        this.router.navigate(['/engagements']);
         return;
       }
 
-      // If this is actually an RFP (no tag), redirect to RFP route
-      if (!eng.engagement_tag) {
-        this.router.navigate(['/rfps', eng.id], { replaceUrl: true });
-        return;
-      }
+      // Note: the legacy "no engagement_tag -> /rfps" redirect was removed
+      // 2026-05-14. The new platform.Project data path does not populate
+      // engagement_tag on the transform; trust the route the user chose.
 
       // Push data to shared context
       this.ctx.setEngagement(eng);
