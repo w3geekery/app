@@ -10,7 +10,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ZbSearchInputComponent, ZbEmptyStateContainerComponent } from '@zerobias-org/ngx-library';
 import { ZerobiasClientApi, ZerobiasClientApp } from '@zerobias-com/zerobias-client';
 import { UserPreferencesService } from '../../core/services/user-preferences.service';
-import { GraphqlReadService } from '../../core/services/graphql-read.service';
 
 interface OrgListItem {
   id: string;
@@ -19,16 +18,18 @@ interface OrgListItem {
   description?: string;
   hidden?: boolean;
   memberCount?: number;
+  avatarUrl?: string;
+  domains?: string[];
+  supportEmail?: string;
 }
 
-interface OrgMetrics {
-  engagementCount: number;
-  projectCount: number;
-}
-
-interface OrgWithMetadata extends OrgListItem {
-  metrics: OrgMetrics;
-}
+// Type alias kept so call sites that still reference OrgWithMetadata for
+// readability survive future re-additions of cheap per-org metadata. Today
+// there are no derived fields — the cross-org metrics block was removed
+// 2026-05-14 (the engagement/project counts repeated the current session
+// org's totals on every card because GQL scoping comes from the dana-org-id
+// header, not a filter — so all rows showed the same numbers).
+type OrgWithMetadata = OrgListItem;
 
 @Component({
   selector: 'app-org-list',
@@ -50,7 +51,6 @@ export class OrgListComponent {
   private readonly clientApi = inject(ZerobiasClientApi);
   private readonly app = inject(ZerobiasClientApp);
   private readonly prefs = inject(UserPreferencesService);
-  private readonly graphqlRead = inject(GraphqlReadService);
 
   // System org UUID
   private readonly SYSTEM_ORG_ID = '00000000-0000-0000-0000-000000000000';
@@ -61,23 +61,9 @@ export class OrgListComponent {
   readonly currentOrgId = signal<string | null>(null);
   readonly isLoading = signal(true);
   readonly whoAmIData = toSignal(inject(ZerobiasClientApp).getWhoAmI(), { initialValue: null });
-  readonly orgMetrics = signal<Record<string, OrgMetrics>>({});
-
-  readonly orgsWithMetadata = computed(() => {
-    const whoAmI = this.whoAmIData();
-    if (!whoAmI) return [];
-
-    const all = this.allOrgs();
-    const metrics = this.orgMetrics();
-
-    return all.map((org: OrgListItem): OrgWithMetadata => ({
-      ...org,
-      metrics: metrics[org.id] || { engagementCount: 0, projectCount: 0 },
-    }));
-  });
 
   readonly filteredOrgs = computed(() => {
-    const all = this.orgsWithMetadata();
+    const all = this.allOrgs();
     const term = this.searchTerm().toLowerCase();
 
     return all.filter((org: OrgWithMetadata) => {
@@ -105,65 +91,31 @@ export class OrgListComponent {
         description?: string;
         hidden?: boolean;
         memberCount?: number;
+        avatarUrl?: { toString(): string } | string;
+        domains?: string[];
+        supportEmail?: string;
       };
-      const orgList = ((orgs || []) as unknown as RawOrg[]).map((org) => ({
+      const orgList = ((orgs || []) as unknown as RawOrg[]).map((org): OrgListItem => ({
         id: typeof org.id === 'string' ? org.id : (org.id?.toString() ?? ''),
         slug: org.slug,
         name: org.name || '',
         description: org.description,
         hidden: org.hidden,
         memberCount: org.memberCount,
+        avatarUrl: typeof org.avatarUrl === 'string'
+          ? org.avatarUrl
+          : org.avatarUrl?.toString(),
+        domains: Array.isArray(org.domains) ? org.domains : undefined,
+        supportEmail: org.supportEmail,
       }));
 
       this.allOrgs.set(orgList);
-      // Set current org ID
       const currentId = this.app.getCurrentOrgId();
       this.currentOrgId.set(currentId || null);
-
-      // Load metrics for all orgs in parallel (FLAG-1: parallelize)
-      await this.loadAllOrgMetrics(orgList);
     } catch (err) {
       console.error('[OrgList] Failed to load orgs:', err);
     } finally {
       this.isLoading.set(false);
-    }
-  }
-
-  private async loadAllOrgMetrics(orgs: OrgListItem[]): Promise<void> {
-    // Fire all metric requests in parallel (FLAG-1 fix)
-    const metricPromises = orgs.map(org => this.loadOrgMetrics(org.id));
-    await Promise.all(metricPromises);
-  }
-
-  private async loadOrgMetrics(orgId: string): Promise<void> {
-    try {
-      // Query engagements (org scoping handled by dana-org-id header, not filter)
-      const engagements = await this.graphqlRead.query<{ id: string }>(
-        'Engagement',
-        ['id'],
-        { pageSize: 1, pageNumber: 1 }
-      );
-      const engagementCount = engagements.page.totalCount || 0;
-
-      // Query projects (org scoping handled by dana-org-id header, not filter)
-      const projects = await this.graphqlRead.query<{ id: string }>(
-        'SmeMartProject',
-        ['id'],
-        { pageSize: 1, pageNumber: 1 }
-      );
-      const projectCount = projects.page.totalCount || 0;
-
-      this.orgMetrics.update(metrics => ({
-        ...metrics,
-        [orgId]: { engagementCount, projectCount }
-      }));
-    } catch (error) {
-      console.error('Failed to load metrics for org', orgId, error);
-      // Set default zeros on error
-      this.orgMetrics.update(metrics => ({
-        ...metrics,
-        [orgId]: { engagementCount: 0, projectCount: 0 }
-      }));
     }
   }
 
@@ -179,5 +131,20 @@ export class OrgListComponent {
 
   getMemberCount(org: OrgListItem): number {
     return org.memberCount || 0;
+  }
+
+  /**
+   * Primary affiliation hint shown under the org name. Prefers the first
+   * configured email domain (e.g. "@w3geekery.com"); falls back to the
+   * org-level supportEmail when no domains are set. Returns empty string
+   * when neither is available — template hides the row via @if then.
+   */
+  getAffiliation(org: OrgListItem): string {
+    if (org.domains && org.domains.length > 0) {
+      const first = org.domains[0];
+      return first.startsWith('@') ? first : `@${first}`;
+    }
+    if (org.supportEmail) return org.supportEmail;
+    return '';
   }
 }

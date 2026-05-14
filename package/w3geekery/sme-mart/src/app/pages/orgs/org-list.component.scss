@@ -86,47 +86,102 @@
 
 .card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  gap: 8px;
   margin-bottom: 8px;
+}
 
-  .org-name {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 500;
-    flex: 1;
+.org-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.org-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.org-avatar,
+.org-avatar-small {
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: var(--mat-sys-surface-variant);
+  flex-shrink: 0;
+}
+
+.org-avatar {
+  width: 40px;
+  height: 40px;
+}
+
+.org-avatar-small {
+  width: 28px;
+  height: 28px;
+}
+
+.org-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mat-sys-on-surface-variant);
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
   }
 
-  .active-badge {
-    background-color: var(--mat-sys-primary, #1976d2);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-    margin-left: 8px;
+  &.org-avatar-small mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
   }
 }
 
+.org-name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.org-slug {
+  font-size: 12px;
+  color: var(--mat-sys-on-surface-variant);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: transparent;
+  padding: 0;
+}
+
 .org-description {
-  margin: 0 0 12px 0;
+  margin: 0 0 8px 0;
   font-size: 14px;
-  color: var(--mat-sys-on-surface-variant, #666);
+  color: var(--mat-sys-on-surface-variant);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.metrics-row {
+.org-affiliation {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: var(--mat-sys-on-surface-variant);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.row-identity {
   display: flex;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--mdc-theme-text-secondary, #666);
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--mat-sys-outline, #eee);
+  align-items: center;
+  gap: 10px;
 }
 
 .card-footer {
@@ -191,9 +246,8 @@
       text-align: center;
     }
 
-    &.col-metrics {
+    &.col-affiliation {
       width: 25%;
-      text-align: center;
     }
 
     &.col-members {
