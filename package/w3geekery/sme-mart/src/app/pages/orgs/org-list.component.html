@@ -47,21 +47,13 @@
           [class.active]="isActive(org.id)"
         >
           <div class="card-header">
-            <div class="org-identity">
-              @if (org.avatarUrl) {
-                <img class="org-avatar" [src]="org.avatarUrl" [alt]="org.name" />
-              } @else {
-                <div class="org-avatar org-avatar-placeholder">
-                  <mat-icon>business</mat-icon>
-                </div>
-              }
-              <div class="org-titles">
-                <h3 class="org-name">{{ org.name }}</h3>
-                @if (org.slug) {
-                  <code class="org-slug">{{ org.slug }}</code>
-                }
-              </div>
-            </div>
+            <zb-avatar-label
+              class="org-identity"
+              [src]="org.avatarUrl || ''"
+              [label]="org.name"
+              [subText]="org.slug || ''"
+              [bold]="true"
+            />
             @if (isActive(org.id)) {
               <span class="active-chip">Active</span>
             }
@@ -107,21 +99,12 @@
               [class.active-row]="isActive(org.id)"
             >
               <td class="col-name">
-                <div class="row-identity">
-                  @if (org.avatarUrl) {
-                    <img class="org-avatar-small" [src]="org.avatarUrl" [alt]="org.name" />
-                  } @else {
-                    <div class="org-avatar-small org-avatar-placeholder">
-                      <mat-icon>business</mat-icon>
-                    </div>
-                  }
-                  <div>
-                    <div>{{ org.name }}</div>
-                    @if (org.slug) {
-                      <code class="org-slug">{{ org.slug }}</code>
-                    }
-                  </div>
-                </div>
+                <zb-avatar-label
+                  [src]="org.avatarUrl || ''"
+                  [label]="org.name"
+                  [subText]="org.slug || ''"
+                  [small]="true"
+                />
               </td>
               <td class="col-badge">
                 @if (isActive(org.id)) {

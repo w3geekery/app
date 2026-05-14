@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ZbSearchInputComponent, ZbEmptyStateContainerComponent } from '@zerobias-org/ngx-library';
+import { ZbSearchInputComponent, ZbEmptyStateContainerComponent, ZbAvatarLabelComponent } from '@zerobias-org/ngx-library';
 import { ZerobiasClientApi, ZerobiasClientApp } from '@zerobias-com/zerobias-client';
 import { UserPreferencesService } from '../../core/services/user-preferences.service';
 
@@ -42,6 +42,7 @@ type OrgWithMetadata = OrgListItem;
     MatDividerModule,
     ZbSearchInputComponent,
     ZbEmptyStateContainerComponent,
+    ZbAvatarLabelComponent,
   ],
   templateUrl: './org-list.component.html',
   styleUrl: './org-list.component.scss',
