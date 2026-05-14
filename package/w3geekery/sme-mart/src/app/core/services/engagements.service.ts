@@ -8,7 +8,7 @@ import { ENGAGEMENT_FIELD_MAPPING, mapNeonToGql, mapGqlToNeon } from '../field-m
 import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
 import type { ProjectExtended, Tag } from '@zerobias-com/platform-sdk';
 import type { QueryOptions } from '@zerobias-org/data-utils';
-import { PagedResults } from '@zerobias-org/types-core-js';
+import { PagedResults, UUID } from '@zerobias-org/types-core-js';
 import type {
   Engagement,
   EngagementSummaryRow,
@@ -291,6 +291,25 @@ export class EngagementsService {
    */
   @Memoize(30000)
   async getEngagement(id: string): Promise<EngagementDetailRow | null> {
+    // D-15 dual-read: try platform.Project.get first (handles depth-1
+    // engagement-tier Projects from the new data path), fall back to GQL
+    // Engagement (legacy class still in use during the deprecation window).
+    try {
+      const projectApi = this.clientApi.platformClient.getProjectApi();
+      const projectIdUuid = new UUID(id);
+      const platformProject = await projectApi.get(projectIdUuid);
+      if (platformProject) {
+        const summary = this.transformPlatformProjectToEngagementSummary(platformProject as ProjectExtended);
+        return {
+          ...summary,
+          buyer_email: null,
+          bids: '[]',
+        } as EngagementDetailRow;
+      }
+    } catch (err) {
+      console.debug('[GET_ENGAGEMENT:PLATFORM_MISS]', { id, error: (err as Error).message });
+    }
+
     const engagement = await this.graphqlRead.getById<GqlEngagementResponse>(
       'Engagement',
       id,
