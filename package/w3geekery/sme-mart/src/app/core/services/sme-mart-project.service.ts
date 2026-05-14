@@ -7,6 +7,7 @@ import { SmeMartTagService } from './sme-mart-tag.service';
 import { SmeMartResourceService } from './sme-mart-resource.service';
 import { Memoize } from '../../shared/utils/memoize.decorator';
 import { SME_MART_PROJECT_FIELD_MAPPING, SME_MART_BOARD_FIELD_MAPPING, mapGqlToNeon, mapNeonToGql } from '../field-mappings';
+import { SME_MART_TIER_PROJECT_TAG_ID } from '../constants/tier-tags';
 import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
 import type { ProjectExtended, Tag } from '@zerobias-com/platform-sdk';
 import type { QueryOptions } from '@zerobias-org/data-utils';
@@ -155,8 +156,16 @@ export class SmeMartProjectService {
       ]);
 
       if (platformProjects) {
+        // Tier filter: keep only depth-2 Project-tier rows (tagId === sme-mart.tier.project).
+        // platform.Project.list has no server-side tagId filter (parkit-10 SDK shape note),
+        // so we filter client-side. Engagement-tier (depth-1) rows are listed at /engagements,
+        // and untagged or other-tier rows belong elsewhere.
+        const projectTier = platformProjects.items.filter(
+          proj => String((proj as ProjectExtended).tagId ?? '') === SME_MART_TIER_PROJECT_TAG_ID,
+        );
+
         // Transform platform.Project[] to SmeMartProject[]
-        const transformed = platformProjects.items.map(proj => this.transformPlatformProjectToSmeMartProject(proj as ProjectExtended));
+        const transformed = projectTier.map(proj => this.transformPlatformProjectToSmeMartProject(proj as ProjectExtended));
 
         // DG-02/DG-03: Client-side demo-visibility post-filter
         const filtered = this.demoVisibility.applyVisibility(transformed) as SmeMartProject[];

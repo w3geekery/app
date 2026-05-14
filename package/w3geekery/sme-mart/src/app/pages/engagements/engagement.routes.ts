@@ -10,7 +10,7 @@ import { ProjectList } from '../project/project-list.component';
 
 /**
  * Child routes for engagement detail tabs.
- * Reused by both /rfps/:id and /my/engagements/:id.
+ * Reused by both /rfps/:id and /engagements/:id.
  */
 export const ENGAGEMENT_TAB_ROUTES: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'overview' },

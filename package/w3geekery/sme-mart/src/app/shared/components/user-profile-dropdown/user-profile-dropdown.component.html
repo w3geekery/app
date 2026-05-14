@@ -43,9 +43,14 @@
     <mat-icon>business</mat-icon>
     <span>My Organizations</span>
   </a>
-  <!-- Phase 31-A: My Engagements + My Projects hidden for v1.4 dogfood
-       (errata 039 cross-contamination; routes redirect to ComingSoon on
-       direct-URL hits). Restore post-BACKLOG-099. -->
+  <a mat-menu-item routerLink="/engagements">
+    <mat-icon>work</mat-icon>
+    <span>My Engagements</span>
+  </a>
+  <a mat-menu-item routerLink="/projects">
+    <mat-icon>assignment</mat-icon>
+    <span>My Projects</span>
+  </a>
   <a mat-menu-item routerLink="/my-profile">
     <mat-icon>person</mat-icon>
     <span>My Profile</span>

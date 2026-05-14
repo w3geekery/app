@@ -6,7 +6,7 @@ import { EngagementDetail } from './engagement-detail.component';
 import { EngagementsService } from '../../core/services/engagements.service';
 import { ProviderProfilesService } from '../../core/services/provider-profiles.service';
 import { EngagementContextService } from '../../core/services/engagement-context.service';
-import { EngagementHierarchyService } from '../../core/services/engagement-hierarchy.service';
+import { EngagementHierarchyService, type HierarchyBreadcrumb } from '../../core/services/engagement-hierarchy.service';
 import { ImpersonationService } from '../../core/services/impersonation.service';
 import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
 import { makeEngagementDetailRow } from '../../test-helpers/factories';
@@ -164,26 +164,26 @@ describe('EngagementDetail', () => {
   // ---------------------------------------------------------------------------
 
   describe('goBack', () => {
-    it('should navigate to /my/engagements', () => {
+    it('should navigate to /engagements', () => {
       component.goBack();
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/my/engagements']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/engagements']);
     });
   });
 
   describe('onBreadcrumbNavigate', () => {
     it('should not navigate for active crumb', () => {
-      component.onBreadcrumbNavigate({ level: 'boundary', label: 'Test', active: true } as any);
+      component.onBreadcrumbNavigate({ level: 'boundary', label: 'Test', active: true } as HierarchyBreadcrumb);
       expect(mockRouter.navigate).not.toHaveBeenCalled();
     });
 
     it('should navigate to my engagements for boundary/project level', () => {
-      component.onBreadcrumbNavigate({ level: 'boundary', label: 'Test', active: false } as any);
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/my/engagements']);
+      component.onBreadcrumbNavigate({ level: 'boundary', label: 'Test', active: false } as HierarchyBreadcrumb);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/engagements']);
     });
 
     it('should navigate for project level', () => {
-      component.onBreadcrumbNavigate({ level: 'project', label: 'Test', active: false } as any);
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/my/engagements']);
+      component.onBreadcrumbNavigate({ level: 'project', label: 'Test', active: false } as HierarchyBreadcrumb);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/engagements']);
     });
   });
 });

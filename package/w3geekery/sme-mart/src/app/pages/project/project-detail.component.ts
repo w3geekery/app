@@ -144,7 +144,7 @@ export class ProjectDetail implements OnInit, OnDestroy {
 
       if (!project) {
         this.snackBar.open('Project not found', 'OK', { duration: 3000 });
-        this.router.navigate(['/my/engagements']);
+        this.router.navigate(['/engagements']);
         return;
       }
 
@@ -155,8 +155,9 @@ export class ProjectDetail implements OnInit, OnDestroy {
 
       // TODO: Load engagement name from project's engagementId for breadcrumb
       // TODO: Check boundary membership for access control (Plan 022 access guard)
-    } catch (err: any) {
-      this.snackBar.open(`Failed to load project: ${err.message}`, 'Dismiss', { duration: 5000 });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.snackBar.open(`Failed to load project: ${msg}`, 'Dismiss', { duration: 5000 });
     } finally {
       this.loading.set(false);
     }
@@ -172,7 +173,7 @@ export class ProjectDetail implements OnInit, OnDestroy {
     if (engId) {
       this.router.navigate(['/engagements', engId]);
     } else {
-      this.router.navigate(['/my/engagements']);
+      this.router.navigate(['/engagements']);
     }
   }
 
@@ -193,7 +194,7 @@ export class ProjectDetail implements OnInit, OnDestroy {
       });
 
       console.log('[ProjectDetail.completePilot] dialogRef:', dialogRef);
-      let result: any;
+      let result: { notes?: string } | undefined;
       try {
         result = await firstValueFrom(dialogRef.afterClosed());
         console.log('[ProjectDetail.completePilot] dialog result:', result);
@@ -284,7 +285,7 @@ export class ProjectDetail implements OnInit, OnDestroy {
    * Non-blocking — errors are silently logged.
    */
   private async createPilotCompletionSuggestion(
-    project: any,
+    project: import('../../core/models').SmeMartProject,
     notes?: string
   ): Promise<void> {
     try {

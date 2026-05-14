@@ -106,8 +106,9 @@ export class EngagementDetail implements OnInit, OnDestroy {
       // Non-blocking async loads
       this.loadBreadcrumbs(eng);
       this.loadVettingGate(eng.id);
-    } catch (err: any) {
-      this.snackBar.open(`Failed to load: ${err.message}`, 'Dismiss', { duration: 5000 });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.snackBar.open(`Failed to load: ${msg}`, 'Dismiss', { duration: 5000 });
     } finally {
       this.loading.set(false);
     }
@@ -123,13 +124,13 @@ export class EngagementDetail implements OnInit, OnDestroy {
   // ===========================================================================
 
   goBack(): void {
-    this.router.navigate(['/my/engagements']);
+    this.router.navigate(['/engagements']);
   }
 
   onBreadcrumbNavigate(crumb: HierarchyBreadcrumb): void {
     if (crumb.active) return;
     if (crumb.level === 'boundary' || crumb.level === 'project') {
-      this.router.navigate(['/my/engagements']);
+      this.router.navigate(['/engagements']);
     }
   }
 

@@ -12,12 +12,14 @@ import { Home } from './pages/home/home.component';
 // import { BidWizard } from './pages/rfps/bid-wizard/bid-wizard.component';
 // import { BidComparisonPage } from './pages/rfps/bid-comparison-page.component';
 import { EngagementDetail } from './pages/engagements/engagement-detail.component';
+import { EngagementEdit } from './pages/engagements/engagement-edit.component';
 import { ENGAGEMENT_TAB_ROUTES } from './pages/engagements/engagement.routes';
+import { MyEngagementList } from './pages/my-engagements/my-engagement-list.component';
+import { MyProjectList } from './pages/my-projects/my-project-list.component';
 import { ComingSoon } from './pages/coming-soon/coming-soon.component';
 import { CompanyProfileFormComponent } from './onboarding/company-profile-form.component';
 import { onboardingGuard } from './core/guards/onboarding.guard';
 import { PlatformEngagementSetupComponent } from './onboarding/platform-engagement-setup.component';
-import { DefaultProjectBoardComponent } from './pages/default-project-board/default-project-board.component';
 import { FeatureComingSoonComponent } from './pages/default-project-board/feature-coming-soon.component';
 
 export const routes: Routes = [
@@ -46,7 +48,16 @@ export const routes: Routes = [
       { path: 'rfps', component: ComingSoon, data: { title: 'RFPs' } },
       { path: 'rfps/:id', redirectTo: 'rfps' },
       { path: 'rfps/:id/:tail', redirectTo: 'rfps' },
+      // Engagements + Projects (top-level — the /my/ prefix was dropped
+      // 2026-05-14; lists are implicitly "yours" via the org-session header).
+      { path: 'engagements', component: MyEngagementList },
       { path: 'engagements/:id', component: EngagementDetail, children: ENGAGEMENT_TAB_ROUTES },
+      { path: 'engagements/:id/edit', component: EngagementEdit },
+      { path: 'projects', component: MyProjectList },
+      // Legacy /my/* redirects (preserve any bookmarks / cached deep-links).
+      { path: 'my/engagements', redirectTo: 'engagements', pathMatch: 'full' },
+      { path: 'my/engagements/:id', redirectTo: 'engagements/:id' },
+      { path: 'my/projects', redirectTo: 'projects', pathMatch: 'full' },
       {
         path: 'templates/:id',
         loadComponent: () =>
@@ -61,8 +72,8 @@ export const routes: Routes = [
           { path: 'company-profile', component: CompanyProfileFormComponent },
         ],
       },
-      // Phase 30: Default project board + honest coming-soon placeholders
-      { path: 'projects', component: DefaultProjectBoardComponent },
+      // Phase 30 placeholders — deep-link-only honest "coming soon" pages for
+      // 046 / 066 / 065 (no nav entries; surfaced only when something deep-links).
       {
         path: 'org-documents',
         component: FeatureComingSoonComponent,
@@ -90,8 +101,6 @@ export const routes: Routes = [
           featureKey: '065',
         },
       },
-      // Legacy redirects
-      { path: 'engagements', redirectTo: 'rfps', pathMatch: 'full' },
       {
         path: 'org',
         loadChildren: () =>
@@ -102,22 +111,6 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./pages/orgs/orgs.routes').then((m) => m.ORGS_ROUTES),
       },
-      // Phase 31-A: my/engagements + my/projects hidden for v1.4 dogfood.
-      // Direct-URL hits land on ComingSoon. Restore loadChildren post-099.
-      // {
-      //   path: 'my/engagements',
-      //   loadChildren: () =>
-      //     import('./pages/my-engagements/my-engagements.routes').then((m) => m.MY_ENGAGEMENTS_ROUTES),
-      // },
-      // {
-      //   path: 'my/projects',
-      //   loadChildren: () =>
-      //     import('./pages/my-projects/my-projects.routes').then((m) => m.MY_PROJECTS_ROUTES),
-      // },
-      { path: 'my/engagements', component: ComingSoon, data: { title: 'My Engagements' } },
-      { path: 'my/engagements/:id', redirectTo: 'my/engagements' },
-      { path: 'my/projects', component: ComingSoon, data: { title: 'My Projects' } },
-      { path: 'my/projects/:id', redirectTo: 'my/projects' },
       {
         path: 'my/invitations',
         loadChildren: () =>

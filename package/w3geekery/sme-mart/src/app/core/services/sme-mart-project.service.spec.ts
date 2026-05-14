@@ -151,6 +151,7 @@ describe('SmeMartProjectService', () => {
             status: 'draft',
             startDate: '2026-03-19',
             tag: null,
+            tagId: '420b0753-e72c-4b81-8929-70508a119bf0',
           },
         ],
         pageSize: 50,
@@ -176,6 +177,7 @@ describe('SmeMartProjectService', () => {
         status: 'active',
         startDate: '2026-03-19',
         tag: null,
+        tagId: '420b0753-e72c-4b81-8929-70508a119bf0',
       }));
 
       const mockPlatformResponse = {
@@ -191,6 +193,29 @@ describe('SmeMartProjectService', () => {
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(((mockClientApi as any).platformClient['getProjectApi']() as any).list).toHaveBeenCalledWith(2, 25);
+    });
+
+    it('filters out non-Project-tier rows (errata 039 cross-contamination fix)', async () => {
+      // Mixed bag: depth-1 engagement, untagged, foreign tag, and the real
+      // Project-tier row. Only the last should pass the client-side tier filter.
+      const PROJECT_TIER_TAG_ID = '420b0753-e72c-4b81-8929-70508a119bf0';
+      const mockPlatformResponse = {
+        items: [
+          { id: 'eng-1', name: 'Engagement (depth-1)', status: 'active', tag: null, parentId: null },
+          { id: 'untagged', name: 'Untagged Project', status: 'active', tag: null },
+          { id: 'foreign', name: 'Foreign-tag Project', status: 'active', tag: null, tagId: '00000000-0000-0000-0000-000000000099' },
+          { id: 'project-tier', name: 'Project Tier Row', status: 'active', tag: null, tagId: PROJECT_TIER_TAG_ID },
+        ],
+        pageSize: 50,
+        pageNumber: 1,
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ((mockClientApi as any).platformClient['getProjectApi']() as any).list.mockResolvedValue(mockPlatformResponse);
+
+      const result = await service.listProjects();
+
+      expect(result.items.map(r => r.id)).toEqual(['project-tier']);
     });
   });
 
@@ -259,11 +284,14 @@ describe('SmeMartProjectService', () => {
   });
 
   describe('demo visibility (Phase 24 Plan 03)', () => {
+    // All four mocks carry the Project-tier tagId so they survive the
+    // tier filter; the demo-visibility post-filter is what's under test here.
+    const PROJECT_TIER_TAG_ID = '420b0753-e72c-4b81-8929-70508a119bf0';
     const mockPlatformReturn = [
-      { id: '1', name: 'Real', tag: null, status: 'draft' },
-      { id: '2', name: 'Real w/ marketplace tag', tag: [{ value: 'a81cd320-243e-44eb-bdd9-9824019ef3dd' }], status: 'draft' },
-      { id: '3', name: 'Demo (global)', tag: [{ value: '81053c14-a8e5-4939-b538-c122c7d0eb1a' }], status: 'draft' },
-      { id: '4', name: 'Demo (legacy)', tag: [{ value: 'd618b602-21cc-40a1-a9fa-534b7bc1672c' }], status: 'draft' },
+      { id: '1', name: 'Real', tag: null, status: 'draft', tagId: PROJECT_TIER_TAG_ID },
+      { id: '2', name: 'Real w/ marketplace tag', tag: [{ value: 'a81cd320-243e-44eb-bdd9-9824019ef3dd' }], status: 'draft', tagId: PROJECT_TIER_TAG_ID },
+      { id: '3', name: 'Demo (global)', tag: [{ value: '81053c14-a8e5-4939-b538-c122c7d0eb1a' }], status: 'draft', tagId: PROJECT_TIER_TAG_ID },
+      { id: '4', name: 'Demo (legacy)', tag: [{ value: 'd618b602-21cc-40a1-a9fa-534b7bc1672c' }], status: 'draft', tagId: PROJECT_TIER_TAG_ID },
     ];
     const mockGqlReturn = mockPlatformReturn as unknown as GqlSmeMartProjectResponse[];
 

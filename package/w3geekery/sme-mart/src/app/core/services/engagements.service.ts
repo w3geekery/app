@@ -76,8 +76,16 @@ export class EngagementsService {
         ]);
 
         if (platformProjects) {
+          // Depth-1 filter: engagement-tier Projects only (parentId === null).
+          // platform.Project.list has no server-side parentId filter (parkit-10 SDK
+          // shape note), so we filter client-side. Depth-2 Project-tier rows are
+          // listed at /projects, not /engagements.
+          const depth1 = platformProjects.items.filter(
+            proj => !(proj as ProjectExtended).parentId,
+          );
+
           // Transform platform.Project[] to EngagementSummaryRow[]
-          const transformed = platformProjects.items.map(proj => this.transformPlatformProjectToEngagementSummary(proj as ProjectExtended));
+          const transformed = depth1.map(proj => this.transformPlatformProjectToEngagementSummary(proj as ProjectExtended));
 
           // DG-02/DG-03: Client-side demo-visibility post-filter
           // Note: applyVisibility handles both GQL Engagement and platform.Project shapes (D-24)
