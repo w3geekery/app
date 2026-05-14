@@ -3,11 +3,14 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink, Router } from '@angular/router';
+import { Clipboard } from '@angular/cdk/clipboard';
+import { TitleCasePipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ZbSimplePanelComponent, ZbAvatarLabelComponent, ZbCustomizableTableComponent } from '@zerobias-org/ngx-library';
 import { ZerobiasClientApp } from '@zerobias-com/zerobias-client';
 import { map, switchMap, from, firstValueFrom } from 'rxjs';
@@ -26,15 +29,19 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 interface OrgMember {
   id: string;
-  display_name?: string;
+  name: string;
+  type: string;
+  status?: string;
   email?: string;
-  role?: string;
+  avatarUrl?: string;
 }
 
 interface OrgGroup {
   id: string;
   name: string;
-  memberCount?: number;
+  groupType?: string;
+  boundaryGroupType?: string;
+  avatarUrl?: string;
 }
 
 interface BoundaryInfo {
@@ -57,11 +64,36 @@ interface EngagementInfo {
   name?: string;
 }
 
+function toOrgMember(raw: Record<string, unknown>): OrgMember {
+  const emails = raw['emails'];
+  const fallbackEmail = Array.isArray(emails) ? String(emails[0] ?? '') : '';
+  const email = raw['email'] ? String(raw['email']) : (fallbackEmail || undefined);
+  return {
+    id: String(raw['id'] ?? ''),
+    name: String(raw['name'] ?? ''),
+    type: String(raw['type'] ?? ''),
+    status: raw['status'] ? String(raw['status']) : undefined,
+    email,
+    avatarUrl: raw['avatarUrl'] ? String(raw['avatarUrl']) : undefined,
+  };
+}
+
+function toOrgGroup(raw: Record<string, unknown>): OrgGroup {
+  return {
+    id: String(raw['id'] ?? ''),
+    name: String(raw['name'] ?? ''),
+    groupType: raw['groupType'] ? String(raw['groupType']) : undefined,
+    boundaryGroupType: raw['boundaryGroupType'] ? String(raw['boundaryGroupType']) : undefined,
+    avatarUrl: raw['avatarUrl'] ? String(raw['avatarUrl']) : undefined,
+  };
+}
+
 @Component({
   selector: 'app-org-detail',
   standalone: true,
   imports: [
     RouterLink,
+    TitleCasePipe,
     MatButtonModule,
     MatIconModule,
     MatDividerModule,
@@ -81,6 +113,8 @@ export class OrgDetailComponent implements OnInit {
   private readonly clientApi = inject(ZerobiasClientApi);
   private readonly router = inject(Router);
   private readonly graphqlRead = inject(GraphqlReadService);
+  private readonly clipboard = inject(Clipboard);
+  private readonly snackBar = inject(MatSnackBar);
 
   // Raw route handle — slug or UUID. Use `orgId` (resolved UUID) for downstream.
   readonly routeHandle = toSignal(
@@ -120,11 +154,11 @@ export class OrgDetailComponent implements OnInit {
           const [members, groups, boundaries] = await Promise.all([
             this.clientApi.hydraClient?.getOrgApi?.()
               .listOrgMembers?.(orgIdUuid)
-              .then((r: unknown) => ((r as SdkPaged)?.items ?? []) as unknown as OrgMember[])
+              .then((r: unknown) => ((r as SdkPaged)?.items ?? []).map(toOrgMember))
               .catch(() => [] as OrgMember[]) || Promise.resolve([] as OrgMember[]),
             this.clientApi.hydraClient?.getOrgApi?.()
               .listGroups?.(orgIdUuid)
-              .then((r: unknown) => ((r as SdkPaged)?.items ?? []) as unknown as OrgGroup[])
+              .then((r: unknown) => ((r as SdkPaged)?.items ?? []).map(toOrgGroup))
               .catch(() => [] as OrgGroup[]) || Promise.resolve([] as OrgGroup[]),
             this.clientApi.platformClient
               .getBoundaryApi()
@@ -236,6 +270,13 @@ export class OrgDetailComponent implements OnInit {
     } finally {
       this.projectsLoading.set(false);
     }
+  }
+
+  copyOrgId(): void {
+    const id = this.orgId();
+    if (!id) return;
+    this.clipboard.copy(id);
+    this.snackBar.open('Organization ID copied', 'OK', { duration: 2000 });
   }
 
   navigateToProject(projectId: string): void {
