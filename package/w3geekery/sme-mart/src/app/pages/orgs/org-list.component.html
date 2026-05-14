@@ -50,6 +50,8 @@
             <zb-avatar-label
               class="org-identity"
               [src]="org.avatarUrl || ''"
+              [srcDefault]="'./assets/unknown-company.svg'"
+              [maintainAspectRatio]="true"
               [label]="org.name"
               [subText]="org.slug || ''"
               [bold]="true"
@@ -63,15 +65,8 @@
             <p class="org-description">{{ org.description }}</p>
           }
 
-          @if (getAffiliation(org)) {
-            <p class="org-affiliation">{{ getAffiliation(org) }}</p>
-          }
-
           <div class="card-footer">
-            <div class="member-count">
-              <mat-icon>people</mat-icon>
-              <span>{{ getMemberCount(org) }} members</span>
-            </div>
+            <span class="org-domain">{{ getDomain(org) || '' }}</span>
             <mat-icon class="arrow">arrow_forward</mat-icon>
           </div>
         </div>
@@ -87,8 +82,7 @@
           <tr>
             <th class="col-name">Organization</th>
             <th class="col-badge"></th>
-            <th class="col-affiliation">Affiliation</th>
-            <th class="col-members">Members</th>
+            <th class="col-domain">Domain</th>
           </tr>
         </thead>
         <tbody>
@@ -101,6 +95,8 @@
               <td class="col-name">
                 <zb-avatar-label
                   [src]="org.avatarUrl || ''"
+                  [srcDefault]="'./assets/unknown-company.svg'"
+                  [maintainAspectRatio]="true"
                   [label]="org.name"
                   [subText]="org.slug || ''"
                   [small]="true"
@@ -111,8 +107,7 @@
                   <span class="active-chip">Active</span>
                 }
               </td>
-              <td class="col-affiliation">{{ getAffiliation(org) || '—' }}</td>
-              <td class="col-members">{{ getMemberCount(org) }}</td>
+              <td class="col-domain">{{ getDomain(org) || '—' }}</td>
             </tr>
           }
         </tbody>

@@ -64,22 +64,25 @@
 }
 
 .org-card {
-  border: 1px solid var(--mat-sys-outline, #ddd);
-  border-radius: 8px;
+  background-color: var(--zb-background-card, var(--mat-sys-surface));
+  border: none;
+  border-radius: 5px;
   padding: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: box-shadow 0.13s linear, transform 0.13s linear;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  box-shadow: var(--zb-card-shadow, 8px 8px 16px -6px rgb(0 0 0 / 10%));
 
   &:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--zb-card-shadow-hover, 8px 8px 16px -4px rgb(0 0 0 / 30%));
+    transform: translateX(-2px) translateY(-2px);
   }
 
   &.active {
-    border-color: var(--mat-sys-primary, #1976d2);
-    border-width: 2px;
+    outline: 2px solid var(--mat-sys-primary, #1976d2);
+    outline-offset: -2px;
     background-color: var(--mat-sys-primary-container, #e3f2fd);
   }
 }
@@ -107,33 +110,21 @@
   overflow: hidden;
 }
 
-.org-affiliation {
-  margin: 0 0 12px 0;
-  font-size: 13px;
-  color: var(--mat-sys-on-surface-variant);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-
 .card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   padding-top: 8px;
   border-top: 1px solid var(--mat-sys-outline, #eee);
 
-  .member-count {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 14px;
-    color: var(--mat-sys-on-surface-variant, #666);
-
-    mat-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-      color: var(--mat-sys-primary, #1976d2);
-    }
+  .org-domain {
+    font-size: 13px;
+    color: var(--mat-sys-on-surface-variant);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
   }
 
   .arrow {
@@ -141,6 +132,7 @@
     font-size: 20px;
     width: 20px;
     height: 20px;
+    flex-shrink: 0;
   }
 }
 
@@ -176,13 +168,8 @@
       text-align: center;
     }
 
-    &.col-affiliation {
-      width: 25%;
-    }
-
-    &.col-members {
-      width: 15%;
-      text-align: center;
+    &.col-domain {
+      width: 40%;
     }
 
     &.col-description {

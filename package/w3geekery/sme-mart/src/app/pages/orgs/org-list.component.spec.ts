@@ -52,10 +52,10 @@ describe('OrgListComponent', () => {
     expect(Array.isArray(allOrgs)).toBe(true);
   });
 
-  it('should expose a getAffiliation helper that prefers domains over supportEmail', () => {
-    expect(component.getAffiliation({ id: 'a', name: 'A', domains: ['w3geekery.com'] })).toBe('@w3geekery.com');
-    expect(component.getAffiliation({ id: 'b', name: 'B', supportEmail: 'help@example.com' })).toBe('help@example.com');
-    expect(component.getAffiliation({ id: 'c', name: 'C' })).toBe('');
+  it('should expose a getDomain helper that prefers domains over supportEmail', () => {
+    expect(component.getDomain({ id: 'a', name: 'A', domains: ['w3geekery.com'] })).toBe('@w3geekery.com');
+    expect(component.getDomain({ id: 'b', name: 'B', supportEmail: 'help@example.com' })).toBe('help@example.com');
+    expect(component.getDomain({ id: 'c', name: 'C' })).toBe('');
   });
 
   it('should have filteredOrgs computed signal', () => {

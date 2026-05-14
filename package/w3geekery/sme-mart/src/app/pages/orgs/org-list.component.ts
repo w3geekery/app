@@ -17,7 +17,6 @@ interface OrgListItem {
   name: string;
   description?: string;
   hidden?: boolean;
-  memberCount?: number;
   avatarUrl?: string;
   domains?: string[];
   supportEmail?: string;
@@ -91,7 +90,6 @@ export class OrgListComponent {
         name?: string;
         description?: string;
         hidden?: boolean;
-        memberCount?: number;
         avatarUrl?: { toString(): string } | string;
         domains?: string[];
         supportEmail?: string;
@@ -102,7 +100,6 @@ export class OrgListComponent {
         name: org.name || '',
         description: org.description,
         hidden: org.hidden,
-        memberCount: org.memberCount,
         avatarUrl: typeof org.avatarUrl === 'string'
           ? org.avatarUrl
           : org.avatarUrl?.toString(),
@@ -130,17 +127,7 @@ export class OrgListComponent {
     return this.currentOrgId() === orgId;
   }
 
-  getMemberCount(org: OrgListItem): number {
-    return org.memberCount || 0;
-  }
-
-  /**
-   * Primary affiliation hint shown under the org name. Prefers the first
-   * configured email domain (e.g. "@w3geekery.com"); falls back to the
-   * org-level supportEmail when no domains are set. Returns empty string
-   * when neither is available — template hides the row via @if then.
-   */
-  getAffiliation(org: OrgListItem): string {
+  getDomain(org: OrgListItem): string {
     if (org.domains && org.domains.length > 0) {
       const first = org.domains[0];
       return first.startsWith('@') ? first : `@${first}`;
