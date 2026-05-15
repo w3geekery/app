@@ -1,5 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { ZerobiasClientApi, ZerobiasClientSessionId } from '@zerobias-com/zerobias-client';
+import { ZerobiasClientOrgIdService } from '@zerobias-com/zerobias-angular-client';
+
+const TEST_ORG_ID = 'aaaa1111-bbbb-2222-cccc-333344445555';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SmeMartProjectService } from './sme-mart-project.service';
 import { PipelineWriteService } from './pipeline-write.service';
@@ -63,6 +66,7 @@ describe('SmeMartProjectService', () => {
         { provide: SmeMartResourceService, useValue: { linkResources: vi.fn().mockResolvedValue(undefined) } },
         { provide: ZerobiasClientApi, useValue: mockClientApi },
         { provide: ZerobiasClientSessionId, useValue: { getCurrentSessionId: () => null } },
+        { provide: ZerobiasClientOrgIdService, useValue: { getCurrentOrgId: () => TEST_ORG_ID } },
       ],
     });
 
@@ -166,7 +170,7 @@ describe('SmeMartProjectService', () => {
       expect(result.items).toHaveLength(1);
       expect(result.items[0].name).toBe('Project 1');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(((mockClientApi as any).platformClient['getProjectApi']() as any).list).toHaveBeenCalledWith(1, 50);
+      expect(((mockClientApi as any).platformClient['getProjectApi']() as any).list).toHaveBeenCalledWith(1, 50, undefined, TEST_ORG_ID);
     });
 
     it('should respect pagination options (primary platform path)', async () => {
@@ -192,7 +196,7 @@ describe('SmeMartProjectService', () => {
       await service.listProjects({ pageNumber: 2, pageSize: 25 });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(((mockClientApi as any).platformClient['getProjectApi']() as any).list).toHaveBeenCalledWith(2, 25);
+      expect(((mockClientApi as any).platformClient['getProjectApi']() as any).list).toHaveBeenCalledWith(2, 25, undefined, TEST_ORG_ID);
     });
 
     it('filters out non-Project-tier rows (errata 039 cross-contamination fix)', async () => {
@@ -340,7 +344,7 @@ describe('SmeMartProjectService', () => {
 
       // Platform API call args: pageNumber, pageSize (no filters)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(((mockClientApi as any).platformClient['getProjectApi']() as any).list).toHaveBeenCalledWith(1, 50);
+      expect(((mockClientApi as any).platformClient['getProjectApi']() as any).list).toHaveBeenCalledWith(1, 50, undefined, TEST_ORG_ID);
     });
 
     it('requests tag field in GQL query for listProjects (fallback path only)', async () => {

@@ -9,6 +9,7 @@ import { Memoize } from '../../shared/utils/memoize.decorator';
 import { SME_MART_PROJECT_FIELD_MAPPING, SME_MART_BOARD_FIELD_MAPPING, mapGqlToNeon, mapNeonToGql } from '../field-mappings';
 import { SME_MART_TIER_PROJECT_TAG_ID } from '../constants/tier-tags';
 import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
+import { ZerobiasClientOrgIdService } from '@zerobias-com/zerobias-angular-client';
 import type { ProjectExtended, Tag } from '@zerobias-com/platform-sdk';
 import type { QueryOptions } from '@zerobias-org/data-utils';
 import { PagedResults, UUID } from '@zerobias-org/types-core-js';
@@ -47,6 +48,7 @@ export class SmeMartProjectService {
   private readonly resourceService = inject(SmeMartResourceService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly clientApi = inject(ZerobiasClientApi);
+  private readonly orgIdService = inject(ZerobiasClientOrgIdService);
 
   /** Scalar fields queryable via standard GraphqlReadService.query() */
   private readonly scalarFields = [
@@ -164,10 +166,14 @@ export class SmeMartProjectService {
         setTimeout(() => reject(new Error('PRIMARY_READ_TIMEOUT')), PRIMARY_READ_TIMEOUT_MS)
       );
 
+      // Scope to current org via 4th positional arg (ownerId). Server returns
+      // every Project the user has visibility into; without ownerId, multi-org
+      // members see cross-org leak (sibling of errata 036(a) / 039).
+      const currentOrgId = this.orgIdService.getCurrentOrgId();
       const platformProjects = await Promise.race([
         this.clientApi.platformClient
           .getProjectApi()
-          .list(pageNumber, pageSize),
+          .list(pageNumber, pageSize, undefined, currentOrgId as never),
         timeout,
       ]);
 
@@ -375,9 +381,12 @@ export class SmeMartProjectService {
     // children of this engagement), fallback GQL SmeMartProject filtered by
     // engagementId scalar (legacy data during the deprecation window).
     try {
+      // Scope to current org via 4th positional arg (ownerId) — sibling fix to
+      // listProjects above. Cross-org leak risk otherwise.
+      const currentOrgId = this.orgIdService.getCurrentOrgId();
       const platformList = await this.clientApi.platformClient
         .getProjectApi()
-        .list(pageNumber, pageSize);
+        .list(pageNumber, pageSize, undefined, currentOrgId as never);
 
       if (platformList) {
         // Children of the requested engagement Project, tier=Project (D-50).
