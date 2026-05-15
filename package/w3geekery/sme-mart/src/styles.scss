@@ -51,6 +51,18 @@ body.dark-theme {
   --mat-card-elevated-container-color: var(--zb-background-card);
 }
 
+// Floating labels on appearance="outline" mat-form-fields straddle the input's
+// top border. When the form-field is the first interactive child inside
+// mat-dialog-content, the upper half of the label gets clipped against the
+// content edge. Add breathing room to the first form-field in every dialog so
+// floating labels render fully. Global / site-wide.
+.mat-mdc-dialog-content {
+  .mat-mdc-form-field:first-child,
+  form:first-child > .mat-mdc-form-field:first-of-type {
+    margin-top: 0.5rem;
+  }
+}
+
 // Resizable drawer (used by filter sidebars)
 .resizable-drawer {
   width: var(--drawer-width, 280px);
