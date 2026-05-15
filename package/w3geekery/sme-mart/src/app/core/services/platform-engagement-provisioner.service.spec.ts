@@ -1,8 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ZerobiasClientApi, ZerobiasClientSessionId } from '@zerobias-com/zerobias-client';
+import { ZerobiasClientOrgIdService } from '@zerobias-com/zerobias-angular-client';
 import { PlatformEngagementProvisioner } from './platform-engagement-provisioner.service';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+// Simulated caller's starting scope — assertions check that the recipe flips
+// to MARKETPLACE_OPERATOR_ORG_ID for tag operations and to the target orgId
+// for Project operations (errata 040 + 041), then restores this value in
+// finally.
+const STARTING_ORG_ID = 'starting-org-id';
 
 // UAT bootstrap value mirrored from provisioner.service.ts (D-50 tier-tag).
 const SME_MART_TIER_PROJECT_TAG_ID_UAT = '420b0753-e72c-4b81-8929-70508a119bf0';
@@ -13,12 +20,17 @@ describe('PlatformEngagementProvisioner', () => {
   type ApiMock = ReturnType<typeof vi.fn>;
   let clientApiMock: {
     toUUID: ApiMock;
+    reconnectWithOrgId: ApiMock;
     hydraClient: {
       getTagApi: () => { searchTags: ApiMock; createTag: ApiMock };
     };
     platformClient: {
       getProjectApi: () => { list: ApiMock; create: ApiMock };
     };
+  };
+  let orgIdServiceMock: {
+    getCurrentOrgId: ApiMock;
+    setCurrrenOrgId: ApiMock;
   };
 
   const testOrgId = 'org-123';
@@ -44,6 +56,7 @@ describe('PlatformEngagementProvisioner', () => {
     // Build a minimal mock of ZerobiasClientApi for v3 recipe (3 SDK calls).
     clientApiMock = {
       toUUID: vi.fn((id: string) => id), // Identity function for test
+      reconnectWithOrgId: vi.fn().mockResolvedValue(undefined),
       hydraClient: {
         getTagApi: vi.fn().mockReturnValue({
           searchTags: vi.fn(),
@@ -58,10 +71,20 @@ describe('PlatformEngagementProvisioner', () => {
       },
     };
 
+    // ZerobiasClientOrgIdService mock. getCurrentOrgId returns STARTING_ORG_ID
+    // by default to simulate a caller in some non-operator scope; assertions
+    // check that the provisioner flips to operator/target scope as needed and
+    // restores STARTING_ORG_ID in finally.
+    orgIdServiceMock = {
+      getCurrentOrgId: vi.fn().mockReturnValue(STARTING_ORG_ID),
+      setCurrrenOrgId: vi.fn(),
+    };
+
     TestBed.configureTestingModule({
       providers: [
         PlatformEngagementProvisioner,
         { provide: ZerobiasClientApi, useValue: clientApiMock },
+        { provide: ZerobiasClientOrgIdService, useValue: orgIdServiceMock },
         { provide: ZerobiasClientSessionId, useValue: { getCurrentSessionId: () => null } },
         { provide: MatSnackBar, useValue: snackBarMock },
       ],
@@ -250,8 +273,8 @@ describe('PlatformEngagementProvisioner', () => {
 
       // First create is engagement project (Step C). Constructed via new NewProject(...).
       const engagementProjectCall = createCalls[0][0];
-      expect(engagementProjectCall.name).toBe(`${testOrgName} <- ZeroBias`); // D-32
-      expect(engagementProjectCall.description).toContain('Platform Services Engagement: ZeroBias ➡️'); // D-33
+      expect(engagementProjectCall.name).toBe('Engagement with provider ZeroBias Platform'); // D-32 superseded 2026-05-15
+      expect(engagementProjectCall.description).toBe(`Platform services engagement provided by ZeroBias Platform for ${testOrgName}.`); // D-33 superseded 2026-05-15
       expect(engagementProjectCall.status).toBe('active'); // D-29
       expect(engagementProjectCall.visibility).toBe('internal'); // D-29
       expect(engagementProjectCall.membershipPolicy).toBe('private'); // D-29
@@ -272,7 +295,7 @@ describe('PlatformEngagementProvisioner', () => {
       // Second create is project-tier project (Step D)
       const projectTierCall = createCalls[1][0];
       expect(projectTierCall.name).toBe('ZeroBias Platform'); // D-34 (locked; depth-2 NOT "Workspace")
-      expect(projectTierCall.description).toContain(`${testOrgName}'s gateway into ZeroBias`); // D-35
+      expect(projectTierCall.description).toBe(`${testOrgName}'s gateway into ZeroBias — tasks, notes, and communication tied to the platform services engagement with ZeroBias Platform live here.`); // D-35 superseded 2026-05-15
       expect(projectTierCall.parentId).toBe(testEngagementProjectId); // D-01
       expect(projectTierCall.tagId).toBe(SME_MART_TIER_PROJECT_TAG_ID_UAT); // D-50: tier-identity tag
       expect((projectTierCall as { ownerId?: unknown }).ownerId).toBeUndefined();

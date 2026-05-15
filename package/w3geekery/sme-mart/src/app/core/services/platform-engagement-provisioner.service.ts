@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
+import { ZerobiasClientOrgIdService } from '@zerobias-com/zerobias-angular-client';
 import { CreateTagBody, TagSearchBody } from '@zerobias-com/hydra-sdk';
 import { NewProject } from '@zerobias-com/platform-sdk';
 import { Nmtoken } from '@zerobias-org/types-core-js';
@@ -29,15 +30,19 @@ const PROBE_PAGE_SIZE = 100;
 // Per D-50 canonical tier mapping: depth 2 = Project tier (FIXED), tag = sme-mart.tier.project.
 const SME_MART_TIER_PROJECT_TAG_ID = '420b0753-e72c-4b81-8929-70508a119bf0'; // UAT
 
-// Step C: engagement-project values (D-32, D-33)
-const ENGAGEMENT_PROJECT_NAME_TEMPLATE = (orgName: string) => `${orgName} <- ZeroBias`; // D-32
+// Step C: engagement-project values (D-32 superseded 2026-05-15, D-33 superseded 2026-05-15)
+// New convention: customer-org is the implicit context (engagement card always rendered in owner-org
+// scope), so orgName is dropped from the name. The OTHER party's role (provider/client) is the only
+// asymmetry that needs to be encoded. For the default platform engagement, ZeroBias Platform is the
+// provider. Arrows dropped in favor of corporate prose. Closes BACKLOG-101.
+const ENGAGEMENT_PROJECT_NAME = 'Engagement with provider ZeroBias Platform';
 const ENGAGEMENT_PROJECT_DESCRIPTION_TEMPLATE = (orgName: string) =>
-  `Platform Services Engagement: ZeroBias ➡️ ${orgName}`; // D-33 (no trailing period)
+  `Platform services engagement provided by ZeroBias Platform for ${orgName}.`;
 
-// Step D: project-tier values (depth 2; FIXED per D-50; locked verbiage D-34/D-35)
-const PROJECT_TIER_NAME = 'ZeroBias Platform'; // D-34
+// Step D: project-tier values (depth 2; FIXED per D-50; D-34 locked, D-35 superseded 2026-05-15)
+const PROJECT_TIER_NAME = 'ZeroBias Platform'; // D-34 (unchanged)
 const PROJECT_TIER_DESCRIPTION_TEMPLATE = (orgName: string) =>
-  `${orgName}'s gateway into ZeroBias — tasks, notes, and communication tied to the ZeroBias ➡️ ${orgName} platform engagement live here.`; // D-35
+  `${orgName}'s gateway into ZeroBias — tasks, notes, and communication tied to the platform services engagement with ZeroBias Platform live here.`;
 
 // Enum values (locked per MCP describe D-29, INVENTORY.md confirms)
 const PROJECT_STATUS = 'active'; // D-29
@@ -79,7 +84,36 @@ const PROJECT_MEMBERSHIP_POLICY = 'private'; // D-29 (no auto-join; admin-curate
 @Injectable({ providedIn: 'root' })
 export class PlatformEngagementProvisioner {
   private readonly clientApi = inject(ZerobiasClientApi);
+  private readonly orgIdService = inject(ZerobiasClientOrgIdService);
   private readonly snackBar = inject(MatSnackBar);
+
+  /**
+   * Flip the SDK's `dana-org-id` session header to the given org.
+   *
+   * Why this lives in the provisioner: hydra and platform apply session-scope
+   * visibility filters that the API request body cannot override. To find an
+   * operator-owned tag we must call from the operator session; to create a
+   * platform.Project with a given ownerId we must call from that org's
+   * session (NewProject DTO has no `ownerId` field — server derives from
+   * session). The recipe therefore orchestrates its own scope flips: tag
+   * operations run in OPERATOR scope, Project operations in TARGET scope.
+   *
+   * Callers MUST restore the starting scope in a try/finally; the recipe
+   * does this internally but its own callers (admin tab) own their own
+   * outer restore.
+   *
+   * Caller permission caveat: switching scope is a client-side header flip.
+   * The SERVER will still reject requests if the calling user isn't a member
+   * of the target scope. This works for operator-admin flows (admin who's a
+   * member of both operator and target) but NOT for non-operator end users
+   * (e.g., a regular target-org user has no operator membership and will
+   * 403 on any operator-scope call). For non-operator probes the call site
+   * must catch and treat 403 as "unknown" rather than "not provisioned".
+   */
+  private async setScope(orgId: string): Promise<void> {
+    this.orgIdService.setCurrrenOrgId(orgId);
+    await this.clientApi.reconnectWithOrgId(orgId);
+  }
 
   /**
    * Read-only: returns true iff the org has a provisioned platform engagement.
@@ -109,8 +143,15 @@ export class PlatformEngagementProvisioner {
       buildEngagementTagName(ENGAGEMENT_TAG_NAMESPACE_NEW, slug),
       buildEngagementTagName(ENGAGEMENT_TAG_NAMESPACE_LEGACY, slug),
     ];
+    const startingScope = this.orgIdService.getCurrentOrgId();
     try {
-      // Step 1: find candidate tag IDs across both namespaces (sequential; NEW first).
+      // Step 1: find candidate tag IDs in OPERATOR scope.
+      // Tags are operator-owned per D-50; hydra's searchTags applies an implicit
+      // session-scope visibility filter that AND's with any explicit ownerIds.
+      // From a non-operator session the operator-owned tag is invisible
+      // regardless of body filters (errata 041 empirical verification). So we
+      // switch to operator session before the tag probe.
+      await this.setScope(MARKETPLACE_OPERATOR_ORG_ID);
       const tagIds: string[] = [];
       for (const tagName of candidateTagNames) {
         const body = new TagSearchBody();
@@ -124,8 +165,11 @@ export class PlatformEngagementProvisioner {
       }
       if (tagIds.length === 0) return false;
 
-      // Step 2: server-filter Projects by ownerId; client-filter by parentId+tagId.
-      // SDK 1.1.17 list() doesn't expose tagId/parentId server filters (errata 036 (a)).
+      // Step 2: find target-owned Engagement Project in TARGET scope.
+      // platform.Project.list applies session-scope visibility too — operator
+      // session cannot see target-owned projects even with ownerId=target
+      // query param. Switch to target before the Project probe.
+      await this.setScope(orgId);
       const projects = await this.clientApi.platformClient
         .getProjectApi()
         .list(undefined, PROBE_PAGE_SIZE, undefined, orgId as never);
@@ -136,6 +180,16 @@ export class PlatformEngagementProvisioner {
     } catch (err) {
       console.warn('[PLATFORM_ENGAGEMENT_PROBE_FAILED]', { orgId, error: err });
       return false;
+    } finally {
+      // Restore the starting scope. Best-effort — log on failure but don't
+      // re-throw (would mask the original return value).
+      if (startingScope && startingScope !== this.orgIdService.getCurrentOrgId()) {
+        try {
+          await this.setScope(startingScope);
+        } catch (restoreErr) {
+          console.error('[PLATFORM_ENGAGEMENT_SCOPE_RESTORE_FAILED]', restoreErr);
+        }
+      }
     }
   }
 
@@ -158,33 +212,58 @@ export class PlatformEngagementProvisioner {
     currentOrgSlug?: string;
   }): Promise<{ engagementProjectId: string; projectTierProjectId: string; created: boolean }> {
     const { currentOrgId, currentOrgName, currentOrgSlug } = input;
-
-    // Idempotency probe: check if platform engagement already exists.
     const orgSlug = currentOrgSlug || slugify(currentOrgName);
-    const isProvisioned = await this.isOrgProvisioned(currentOrgId, currentOrgName, orgSlug);
+    const startingScope = this.orgIdService.getCurrentOrgId();
 
-    if (isProvisioned) {
-      return { engagementProjectId: '', projectTierProjectId: '', created: false };
+    try {
+      // Idempotency probe: check if platform engagement already exists.
+      // isOrgProvisioned manages its own scope flips internally and restores
+      // the starting scope before returning, so the next setScope call below
+      // is required (not redundant).
+      const isProvisioned = await this.isOrgProvisioned(currentOrgId, currentOrgName, orgSlug);
+
+      if (isProvisioned) {
+        return { engagementProjectId: '', projectTierProjectId: '', created: false };
+      }
+
+      // Step A: ensure hydra tag — must run in OPERATOR scope.
+      // Tag ownerId is payload-driven (MARKETPLACE_OPERATOR_ORG_ID) but hydra's
+      // visibility filter on the idempotency probe inside ensureTag requires
+      // operator session to see operator-owned tags (errata 041). Create also
+      // runs cleanly from operator scope.
+      await this.setScope(MARKETPLACE_OPERATOR_ORG_ID);
+      const tagId = await this.ensureTag(orgSlug, currentOrgId, currentOrgName);
+
+      // Steps C + D: create Engagement Project + Project tier in TARGET scope.
+      // platform.Project.create has no payload ownerId field; server derives
+      // ownership from session (errata 040). Target scope ensures correct
+      // ownerId attribution. Auto-Board + auto-Lead inherit target ownership.
+      await this.setScope(currentOrgId);
+
+      const engagementProjectId = await this.ensureEngagementProject(
+        currentOrgName,
+        currentOrgId,
+        tagId,
+      );
+
+      const projectTierProjectId = await this.ensureProjectTier(
+        currentOrgName,
+        currentOrgId,
+        engagementProjectId,
+      );
+
+      return { engagementProjectId, projectTierProjectId, created: true };
+    } finally {
+      // Restore the caller's starting scope. Caller (admin tab) still owns its
+      // outer restore in its own finally — this is the inner safety net.
+      if (startingScope && startingScope !== this.orgIdService.getCurrentOrgId()) {
+        try {
+          await this.setScope(startingScope);
+        } catch (restoreErr) {
+          console.error('[PLATFORM_ENGAGEMENT_SCOPE_RESTORE_FAILED]', restoreErr);
+        }
+      }
     }
-
-    // Step A: Create hydra tag (identity; NEW namespace per D-49).
-    const tagId = await this.ensureTag(orgSlug, currentOrgId, currentOrgName);
-
-    // Step C: Create Engagement Project (depth 1; FIXED tier; auto-Board + auto-Lead).
-    const engagementProjectId = await this.ensureEngagementProject(
-      currentOrgName,
-      currentOrgId,
-      tagId,
-    );
-
-    // Step D: Create Project-tier Project (depth 2; FIXED tier per D-50).
-    const projectTierProjectId = await this.ensureProjectTier(
-      currentOrgName,
-      currentOrgId,
-      engagementProjectId,
-    );
-
-    return { engagementProjectId, projectTierProjectId, created: true };
   }
 
   /**
@@ -201,6 +280,10 @@ export class PlatformEngagementProvisioner {
     const tagName = buildEngagementTagName(ENGAGEMENT_TAG_NAMESPACE_NEW, orgSlug);
     try {
       // Probe: does tag already exist (NEW namespace)?
+      // MUST be called in OPERATOR scope — hydra's session-scope visibility
+      // filter blocks operator-owned tags from non-operator sessions (errata
+      // 041). The caller (ensurePlatformEngagement) sets that scope before
+      // calling here; this method does not manage scope itself.
       const body = new TagSearchBody();
       body.name = tagName;
       const existing = await this.clientApi.hydraClient
@@ -271,7 +354,7 @@ export class PlatformEngagementProvisioner {
       // Construct via NewProject (errata 036 (c)); ownerId server-derived from
       // session (errata 036 (b) — NewProject DTO has no ownerId field).
       const newProject = new NewProject(
-        ENGAGEMENT_PROJECT_NAME_TEMPLATE(orgName),
+        ENGAGEMENT_PROJECT_NAME,
         PROJECT_STATUS as never,
         PROJECT_VISIBILITY as never,
         PROJECT_MEMBERSHIP_POLICY as never,

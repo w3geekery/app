@@ -54,15 +54,12 @@ interface OrgRow {
  *      so the UI elsewhere keeps showing the original org.
  *   3. Fetch the target org's org-party (R) and admin user-party (A) — these
  *      lookups REQUIRE target context (parties are per-org).
- *   4. (Provision only) `switchOrgContext(originalOrgId)` — switch BACK to
- *      W3Geekery before running the recipe. Steps C/E call `Pipeline.receive`
- *      against the W3Geekery-owned SME Marketplace DEV pipeline; that
- *      pipeline is not visible from any other org's scope. The recipe stamps
- *      the target org's IDs into the payload (buyerZerobiasOrgId, etc.) —
- *      those are data, not request scope.
- *   5. (Provision only) Call `ensurePlatformEngagement` with the resolved
- *      parties; runs in W3Geekery context.
- *   6. ALWAYS switch back to the original org-id in finally (idempotent
+ *   4. (Provision only) Call `ensurePlatformEngagement`. The provisioner
+ *      orchestrates its own scope flips internally — tag operations in
+ *      OPERATOR scope (hydra visibility filter; errata 041) and Project
+ *      operations in TARGET scope (server-derived ownerId; errata 040).
+ *      The recipe restores the caller's starting scope before returning.
+ *   5. ALWAYS switch back to the original org-id in finally (idempotent
  *      restore — paranoid against partial-execution paths).
  *
  * Scope (2026-05-06): provisioning is admin-only, manual. No race protection,
@@ -232,12 +229,9 @@ export class OrgProvisioningTabComponent implements OnInit {
       // covers admin membership — but the validation remains useful.
       await this.resolveInputsInTargetContext(row);
 
-      // Switch BACK to original (W3Geekery) context before running the recipe.
-      // v3 recipe issues platform.Project.create against the operator-org scope;
-      // the recipe stamps the target org's IDs into the payload (ownerId, etc.)
-      // — those are data, not request scope.
-      await this.switchOrgContext(originalOrgId);
-
+      // Provisioner orchestrates its own scope flips (operator scope for tag
+      // operations per errata 041; target scope for Project create per errata
+      // 040). It restores the caller's starting scope before returning.
       const result = await this.provisioner.ensurePlatformEngagement({
         currentOrgId: row.id,
         currentOrgName: row.name,

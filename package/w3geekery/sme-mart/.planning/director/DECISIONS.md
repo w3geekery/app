@@ -880,3 +880,70 @@ Both were caught by Clark and corrected. The mistake was rooted in stale memory 
 - D-43 (engagement tag namespace — extended by D-49 to full word)
 - D-46 (corrected reading: nesting for structure + tags for tier naming; this entry locks the specific tier-to-tag mapping)
 - D-49 (engagement namespace; symmetric full-word convention)
+
+## D-51 Engagement Display Verbiage — Drop Arrows, "provider/client" Asymmetric Role Label (supersedes D-32, D-33, D-35)
+**Date:** 2026-05-15
+**Decision:** Engagement Project display strings drop ASCII arrows (`<-`, `➡️`) and adopt corporate-prose phrasing with a single asymmetric role label. The customer-org is the implicit context (engagement is always rendered in owner-org scope), so the owner-org name is dropped from the name. The OTHER party's role (provider or client) is the only asymmetry that needs to be encoded. Closes BACKLOG-101.
+
+**Vocabulary lock:**
+- **provider** — the supply side (formerly "supplier" / arrow tail). Matches `provider_type` MPI section convention.
+- **client** — the demand side (formerly "customer" / arrow head). Native to professional-services vocabulary (consultants, auditors, SMEs).
+- Rule: provider has clients; client has providers. Symmetric asymmetry — each side uses the other's professional-services-native term.
+
+**Lock #1 — D-32 superseded (engagement Project name):**
+- OLD (D-32): `${orgName} <- ZeroBias` (e.g., `Brian Hierholzer Inc. <- ZeroBias`)
+- NEW: `Engagement with provider ZeroBias Platform` (constant — orgName dropped)
+- Converse case for non-default marketplace engagements (when owner-org IS the provider): `Engagement with client ${otherOrgName}`
+
+**Lock #2 — D-33 superseded (engagement Project description):**
+- OLD (D-33): `Platform Services Engagement: ZeroBias ➡️ ${orgName}` (no trailing period)
+- NEW: `Platform services engagement provided by ZeroBias Platform for ${orgName}.` (trailing period — full sentence)
+
+**Lock #3 — D-35 superseded (project-tier description, depth 2):**
+- OLD (D-35): `${orgName}'s gateway into ZeroBias — tasks, notes, and communication tied to the ZeroBias ➡️ ${orgName} platform engagement live here.`
+- NEW: `${orgName}'s gateway into ZeroBias — tasks, notes, and communication tied to the platform services engagement with ZeroBias Platform live here.`
+- (em-dash retained — that's punctuation, not an arrow)
+
+**D-34 unchanged:** project-tier name stays `"ZeroBias Platform"` (already arrow-free).
+
+**Why:**
+- Arrows (`<-`, `➡️`) are ambiguous-glyph: look like typos / markdown artifacts to non-domain readers, don't survive copy-paste cleanly, and the "supply flows toward buyer" framing isn't legible without a memo.
+- "customer" and "supplier" carry retail / manufacturing baggage. SMEs and the platform's own vocabulary both already use "provider" and "client".
+- Dropping orgName from the name reduces noise — every engagement is rendered in its owner-org's scope, so the owner-org is redundant in the title. Description retains orgName for clarity in cross-org admin contexts.
+
+**How to apply:**
+- All NEW engagement Project creation (provisioner.service.ts, manual MCP walkthroughs, future migration scripts) uses the new verbiage.
+- Existing engagement Projects: opt-in operator rename, NOT batch migration. No UUID churn. Tags + UUIDs are stable.
+- Marketing / docs / UI copy referring to engagement display strings uses the new phrasing.
+- Both UAT seed engagements (Brian's-Org + W3Geekery) updated to the new verbiage on 2026-05-15 alongside this entry to set a clean baseline. Future existing-engagement renames are opt-in per the no-batch-migration rule.
+
+**Anti-pattern:**
+- (a) Re-introducing arrows in name or description for "compactness" or "visual asymmetry". The asymmetry is encoded by the role label.
+- (b) Mixing vocabularies — `Engagement with supplier X` or `Engagement with customer X`. Use provider/client exclusively for the role label.
+- (c) Renaming the engagement TAG to match the display verbiage. Tags stay on the `sme-mart.engagement.{supply}-to-{demand}` UUID-stable convention per D-49.
+- (d) Parsing the display name as a structured key. The tag is the parser-friendly key; the display name is human-only.
+- (e) Batch-migrating existing engagement display strings via UUID-churning recreates. Operator-by-operator rename only.
+
+**Validated empirically on UAT 2026-05-15:**
+- Brian's-Org Engagement Project `551f7ca6-d89d-4508-aac0-0e8bd8d4e17e` updated via `platform.Project.update`:
+  - name: `"Engagement with provider ZeroBias Platform"`
+  - description: `"Platform services engagement provided by ZeroBias Platform for Brian Hierholzer Inc."`
+- Brian's-Org Project tier `dae62726-7659-47cc-af97-63a69bcac1bf` updated:
+  - description: `"Brian Hierholzer Inc.'s gateway into ZeroBias — tasks, notes, and communication tied to the platform services engagement with ZeroBias Platform live here."`
+- W3Geekery Engagement Project `4617e9d7-b7b4-4679-be43-10fc4140295c` updated:
+  - name: `"Engagement with provider ZeroBias Platform"`
+  - description: `"Platform services engagement provided by ZeroBias Platform for W3Geekery."`
+- W3Geekery Project tier `e62b2446-b99f-4160-b7cc-aac9734964eb` updated:
+  - description: `"W3Geekery's gateway into ZeroBias — tasks, notes, and communication tied to the platform services engagement with ZeroBias Platform live here."`
+- Provisioner code + spec (`platform-engagement-provisioner.service.ts` + `.spec.ts`) updated; 20/20 specs pass.
+
+**Open questions:**
+- Is "customer = buyer" universally true across all future engagement types (e.g., Brian's guild engagements per 2026-05-05/05-12)? Currently yes — guild engagements still have a sponsor (client-equivalent) and participants (provider-equivalent). Flag for review if a truly peer-symmetric engagement type ever emerges (research partnerships, JVs with no obvious sponsor).
+- Should we ever rewrite the existing W3Geekery engagement's legacy display name to match the new convention? Filed as opt-in operator action; no Director-driven cleanup planned.
+
+**Related decisions:**
+- D-32, D-33, D-35 (superseded; see Lock entries above for OLD→NEW mapping)
+- D-34 (project-tier name `"ZeroBias Platform"` — unchanged)
+- D-49 (engagement tag namespace — tags stay UUID-stable, only display verbiage changes)
+- D-43 (anti-pattern (d) on UUID churn — applies here: no tag rename, only display rename)
+- D-50 (canonical tier mapping — display verbiage hooks attach to Engagement (depth 1) and Project (depth 2) tiers per the mapping)
