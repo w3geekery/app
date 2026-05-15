@@ -10,7 +10,283 @@
 
 ---
 
-## 📍 LATEST: 2026-05-13 parkit (10) — Director-side hardening sprint: PRECOMMIT-TSC-GATE-1 + D-49-MIGRATE + errata 036/037/038/039 + Phase 31-A nav cleanup + Phase 31 brief v2 + BACKLOG-099 architectural decision captured
+## 📍 LATEST: 2026-05-15 parkit (12) — Surface-layering audit cascade + provisioner cross-org architecture fix (errata 040 + 041) + Brian's-Org dogfood VERIFIED
+
+**TL;DR — TWO MAJOR THINGS LANDED, BOTH UNCOMMITTED:**
+
+1. **Site-wide surface-layering audit fully executed** by a sibling Claude session (handoff doc `.claude/handoffs/surface-layering-audit-2026-05-14.md`). 5 commits landed (`7405cca`, `0ed056b`, `7ce109b`, `cfbe1b3`, `8804808` — document-list, note-card, notebook-overview, task-card, template-chooser-dialog). Director caught + fixed two MORE surface bugs not in the audit's grep scope: `project-card` (used in `/org/projects` + `/my/projects`) had `appearance="outlined"` → dropped + canonical hover; `project-boards-tab` `.board-card` (used in `/project/:id/boards`) had same — dropped, no hover (static cards until BACKLOG-100 drill-down lands). **Both project-card/-boards-tab changes are UNCOMMITTED.** ALSO landed: global `--mat-card-elevated-container-color: var(--zb-background-card)` override in `src/styles.scss` (declared at `body, body.dark-theme` for correct specificity vs `mat.theme()`) so EVERY `<mat-card>` site-wide picks up the canonical card surface without per-component bg overrides. ALSO landed: org-list `.active-chip` swapped to ngx-library `<span class="zb-chip square dense generic light-green">` for the "Active" pill on current-org card, dead `.active-chip` SCSS block removed (also UNCOMMITTED in HTML+SCSS — these accumulated mid-session under the parkit-11 sweep rule of "no commit until said so").
+
+2. **Provisioner cross-org architecture fix (errata 040 + 041) — VERIFIED END-TO-END on Brian's-Org.** Phase 31-C Pass 2 dogfood = ✅ COMPLETE for the provisioner specifically. Two cascading bugs surfaced during the live attempt; both fixed; final architecture has the provisioner orchestrating its OWN scope flips internally (operator scope for hydra.Tag operations, target scope for platform.Project.create). Admin tab is now a thinner orchestrator. **All provisioner refactor work is UNCOMMITTED** (sizable change — provisioner service + spec + admin tab + admin tab spec + 2 new errata docs).
+
+**Brian's-Org final state on UAT** — VERIFIED via ZB MCP (acquired `zb-mcp-profile-lock.sh` for `uat-zb` system org for cross-scope visibility):
+
+```
+Brian Hierholzer Inc.   d6810036-fbc1-54c2-b01d-1496fc14ed32
+└── Engagement Project   depth 1
+    │   id:           551f7ca6-d89d-4508-aac0-0e8bd8d4e17e
+    │   name:         "Brian Hierholzer Inc. <- ZeroBias"      [D-32 ✓]
+    │   description:  "Platform Services Engagement: ZeroBias ➡️ Brian Hierholzer Inc."   [D-33 ✓]
+    │   parentId:     null                                       [✓]
+    │   ownerId:      d6810036-...   Brian Hierholzer Inc.       [✅ correct — errata 040 fix verified]
+    │   tagId:        0ac97b7a-96df-4dd7-a4fa-7512e5fd6198       [sme-mart.engagement.zerobias-to-brianhierholzer; REUSED]
+    │   auto-Board:   846518bb-4a4e-4536-a334-36038d48eece       [ownerId Brian's-Org ✓]
+    └── Project tier   depth 2
+        ·   id:           dae62726-7659-47cc-af97-63a69bcac1bf
+        ·   name:         "ZeroBias Platform"                     [D-34 ✓]
+        ·   description:  D-35 verbiage with Brian's-Org name interp ✓
+        ·   parentId:     551f7ca6-...                            [✓]
+        ·   ownerId:      d6810036-...   Brian Hierholzer Inc.    [✅ correct]
+        ·   tagId:        420b0753-...   sme-mart.tier.project    [D-50 ✓]
+        ·   auto-Board:   a1d97773-262b-4555-a938-b39b8ceb4f19    [ownerId Brian's-Org ✓]
+```
+
+### Commits since parkit-11 (`55b0e4c` was the parkit-12 opening commit)
+
+6 commits in this session window. Roughly:
+
+```
+# /orgs polish (Director-side, opening commit of session)
+55b0e4c refactor(org-list): adopt zb/ui surface layering pattern + drop members + rename Affiliation -> Domain
+
+# Surface-layering audit cascade (executed by sibling Claude per handoff doc)
+7405cca refactor(document-list): apply layered surface pattern to .document-row
+0ed056b refactor(note-card): adopt zb card-shadow tokens on hover
+7ce109b refactor(notebook-overview): apply layered surface pattern to .stat-card
+cfbe1b3 refactor(task-card): adopt zb card-shadow tokens on .sub-card hover
+8804808 refactor(template-chooser-dialog): apply layered surface pattern to .template-card
+```
+
+### Uncommitted at parkit-12 (significant — review before commit)
+
+| File | Why uncommitted | Commit grouping suggestion |
+|---|---|---|
+| `src/styles.scss` | Global `--mat-card-elevated-container-color` override | "feat(global-styles): route mat-card to --zb-background-card via M3 token override" |
+| `src/app/pages/project/project-card.component.ts` | Drop `appearance="outlined"`, canonical hover | bundle with project-boards-tab as "fix(project-card/boards): drop appearance=outlined; pick up canonical surface treatment" |
+| `src/app/pages/project/tabs/project-boards-tab.component.ts` | Drop `appearance="outlined"` (static, no hover) | same group as above |
+| `src/app/pages/orgs/org-list.component.html` + `.scss` | Active chip swapped to `.zb-chip square dense generic light-green`; dead `.active-chip` block dropped | "refactor(org-list): adopt ngx-library zb-chip for Active pill" |
+| `src/app/core/services/platform-engagement-provisioner.service.ts` + `.spec.ts` | Provisioner refactor — orchestrates own scope flips; setScope helper; errata 040 + 041 fix | big single commit: "fix(provisioner): cross-org scope orchestration — errata 040 + 041" |
+| `src/app/pages/admin/tabs/org-provisioning-tab.component.ts` + `.spec.ts` | Drop internal switch-back; provisioner handles scope now | bundle with provisioner commit |
+| `.planning/director/errata/040-provisioner-ownerid-session-derived-cross-org.md` (NEW) | Documented errata | bundle with provisioner commit |
+| `.planning/director/errata/041-searchtags-session-scoped-visibility-blind-spot.md` (NEW) | Documented errata | bundle with provisioner commit |
+| `.planning/BACKLOG.md` | BACKLOG-103 filed (org/profile add-item dialog not theme-aware) | "docs(backlog): BACKLOG-103 — org-profile add-item dialog not theme-aware" |
+
+**TSC + specs status as of parkit-12:** `tsconfig.app.json` + `tsconfig.spec.json` both clean. `platform-engagement-provisioner.service.spec.ts` 20/20 pass; `org-provisioning-tab.component.spec.ts` 11/11 pass; `org-list.component.spec.ts` 4/4 pass; `project-card.component.spec.ts` 14/14 pass.
+
+### Errata + memory landed this session
+
+**Errata:**
+- **040 — `provisioner-ownerid-session-derived-cross-org`** (high) — cross-org provisioning landed Project.ownerId as operator (W3Geekery) not target. NewProject DTO has no ownerId field; server derives from session header. Pre-fix admin tab switched session BACK to operator before recipe ran. Status: **fixed**. Live-verified.
+- **041 — `searchtags-session-scoped-visibility-blind-spot`** (high) — `hydra.Tag.searchTags` AND's explicit `ownerIds` with implicit session-scope visibility; from non-operator session, operator-owned tags are invisible regardless of body filters. Caused createTag duplicate-name 404 after errata 040 fix flipped recipe to target scope. Status: **fixed** (provisioner now flips to operator scope for tag ops, target scope for Project ops, restores starting scope in finally). Live-verified.
+
+**Memory entries:**
+- `feedback_no_commit_nags.md` — never end response with commit-authorization question
+- `feedback_let_me_violation.md` — "let me X" + immediate action is BANNED (global CLAUDE.md rule, repeatedly violated; memorialized after Clark caught it twice)
+- `feedback_read_before_edit_always.md` — widened from "on retry" to ALWAYS (Clark correction; old slug `feedback_read_before_edit_on_retry.md` deleted)
+
+### Pre-existing direct-fix items closed (in addition to errata)
+
+- `BACKLOG-103` filed (org-profile add-item dialog not theme-aware) — flagged candidate to fold into BACKLOG-098 (Org Profile revamp) since the form is being rebuilt there anyway
+
+### Major architectural insight captured (no errata, no code change — workflow design)
+
+**Background-sessions feature** (Claude Code TUI hint: `← for agents`): pressing `←` twice in bypass mode dispatches a parallel background Claude session via `claude agents` infrastructure. Spawns a NEW full Claude Code process with same auth but no context inheritance (no conversation history, no CLAUDE.md auto-load, no session memory). Transcripts go to `~/.claude/jobs/<id>/` (NOT the standard project-cwd path — SpecStory wouldn't auto-pick them up; needs verification). **NOT a fit for Director → gsd-plan/gsd-execute handoffs** because context doesn't transfer — Director's whole value is accumulated state. Existing handoff pattern (`.claude/handoffs/<doc>.md` + manual session spawn) remains better. Background sessions are right for self-contained one-shots: PR review, flake investigation, dependency upgrades. See claude-code-guide agent sessions in specstory for details.
+
+### ZB MCP lock script learned
+
+Script: `~/.claude/scripts/zb-mcp-profile-lock.sh` with `check / acquire / release / whoami` commands. Lock file `~/.claude/.zb-mcp-profile-lock`. Auto-resolves session name from tmux pane cache or recent JSONL `customTitle`. Stale threshold 30 min. **USE THIS** before any `meta.switchProfile` call when another Claude might be using ZB MCP. Pattern used at end of session for cross-scope verification: `acquire uat-zb` → `meta.switchProfile uat-zb` → queries → `meta.switchProfile uat-clark@w3geekery` (restore) → `release`. Going forward: any profile switch goes through this script unless single-session-only is certain.
+
+### Carry-forward open items (resume picks these up)
+
+| Item | Type | Trigger |
+|---|---|---|
+| **Commit the uncommitted work** | Required before further GSD/PR work | After Clark surfaces from /clear and reviews the pending diff. Commit grouping suggested in table above. |
+| **Verify SpecStory captures background-sessions** | Diagnostic | If we ever want to use `← for agents` for parallel work, need to confirm transcripts land somewhere SpecStory watches. Empirical test: spawn one trivial background session, check `.specstory/history/` for new file. |
+| **Onboarding-guard `isOrgProvisioned` for non-operator users** | Known follow-on issue | Provisioner's internal scope flip works for operator-admin (Clark via W3Geekery) but Brian's own user session can't switch to operator scope (no membership → 403). Guard will treat 403 as "not provisioned" and route Brian to onboarding holding page even when engagement exists. File as errata-followup or roll into Phase 31-C continuation. |
+| **Phase 31-C dogfood continued** | Remaining v1.4 Director-side work | Provisioner verified, but the broader walkthrough (Brian logs in as Brian, navigates org, project, tasks, vetting surfaces, profile, etc.) hasn't happened. |
+| **Cross-fork PR `w3geekery/app:poc/sme-mart` → `zerobias-org/app:uat`** | Clark's action; deferred | Clark deferred; still deferred. **DO NOT PUSH** without explicit instruction. |
+| **Nic's response on `hydra.Resource.setMetadata()`** | Architectural unblock for BACKLOG-099 | Same pending status from parkit-10. |
+| **errata 029 (GSD 1.38.5 state-frontmatter)** | Status check | Flip to `fixed` on next clean /gsd-* command run. |
+
+### Hooks + tests in good standing
+
+- All pre-commit hooks intact (PRECOMMIT-TSC-GATE-1 from parkit-10).
+- Lint clean on touched files.
+- Spec coverage:
+  - Provisioner 20/20 (with new orgIdService injection + scope mocks)
+  - Admin tab 11/11 (assertion updated to "stays in target context" then refactored to provisioner-owns-scope after errata 041 surfaced)
+  - org-list 4/4
+  - project-card 14/14
+
+### Director-side findings for Brian/Kevin meetings (new this session)
+
+1. **Hydra createTag returns 404 with hallucinated UUID on duplicate-name uniqueness check.** Should be 409 Conflict or return existing tag. Server-side bug worth flagging to Nic — even with our client-side fix, anyone hitting the duplicate-name path gets a confusing error.
+2. **NewProject DTO needs an `ownerId` field** (and UpdateProject too, for in-place ownership transfer of mis-attributed Projects). Per errata 040, current behavior is implicit session-scope derivation, which is fragile for cross-org provisioning. Ask Kevin/Nic: feature request to add explicit ownerId attribution.
+3. **`hydra.Tag.searchTags` ignores explicit `ownerIds` body filter for visibility-broadening.** Acts as AND filter only, can't bypass session-scope visibility. For cross-org marketplace use cases (operator owns shared tags, targets need to find them), this is a real gap. Ask Kevin/Nic: should there be a `crossOrg: true` or similar override?
+4. (carries from parkit-10) Portal service not in ZB MCP index.
+5. (carries from parkit-10) `searchTasks` lives on portal client.
+6. (carries from parkit-10) `platform.Project.tagId` vs hydra resourceLink discovery mismatch.
+
+### Next-action sequence (on /parks load after /clear)
+
+1. **Verify branch posture:** `git status -sb` (expect dirty working tree per Uncommitted table above), `git log --oneline -6` (expect 8804808 at top).
+2. **Read this parkit-12 section** for full context.
+3. **Decide commit posture.** All uncommitted work passes tsc + specs; commit grouping suggested above. Director can offer the groupings but won't auto-commit (Clark's call per the no-commit-nags rule).
+4. **If Clark continues Phase 31-C dogfood:** Brian's-Org provisioning is verified backend-side. Next step is UI-side walkthrough — Brian logs in (or impersonate via admin), navigates engagement → project tier → boards → profile etc. The onboarding-guard blind spot will surface here (it can't see operator-owned tag from Brian's session). Be prepared with the workaround or accept the broken state and add it to the errata followup queue.
+5. **If Clark wants to continue surface-layering / visual polish work:** scan for any remaining flat-card surfaces (e.g., the global `--mat-card-elevated-container-color` override may have surfaced new visual issues elsewhere worth checking).
+
+### Quick-start prompt (Director Parks reads this first on resume — parkit-12)
+
+You're Director Parks for SME Mart. v1.4 milestone goal = **3P Onboarding & Default Engagement**. Phase 31-B shipped at parkit-11. Phase 31-C Pass 1 (W3Geekery happy path) was previously verified. **Phase 31-C Pass 2 (Brian's-Org orphan recovery) backend = ✅ VERIFIED at parkit-12.** UI-side dogfood walkthrough still pending.
+
+**Immediate state on /parks load:**
+- 6 commits landed this window (parkit-11 baseline → 8804808 = surface-layering audit complete).
+- **Working tree dirty.** Significant uncommitted work spanning the surface-layering audit's last-mile bugs + the entire provisioner cross-org architecture fix (errata 040 + 041, refactor + spec + admin tab + 2 new errata docs). All tsc + specs green; just needs review + commit grouping (suggested in the table above).
+- DO NOT PUSH. Cross-fork PR still deferred.
+
+**Rules carried over (read once, don't violate):**
+- **No commit nags** (`feedback_no_commit_nags.md`) — never end a response with "commit?" / "hold or commit?" / "want me to commit?". State what changed, end.
+- **No "let me X" + immediate action** (`feedback_let_me_violation.md`) — drop the preamble or ask a real question and WAIT.
+- **Read-before-Edit ALWAYS** (`feedback_read_before_edit_always.md`) — fresh Read on target file before every Edit, not just on retry.
+- **NEVER mention branch-ahead-of-origin count** (carries from parkit-11).
+- **ZB MCP lock** — use `~/.claude/scripts/zb-mcp-profile-lock.sh acquire <profile>` before any `meta.switchProfile`; release after restore.
+
+**Reading order on resume:** this parkit-12 section → check the Uncommitted table above against `git status` → `.planning/director/errata/040-*.md` + `041-*.md` for the latest architectural context → DECISIONS.md tail for D-50 (marketplace-singleton tag ownership) + D-49 (engagement tag namespace) which the fix relies on.
+
+**Dev server state at parkit-12:** Angular dev server running on port 4200; Brian's-Org provisioned and visible in admin tab (status should read "provisioned" after my latest provisioner refactor + page refresh). Hot reload picked up all changes during the session.
+
+---
+
+## 📍 2026-05-14 parkit (11) — Phase 31-B shipped + cascading routing/data fixes + /orgs polish sweep (IN PROGRESS — uncommitted)
+
+**TL;DR — RESUMING THE SWEEP:** Polish-sweep mode on the org-list page (`/orgs`). A few more spot-tweaks before we commit and move on. **Uncommitted at parkit-11**: `src/app/pages/orgs/org-list.component.html` has `[srcDefault]="'./assets/unknown-company.svg'"` + `[maintainAspectRatio]="true"` added to both card-view AND table-view `<zb-avatar-label>` invocations — same fallback pattern the org-switcher uses (`user-profile-dropdown.component.html:75-81`) and the `maintainAspectRatio` flag flips object-fit so wordmark logos (Auditmation Operations, Zerobias Operations) letterbox-fit instead of squish/clip. Tests + tsc clean against the uncommitted change. **HOLD COMMIT** until Clark says — he flagged that committing-after-every-tweak is annoying mid-sweep.
+
+**Mode rules carried into resume:** (1) NO commits without explicit "commit" / "go" from Clark while sweeping. (2) NEVER mention branch-ahead-of-origin count (he hates it). (3) Read-before-Edit on retry — if Edit returns "file has been modified," next call is `Read`, not retry with stale `old_string` (new memory entry `feedback_read_before_edit_on_retry`).
+
+### Commits since parkit-10 (`9ada949` was the parkit-10 marker commit)
+
+14 commits in this session. Roughly grouped:
+
+```
+# Phase 31-B (auto-pre-fill legalEntityName + always-show welcome card)
+4a01820 feat(phase-31-b): pre-fill legalEntityName from Org.name + always-show welcome card
+
+# /orgs slug routing
+650d2b5 feat(org-routes): accept slug or UUID in /orgs/:id; prefer slug in links
+
+# Org detail page polish (hide UUID, fix Members rendering, drop bogus Group counts)
+2a502d2 fix(org-detail): hide UUID, fix members display, drop bogus group counts
+
+# Big routing + data-source refactor — kill Phase 30's orphan /projects route,
+# rename /my/engagements + /my/projects → /engagements + /projects, fix
+# engagement-card click bug, restore dropdown links, add tag-based filters
+# to listEngagements (depth-1) + listProjects (tier=Project)
+f0dbec8 refactor(routes): kill /projects, drop /my/ prefix, fix engagement-card routing
+
+# Cascading dual-read fixes — engagement-card click, then engagement detail,
+# then project detail, then engagement Projects tab all failed because
+# legacy GQL classes don't carry the new platform.Project rows
+98dc30b fix(routing): drop false-RFP redirect on engagement-detail; dual-read getProject
+d380f4c fix(routing): dual-read getEngagement so platform.Project rows resolve
+b546ecc fix(routing): dual-read listProjectsByEngagement for engagement Projects tab
+
+# Real Boards tab on project (was Coming Soon stub)
+28fe83b feat(project): real Boards tab — list platform.Board.list by projectId
+
+# Backlog filings
+810db8a docs(backlog): BACKLOG-100 — shared Tasks tab + Boards drill-down + switcher (v1.4 target)
+8b29f13 docs(backlog): BACKLOG-101 — revisit engagement display-name convention
+8bc9e8d docs(backlog,101): drop arrow options from engagement-name brainstorm
+
+# Active /orgs polish (current sweep)
+63a87e3 fix(org-list): replace INTERNAL/EXTERNAL badge with 'Active' chip on current org
+fd99f2f feat(org-list): card discriminators — avatar, slug, affiliation; drop bogus metrics
+b6376a8 refactor(org-list): swap hand-rolled avatar for ngx-library ZbAvatarLabelComponent
+
+# (uncommitted) avatar polish — srcDefault unknown-company.svg + maintainAspectRatio
+```
+
+### Where we ARE in the sweep (resume here)
+
+Polish target: `/orgs` cards (My Organizations list page). Done so far:
+
+| Done in commits | Lands on |
+|---|---|
+| INTERNAL/EXTERNAL badge removed; "Active" chip on currently-selected org only | `63a87e3` |
+| Bogus per-org engagement/project counts removed (every card was reading the current session-org's totals via dana-org-id header — they all said the same numbers) | `fd99f2f` |
+| Avatar (was rolled-our-own `<img>` with `object-fit:cover` clipping wordmarks) → `<zb-avatar-label>` ngx-library component | `b6376a8` |
+| Slug shown beneath name (monospace) | `fd99f2f` |
+| Affiliation row (`@domain` from `Org.domains[0]`, or `Org.supportEmail` fallback) — when present | `fd99f2f` |
+| `[srcDefault]="'./assets/unknown-company.svg'"` fallback (matches org-switcher pattern) | **UNCOMMITTED** |
+| `[maintainAspectRatio]="true"` so wordmark logos letterbox-fit instead of squish | **UNCOMMITTED** |
+
+Still potential sweep candidates (NOT yet touched — fair game to look at on resume):
+
+- Avatar size — `zb-avatar-label` maxes at 32px default. Going larger needs a scoped CSS override on `.org-card zb-avatar-label img.zb-avatar-img`. Clark said "nah that's fine for now" — leave at 32px unless he changes his mind.
+- Table view consistency check — table column header still says "Affiliation" but should verify the column actually renders well at narrow widths.
+- W3Geekery has slug + avatar but no domains/supportEmail set, so the affiliation row stays hidden for that card — confirmed expected.
+- Auditmation Operations + Zerobias Operations wordmark rendering — verify the `maintainAspectRatio` fix lands as expected after refresh.
+
+### New backlog entries this session
+
+| # | Plan | Status |
+|---|---|---|
+| **100** | Shared Tasks tab (Engagement + Project) — Boards list, drill-down, board switcher mirroring `zb/ui:feat/board-context-selector-mvp`. **Target current milestone (v1.4).** Full `/gsd-plan-phase` prompt embedded in entry. | Filed |
+| **101** | Engagement display-name convention — drop ASCII reverse-arrow; brainstorm 8 arrow-free options + 5 tradeoff dimensions. Display-only revisit; tag namespace stays per D-49. | Filed |
+| **102** | Normalize `ZerobiasClientApp` injection name to `app` (single outlier in `company-profile-form.component.ts:73` named `zbApp`). 15-min touch-it=fix-it. | Filed (by another process — appeared mid-session) |
+
+### Errata flips ready / open
+
+- **errata 039** moves toward fixed-at-engagement/project-surfaces with `f0dbec8`'s tag-based filtering on `listEngagements` (depth-1) + `listProjects` (tier=Project). Cross-contamination at `/rfps` still gated on BACKLOG-099.
+- errata 029 (GSD 1.38.5 state-frontmatter) still untouched — flip to `fixed` on next `/gsd-*` command that exercises state subsystem.
+- errata 037 / 038 (admin-on-onboarding + stale-session-org) — `fixed` and stable since parkit-10.
+
+### Memory updates landed this session
+
+| Entry | Note |
+|---|---|
+| `feedback_read_before_edit_on_retry` | NEW. Edit returning "file has been modified" → next call is `Read`, not retry with stale `old_string`. Filed under Tool Discipline. |
+
+(parkit-10 entries — `feedback_sdk_shape_verify_source_provenance` — still in force, used heavily during the dual-read cascade fixes.)
+
+### Carry-forward open items (resume picks these up if sweep ends today)
+
+| Item | Type | Trigger |
+|---|---|---|
+| **Commit the uncommitted /orgs avatar tweaks** | Required before /clear / new work | After sweep is "done" per Clark — bundle the 2 uncommitted lines into a follow-on `refactor(org-list): srcDefault + maintainAspectRatio polish` commit |
+| **Phase 31-C dogfood walkthrough** | Last Director-side work in v1.4 | After all polish lands. W3Geekery Pass 1 + Brian's-Org Pass 2 per Phase 31 brief v2. |
+| **Cross-fork PR** (`w3geekery/app:poc/sme-mart` → `zerobias-org/app:uat`) | Clark's action; deferred | Clark has been deferring; reading the room, he'll trigger when he's good and ready. **DO NOT PUSH** without explicit instruction. |
+| **Nic's response on `hydra.Resource.setMetadata()`** | Architectural unblock for BACKLOG-099 | When received → spike C feasibility |
+| **errata 029 (GSD 1.38.5 state-frontmatter)** | Status check | Flip to `fixed` if state subsystem ran clean during next /gsd-* command |
+
+### Quick-start prompt (Director Parks reads this first on resume — parkit-11)
+
+You're Director Parks for SME Mart. **Polish-sweep mode on `/orgs`.** Clark is going to `/clear` to reset context, then resume right here. Pick up the sweep — don't rebuild the architecture.
+
+**Immediate state:**
+- 14 commits landed in the session — Phase 31-B shipped, /orgs route renamed (no more /my/), cascading dual-read fixes added to getEngagement/getProject/listProjectsByEngagement, real project Boards tab built, BACKLOG-100/101 filed.
+- **Uncommitted**: `src/app/pages/orgs/org-list.component.html` has 4 new lines — `[srcDefault]` + `[maintainAspectRatio]` on both card AND table `<zb-avatar-label>` invocations. tsc + tests clean. **Hold the commit** until Clark says go — committing-after-every-tweak annoyed him mid-sweep.
+- After Clark confirms sweep is done → commit the uncommitted tweaks → then next move is **Phase 31-C dogfood walkthrough** per Phase 31 brief v2.
+
+**Sweep targets remaining (open game on resume):**
+1. Verify wordmark fix landed (refresh /orgs, check Auditmation Operations + Zerobias Operations avatars no longer squished).
+2. Verify unknown-company fallback for any org missing avatarUrl.
+3. Any other spot Clark surfaces. **Don't go looking — let him drive the sweep.**
+
+**Rules carried over (read once, don't violate):**
+- **No commits mid-sweep without "commit" / "go" from Clark.**
+- **NEVER mention branch-ahead-of-origin count** in any update. (Annoys him.)
+- **Read-before-Edit on retry** — Edit returning "file has been modified" = `Read` next, never retry the same `old_string`. Memory: `feedback_read_before_edit_on_retry`.
+- **No arrows in engagement-name brainstorm** (per BACKLOG-101, post-correction).
+
+**Reading order on resume:** this parkit-11 section → BACKLOG-100/101 entries in `.planning/BACKLOG.md` (lines ~75-80, near top of Active table) → any /orgs polish Clark mentions next.
+
+**Dev server state:** running on port 4200 since parkit-10 (verify with `lsof -iTCP -sTCP:LISTEN -n -P | grep 4200`). Restart hint: if NG8002 / template binding errors appear with no obvious cause after a component public-API change, restart ng serve — known Angular incremental-compile cache issue.
+
+**Errata 035 carry-forward** (GSD 1.41.2 `/gsd-plan-phase` aftermath): unchanged. Still applies on next `/gsd-plan-phase` run.
+
+---
+
+## 📍 2026-05-13 parkit (10) — Director-side hardening sprint: PRECOMMIT-TSC-GATE-1 + D-49-MIGRATE + errata 036/037/038/039 + Phase 31-A nav cleanup + Phase 31 brief v2 + BACKLOG-099 architectural decision captured
 
 **TL;DR:** Post-parkit-9 session focused on Director-side hardening + Phase 31 pre-walkthrough Chrome DevTools triage. **5 commits since parkit-9** (`b5b4c03`). Highlights: (1) PRECOMMIT-TSC-GATE-1 hook-enforced full-project tsc on every SME Mart commit (`5e9e1b4`); (2) D-49-NAMESPACE-MIGRATE-1 closed (`3a42e90`) — dual-namespace probe in `isOrgProvisioned` + Engagement Project verification (defends against orphan-tag false-positive — Brian's-Org case) + 3 SDK shape bugs fixed alongside (errata 036: probe-shape `as never`, ownerId-dropped-on-create, object-cast-instead-of-NewProject-constructor); (3) errata 037 (admin stuck on `/onboarding/*`) + 038 (stale-session-org black hole) co-fixed in `80fff24` after Chrome DevTools surfaced both during pre-walkthrough; (4) Org tab reorder — Corporate Profile is first + default landing for `/org` (`f830588`) + BACKLOG-098 filed for full Org Profile revamp; (5) Phase 31-A nav cleanup (`b74dc69`) — hid Browse Providers / Browse Catalog / My Engagements / My Projects from dropdown; Services + RFPs → Coming Soon; My Profile tabs except Settings → Coming Soon; default redirect from `overview` → `settings`. Also filed errata 039 (cross-contamination on /rfps + /my/engagements + /my/projects via `platform.Project.list()`-no-filter — same as-never pattern as errata 036(a) at different call sites; deferred to v1.5+ post-099 decision) + BACKLOG-099 (RFP-as-`platform.Project` architecture decision A/B/C — Clark pref B, spike C first via Nic's `setMetadata` response). Phase 31 brief refreshed to v2 absorbing 31-A (nav cleanup, done) + 31-B (auto-populate Org Profile from ZB Org fields — next deliverable) + 31-C (original W3Geekery walkthrough + Brian's-Org orphan recovery scope).
 
