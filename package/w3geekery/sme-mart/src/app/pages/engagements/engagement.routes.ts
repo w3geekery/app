@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { OverviewTab } from './tabs/overview-tab.component';
-import { DetailsTab } from './tabs/details-tab.component';
 import { TasksTab } from './tabs/tasks-tab.component';
 import { TimelineTab } from './tabs/timeline-tab.component';
 import { NotesTab } from './tabs/notes-tab.component';
@@ -17,7 +16,8 @@ export const ENGAGEMENT_TAB_ROUTES: Routes = [
   { path: 'overview', component: OverviewTab },
   { path: 'projects', component: ProjectList },
   { path: 'documents', component: DocumentsTab },
-  { path: 'details', component: DetailsTab },
+  // /details deprecated 2026-05-15 — DetailsTab removed; redirect for any stale deep links
+  { path: 'details', redirectTo: 'overview' },
   { path: 'tasks', component: TasksTab },
   { path: 'vetting', component: VettingTab },
   { path: 'timeline', component: TimelineTab },

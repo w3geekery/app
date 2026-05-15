@@ -1,20 +1,16 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit, OnDestroy } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { TitleCasePipe } from '@angular/common';
+import { ZbResourceStatusComponent } from '@zerobias-org/ngx-library';
 import { Subscription } from 'rxjs';
 import { EngagementsService } from '../../core/services/engagements.service';
 import { ProviderProfilesService } from '../../core/services/provider-profiles.service';
 import { EngagementContextService } from '../../core/services/engagement-context.service';
 import { EngagementHierarchyService, type HierarchyBreadcrumb } from '../../core/services/engagement-hierarchy.service';
 import { ImpersonationService } from '../../core/services/impersonation.service';
-import { VettingService } from '../../core/services/vetting.service';
-import type { VettingGateStatus } from '../../core/models';
 import { HierarchyBreadcrumbsComponent } from '../../shared/components/hierarchy-breadcrumbs/hierarchy-breadcrumbs.component';
 import { PageBreadcrumbComponent, type PageBreadcrumbItem } from '../../shared/components/page-breadcrumb/page-breadcrumb.component';
 
@@ -27,7 +23,6 @@ const TABS: readonly TabDef[] = [
   { path: 'overview', label: 'Overview' },
   { path: 'projects', label: 'Projects' },
   { path: 'documents', label: 'Documents' },
-  { path: 'details', label: 'Details' },
   { path: 'tasks', label: 'Tasks' },
   { path: 'vetting', label: 'Vetting' },
   { path: 'timeline', label: 'Timeline' },
@@ -41,15 +36,13 @@ const TABS: readonly TabDef[] = [
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
-    MatChipsModule,
     MatIconModule,
     MatButtonModule,
     MatTabsModule,
-    MatTooltipModule,
     MatSnackBarModule,
-    TitleCasePipe,
     HierarchyBreadcrumbsComponent,
     PageBreadcrumbComponent,
+    ZbResourceStatusComponent,
   ],
   templateUrl: './engagement-detail.component.html',
   styleUrl: './engagement-detail.component.scss',
@@ -63,14 +56,12 @@ export class EngagementDetail implements OnInit, OnDestroy {
   private readonly engagements = inject(EngagementsService);
   private readonly providerProfiles = inject(ProviderProfilesService);
   private readonly hierarchy = inject(EngagementHierarchyService);
-  private readonly vetting = inject(VettingService);
   readonly ctx = inject(EngagementContextService);
 
   private refreshSub?: Subscription;
 
   readonly loading = signal(true);
   readonly breadcrumbs = signal<HierarchyBreadcrumb[]>([]);
-  readonly vettingGate = signal<VettingGateStatus | null>(null);
   readonly tabs = TABS;
 
   /** Page-level breadcrumb: Engagements > <Current Engagement Name>. */
@@ -114,7 +105,6 @@ export class EngagementDetail implements OnInit, OnDestroy {
 
       // Non-blocking async loads
       this.loadBreadcrumbs(eng);
-      this.loadVettingGate(eng.id);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       this.snackBar.open(`Failed to load: ${msg}`, 'Dismiss', { duration: 5000 });
@@ -157,21 +147,11 @@ export class EngagementDetail implements OnInit, OnDestroy {
     }
   }
 
-  private async loadVettingGate(engagementId: string): Promise<void> {
-    try {
-      const summary = await this.vetting.getVettingSummary(engagementId);
-      this.vettingGate.set(summary.gateStatus);
-    } catch {
-      // Non-critical — vetting tab may not have items yet
-    }
-  }
-
   private async refresh(): Promise<void> {
     const id = this.route.snapshot.params['id'];
     const eng = await this.engagements.getEngagement(id);
     if (eng) {
       this.ctx.setEngagement(eng);
-      this.loadVettingGate(eng.id);
     }
   }
 }
