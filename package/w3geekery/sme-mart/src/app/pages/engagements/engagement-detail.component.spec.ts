@@ -160,13 +160,6 @@ describe('EngagementDetail', () => {
   // Navigation
   // ---------------------------------------------------------------------------
 
-  describe('goBack', () => {
-    it('should navigate to /engagements', () => {
-      component.goBack();
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/engagements']);
-    });
-  });
-
   describe('onBreadcrumbNavigate', () => {
     it('should not navigate for active crumb', () => {
       component.onBreadcrumbNavigate({ level: 'boundary', label: 'Test', active: true } as HierarchyBreadcrumb);

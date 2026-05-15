@@ -4,9 +4,7 @@
   } @else if (!ctx.engagement()) {
     <p>Engagement not found.</p>
   } @else {
-    <button mat-button (click)="goBack()" class="back-btn">
-      <mat-icon>arrow_back</mat-icon> Back to Engagements
-    </button>
+    <app-page-breadcrumb [items]="pageBreadcrumb()" />
 
     @if (breadcrumbs().length > 0) {
       <app-hierarchy-breadcrumbs

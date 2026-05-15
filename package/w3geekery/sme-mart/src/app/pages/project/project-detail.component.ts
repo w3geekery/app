@@ -11,11 +11,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { TitleCasePipe } from '@angular/common';
 import { Subscription, firstValueFrom } from 'rxjs';
 import { SmeMartProjectService } from '../../core/services/sme-mart-project.service';
+import { EngagementsService } from '../../core/services/engagements.service';
 
 import { VettingService, PilotCompletionSuggestion } from '../../core/services/vetting.service';
 import { ProjectContextService } from '../../core/services/project-context.service';
 import { ImpersonationService } from '../../core/services/impersonation.service';
 import { ProjectCompletionDialogComponent } from './project-completion-dialog.component';
+import { PageBreadcrumbComponent, type PageBreadcrumbItem } from '../../shared/components/page-breadcrumb/page-breadcrumb.component';
 
 interface TabDef {
   readonly path: string;
@@ -88,6 +90,7 @@ const ALL_MORE_TABS: readonly TabDef[] = MORE_TAB_GROUPS.flatMap(g => g.tabs);
     MatDividerModule,
     MatSnackBarModule,
     TitleCasePipe,
+    PageBreadcrumbComponent,
   ],
   templateUrl: './project-detail.component.html',
   styleUrl: './project-detail.component.scss',
@@ -102,6 +105,7 @@ export class ProjectDetail implements OnInit, OnDestroy {
   private readonly projectService = inject(SmeMartProjectService);
 
   private readonly vetting = inject(VettingService);
+  private readonly engagementsService = inject(EngagementsService);
   readonly ctx = inject(ProjectContextService);
 
   private refreshSub?: Subscription;
@@ -120,6 +124,24 @@ export class ProjectDetail implements OnInit, OnDestroy {
   readonly canPromote = computed(() => {
     const project = this.ctx.project();
     return project?.projectType === 'pilot' && project?.status === 'completed';
+  });
+
+  /** True when the project-actions menu has at least one enabled action. */
+  readonly hasProjectActions = computed(() => this.canCompletePilot() || this.canPromote());
+
+  /** Breadcrumb trail: <Engagement Name> > <Project Name>. */
+  readonly breadcrumb = computed<PageBreadcrumbItem[]>(() => {
+    const engId = this.ctx.engagementId();
+    const engName = this.ctx.engagementName();
+    const projName = this.ctx.projectName();
+    const items: PageBreadcrumbItem[] = [];
+    if (engId) {
+      items.push({ label: engName ?? 'Engagement', link: ['/engagements', engId, 'projects'] });
+    } else {
+      items.push({ label: 'Engagements', link: '/engagements' });
+    }
+    items.push({ label: projName || 'Project' });
+    return items;
   });
 
   /** Check if the currently active route is inside the "More" dropdown */
@@ -153,7 +175,16 @@ export class ProjectDetail implements OnInit, OnDestroy {
       const userId = this.impersonation.effectiveUserId();
       this.ctx.setCurrentUserId(userId || null);
 
-      // TODO: Load engagement name from project's engagementId for breadcrumb
+      // Hydrate engagement (parentId points at the depth-1 Engagement Project) for the breadcrumb.
+      const parentEngagementId = project.engagementId ?? (project as { parentId?: string }).parentId ?? null;
+      if (parentEngagementId) {
+        try {
+          const engagement = await this.engagementsService.getEngagement(parentEngagementId);
+          this.ctx.setEngagement(parentEngagementId, engagement?.title ?? null);
+        } catch {
+          this.ctx.setEngagement(parentEngagementId, null);
+        }
+      }
       // TODO: Check boundary membership for access control (Plan 022 access guard)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -166,15 +197,6 @@ export class ProjectDetail implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.refreshSub?.unsubscribe();
     this.ctx.clear();
-  }
-
-  goToEngagement(): void {
-    const engId = this.ctx.engagementId();
-    if (engId) {
-      this.router.navigate(['/engagements', engId]);
-    } else {
-      this.router.navigate(['/engagements']);
-    }
   }
 
   async completePilot(): Promise<void> {

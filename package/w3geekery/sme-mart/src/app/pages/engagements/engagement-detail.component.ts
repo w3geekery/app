@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy, OnInit, OnDestroy } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
@@ -16,6 +16,7 @@ import { ImpersonationService } from '../../core/services/impersonation.service'
 import { VettingService } from '../../core/services/vetting.service';
 import type { VettingGateStatus } from '../../core/models';
 import { HierarchyBreadcrumbsComponent } from '../../shared/components/hierarchy-breadcrumbs/hierarchy-breadcrumbs.component';
+import { PageBreadcrumbComponent, type PageBreadcrumbItem } from '../../shared/components/page-breadcrumb/page-breadcrumb.component';
 
 interface TabDef {
   readonly path: string;
@@ -48,6 +49,7 @@ const TABS: readonly TabDef[] = [
     MatSnackBarModule,
     TitleCasePipe,
     HierarchyBreadcrumbsComponent,
+    PageBreadcrumbComponent,
   ],
   templateUrl: './engagement-detail.component.html',
   styleUrl: './engagement-detail.component.scss',
@@ -70,6 +72,15 @@ export class EngagementDetail implements OnInit, OnDestroy {
   readonly breadcrumbs = signal<HierarchyBreadcrumb[]>([]);
   readonly vettingGate = signal<VettingGateStatus | null>(null);
   readonly tabs = TABS;
+
+  /** Page-level breadcrumb: Engagements > <Current Engagement Name>. */
+  readonly pageBreadcrumb = computed<PageBreadcrumbItem[]>(() => {
+    const eng = this.ctx.engagement();
+    return [
+      { label: 'Engagements', link: '/engagements' },
+      { label: eng?.title ?? 'Engagement' },
+    ];
+  });
 
   async ngOnInit(): Promise<void> {
     this.refreshSub = this.ctx.refresh$.subscribe(() => this.refresh());
@@ -120,10 +131,6 @@ export class EngagementDetail implements OnInit, OnDestroy {
   // ===========================================================================
   // Navigation
   // ===========================================================================
-
-  goBack(): void {
-    this.router.navigate(['/engagements']);
-  }
 
   onBreadcrumbNavigate(crumb: HierarchyBreadcrumb): void {
     if (crumb.active) return;

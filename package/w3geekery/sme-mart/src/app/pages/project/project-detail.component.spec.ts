@@ -370,22 +370,6 @@ describe('ProjectDetail', () => {
     });
   });
 
-  describe('goToEngagement', () => {
-    it('should navigate to engagement detail', () => {
-      component.goToEngagement();
-
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/engagements', 'eng-123']);
-    });
-
-    it('should navigate to engagements list if no engagementId', () => {
-      mockProjectContext.engagementId = vi.fn().mockReturnValue(null);
-
-      component.goToEngagement();
-
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/engagements']);
-    });
-  });
-
   describe('canPromote computed', () => {
     it('should return true when projectType=pilot and status=completed', () => {
       mockProjectContext.project = vi.fn().mockReturnValue(
