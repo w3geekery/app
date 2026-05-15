@@ -45,7 +45,7 @@ interface BoardRow {
       } @else {
         <div class="boards-grid">
           @for (b of boards(); track b.id) {
-            <mat-card class="board-card" appearance="outlined">
+            <mat-card class="board-card">
               <mat-card-header>
                 <mat-card-title>
                   {{ b.name }}
