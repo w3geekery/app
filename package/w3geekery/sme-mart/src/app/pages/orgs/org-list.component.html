@@ -57,7 +57,7 @@
               [bold]="true"
             />
             @if (isActive(org.id)) {
-              <span class="active-chip">Active</span>
+              <span class="zb-chip square dense generic light-green">Active</span>
             }
           </div>
 
@@ -104,7 +104,7 @@
               </td>
               <td class="col-badge">
                 @if (isActive(org.id)) {
-                  <span class="active-chip">Active</span>
+                  <span class="zb-chip square dense generic light-green">Active</span>
                 }
               </td>
               <td class="col-domain">{{ getDomain(org) || '—' }}</td>
