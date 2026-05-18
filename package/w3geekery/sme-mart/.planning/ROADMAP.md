@@ -64,7 +64,7 @@
 <details>
 <summary>🔄 v1.4 3P Onboarding & Default Engagement (Phases 24-28, 30-31) — ACTIVE 2026-04-24</summary>
 
-- [ ] **Phase 24: Demo Data Visibility Gate** (TBD plans) — Filter demo records from non-admin users via Object.tag; admin delete action (est. 4-6 hrs)
+- [x] **Phase 24: Demo Data Visibility Gate** (4/5 plans, PARTIAL CLOSE 2026-05-18) — Read-side filter shipped (Plans 01-03 tag ingest + service-level visibility gate; Plan 05 verification + close-out artifacts). DG-04 admin delete-demo UI (Plan 04) deferred to BACKLOG-104 — managed via MCP/SQL today. See `.planning/phases/24-demo-data-visibility-gate/24-PHASE-SUMMARY.md`.
 - [x] **Phase 25: Platform Data Audit** (5 plans, Plan 01-04/5 complete 2026-04-24) — Inventory ZeroBias SDK data available for onboarding pre-fill (est. 4-6 hrs, research-as-phase)
   - [x] **Plan 01 (Wave 0)** — Infrastructure scaffold: verify-inventory.sh, per-source template, index file (completed 2026-04-24)
   - [x] **Plan 02 (Wave 1)** — SDK Sources audit: whoami, currentorg, orgsearch, usersearch, boundary, task (6 sources documented, completed 2026-04-24)

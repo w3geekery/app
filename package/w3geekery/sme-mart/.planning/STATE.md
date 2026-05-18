@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: 3P Onboarding & Default Engagement
 status: executing
-last_updated: "2026-05-18T00:00:00.000Z"
-last_activity: 2026-05-18 -- Phase 24 partial-close (Plans 01-03 ✅, Plan 04 deferred to BACKLOG-104, Plan 05 in flight)
+last_updated: "2026-05-18T20:45:00.000Z"
+last_activity: 2026-05-18 -- Phase 24 PARTIAL CLOSE (Plans 01-03 + 05 ✅, Plan 04 deferred to BACKLOG-104). Next: Phase 31-C UI walkthroughs.
 progress:
   total_phases: 21
   completed_phases: 12
@@ -17,7 +17,7 @@ progress:
 
 **Session Name:** `poc/sme-mart`
 **Date Created:** 2026-04-24
-**Current Focus:** Phase 24 partial-close — Plan 05 (verification, reduced scope; Plan 04 deferred to BACKLOG-104), then 31-C UI walkthroughs + v1.4 closing artifacts
+**Current Focus:** Phase 31-C UI dogfood walkthroughs (W3Geekery happy path Pass 1 + Brian's-Org orphan recovery Pass 2), then v1.4 closing artifacts (V14-01 smoke report, V14-05 promotion checklist, V14-06 friction log).
 
 ---
 
