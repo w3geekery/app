@@ -494,7 +494,11 @@ export class SmeMartProjectService {
       name: proj.name ?? '',
       description: proj.description ?? null,
       status: String(proj.status ?? 'draft'),
-      engagementId: null, // Not available in platform.Project shape
+      // Map platform.Project.parentId -> engagementId scalar mirror.
+      // Per D-46/D-50 hierarchy: depth-2 Project's parentId IS the depth-1
+      // Engagement Project's id. Required so project-detail can hydrate the
+      // engagement-name breadcrumb crumb via EngagementsService.getEngagement.
+      engagementId: proj.parentId ? String(proj.parentId) : null,
       projectType: 'project', // Default to 'project' until further distinction in platform schema
       startDate: proj.created?.toISOString() ?? new Date().toISOString(),
       targetEndDate: null, // Not available in platform.Project shape
