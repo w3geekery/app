@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: 3P Onboarding & Default Engagement
 status: executing
-last_updated: "2026-05-12T23:46:25.223Z"
-last_activity: 2026-05-12 -- Phase 30 planning complete
+last_updated: "2026-05-18T00:00:00.000Z"
+last_activity: 2026-05-18 -- Phase 24 partial-close (Plans 01-03 ✅, Plan 04 deferred to BACKLOG-104, Plan 05 in flight)
 progress:
   total_phases: 21
   completed_phases: 12
@@ -17,7 +17,7 @@ progress:
 
 **Session Name:** `poc/sme-mart`
 **Date Created:** 2026-04-24
-**Current Focus:** Phase 24 — Demo Data Visibility Gate (next-up, ready to execute)
+**Current Focus:** Phase 24 partial-close — Plan 05 (verification, reduced scope; Plan 04 deferred to BACKLOG-104), then 31-C UI walkthroughs + v1.4 closing artifacts
 
 ---
 
