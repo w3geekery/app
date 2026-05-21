@@ -1,0 +1,14 @@
+@if (loading()) {
+  <div class="loading-container">
+    <mat-spinner diameter="48" />
+  </div>
+} @else if (error()) {
+  <div class="error-message">{{ error() }}</div>
+} @else {
+  <app-boards-grid
+    [boards]="boards()"
+    [pinnedBoardIds]="pinnedBoardIds()"
+    (cardClicked)="onBoardClick($event)"
+    (pinToggled)="onPinToggle($event)"
+  />
+}
