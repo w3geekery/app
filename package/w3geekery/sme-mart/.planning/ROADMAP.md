@@ -594,6 +594,27 @@ Plans:
 
 ---
 
+## v1.5 Candidate Phases
+
+### Phase 32: Boards (Engagement + Project + Cross-Org)
+
+**Status:** v1.5 candidate (do NOT execute against v1.4)
+**Brief:** `.planning/director/phase-32-boards-brief.md` (Director Parks, 2026-05-19)
+**Source backlog:** [[BACKLOG-100]] (shared component substrate), [[BACKLOG-106]] (engagement UX + cross-org list + Vetting migration + seed tasks)
+**Visual reference:** `.planning/sketches/001-boards-pin-expand/` Variant A (LOCKED)
+
+**Goal:** Replace engagement-detail Tasks tab with a Boards tab (card grid + pin-to-expand inline preview + drill-to-detail). Same shared component powers Project > Boards tab. New top-level `/boards` cross-org list page with org-multi-select filter and User/Private boards section. New `/boards/:boardId` detail page with cog config panel + `zb-remote-table` infinite-scroll tasks list + admin "Open in ZB Platform" link. Default-board seed tasks added to provisioner. Vetting tab eliminated — Vetting becomes a Board (specialized via `sme-mart.board.vetting` tag).
+
+**Locked decisions:** L-1 through L-13 in brief (route shape, sketch variant, pin/drill coexistence, shared-component dependency rule, switcher mirror, admin link gating, Vetting-as-tag, etc.) — do NOT re-debate.
+
+**Open questions for discuss-phase:** Q-1 (one phase or split into Phase 32 Foundation + Phase 33 Polish — Director lean: SPLIT), Q-2 (platform.Board.search orgIds — RESEARCH VERDICT: NOT supported, plan-phase blocker, ask Kevin), Q-3 (User/Private boards — supported via userId), Q-4..Q-12 (Vetting specialized rendering, migration approach, seed tasks, create-board scope, switcher nav, cog drawer pattern, PKV plumbing, list-page entry point, URL rename).
+
+**Plans:** TBD (Director estimate: 6-8 plans across BACKLOG-100 + BACKLOG-106, total 32-48 hrs).
+
+**UI hint:** yes (heavy frontend; sketch locked)
+
+---
+
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |

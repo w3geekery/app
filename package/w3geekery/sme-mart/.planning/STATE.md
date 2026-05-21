@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: 3P Onboarding & Default Engagement
 status: executing
-last_updated: "2026-05-18T20:45:00.000Z"
-last_activity: 2026-05-18 -- Phase 24 PARTIAL CLOSE (Plans 01-03 + 05 ✅, Plan 04 deferred to BACKLOG-104). Next: Phase 31-C UI walkthroughs.
+last_updated: "2026-05-21T00:10:16.593Z"
+last_activity: 2026-05-12 -- Phase 30 planning complete
 progress:
-  total_phases: 21
-  completed_phases: 12
-  total_plans: 68
-  completed_plans: 60
-  percent: 57
+  total_phases: 23
+  completed_phases: 19
+  total_plans: 77
+  completed_plans: 75
+  percent: 97
 ---
 
 # STATE.md -- Session Context
@@ -18,6 +18,8 @@ progress:
 **Session Name:** `poc/sme-mart`
 **Date Created:** 2026-04-24
 **Current Focus:** Phase 31-C UI dogfood walkthroughs (W3Geekery happy path Pass 1 + Brian's-Org orphan recovery Pass 2), then v1.4 closing artifacts (V14-01 smoke report, V14-05 promotion checklist, V14-06 friction log).
+
+**Latest (2026-05-20):** Phase 32 (Boards) discuss-phase complete — `32-CONTEXT.md` + `32-DISCUSSION-LOG.md` written, Director-scanned. Phase 32 added to ROADMAP under v1.5 candidate (SPLIT: Phase 32 Foundation + Phase 33 Polish). 4 pre-discuss research captures in `.planning/notes/` (board-api-shape, zb-ui-tasks-list-reference, board-switcher-reference, vetting-current-shape). Q-1..Q-12 resolved. Resume → `/gsd-plan-phase 32`.
 
 ---
 
