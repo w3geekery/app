@@ -21,6 +21,9 @@
     <button
       mat-icon-button
       type="button"
+      data-testid="pin-button"
+      [class.pinned]="isPinned()"
+      [class.unpinned]="!isPinned()"
       [attr.aria-label]="(isPinned() ? 'Unpin ' : 'Pin ') + board().name"
       [attr.aria-expanded]="isPinned()"
       (click)="onPin()"

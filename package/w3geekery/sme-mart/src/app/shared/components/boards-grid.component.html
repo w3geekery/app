@@ -5,7 +5,9 @@
     @for (board of boards(); track board.id) {
       <app-board-card
         class="board-card"
+        data-testid="board-card"
         [class.pinned]="isPinned(board.id)"
+        [attr.data-board-id]="board.id"
         [board]="board"
         [isPinned]="isPinned(board.id)"
         [maxPreviewTasks]="maxPreviewTasks()"

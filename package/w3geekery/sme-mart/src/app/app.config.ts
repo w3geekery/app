@@ -30,6 +30,8 @@ import { environment } from '../environments/environment';
 import { AppInitService } from './core/app-init.service';
 import { PlatformEngagementProvisioner } from './core/services/platform-engagement-provisioner.service';
 import { MarketplaceProfileService } from './core/services/marketplace-profile.service';
+import { PIN_STORAGE_TOKEN } from './core/services/pin-storage.interface';
+import { LocalStoragePinStorage } from './core/services/pin-storage-local.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -60,6 +62,9 @@ export const appConfig: ApplicationConfig = {
     // Onboarding services (guard dependencies)
     PlatformEngagementProvisioner,
     MarketplaceProfileService,
+
+    // Board pin-state storage (localStorage now; PKV swap is DI-only — D-Q10)
+    { provide: PIN_STORAGE_TOKEN, useExisting: LocalStoragePinStorage },
 
     // ngx-translate — required by ngx-library table components
     ...provideTranslateHttpLoader(),

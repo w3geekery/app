@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,13 +10,14 @@ import type { Board } from '@zerobias-com/platform-sdk';
 import { BoardsGridComponent } from '../../../shared/components/boards-grid.component';
 import type { BoardCardData, BoardPinToggle } from '../../../shared/components/board-card.component';
 import { CreateBoardComponent, type CreateBoardDialogData } from '../../org/dialogs/create-board.component';
+import { PIN_STORAGE_TOKEN } from '../../../core/services/pin-storage.interface';
 
 /**
  * Engagement-scoped Boards tab (replaces the legacy Tasks tab — L-1, D-Q12).
  *
  * Owns board fetch and pin state; the shared boards-grid is a read-only consumer
- * (L-12 separation). Pin state is held in-memory here in Foundation Wave 1; durable
- * persistence behind the PinStorage interface is wired in Plan 32-05.
+ * (L-12 separation). Pin state is persisted via the PinStorage interface (localStorage
+ * now; PKV swap is DI-only — D-Q10).
  *
  * Engagement -> projectId: an engagement IS a platform.Project, so the engagement
  * route `:id` is the project UUID and is passed directly as the `projectId` filter.
@@ -35,15 +36,35 @@ export class EngagementBoardsTabComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly clientApi = inject(ZerobiasClientApi);
   private readonly dialog = inject(MatDialog);
+  private readonly pinStorage = inject(PIN_STORAGE_TOKEN);
 
   readonly boards = signal<BoardCardData[]>([]);
-  readonly pinnedBoardIds = signal<string[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+
+  /** True once pin state is hydrated; gates the first-render derivation. */
+  readonly pinsLoaded = signal(false);
+  /** Bumped on every setPin so the pinned/unpinned computeds re-derive (Map is untracked). */
+  private readonly pinVersion = signal(0);
+
+  readonly pinnedBoards = computed<BoardCardData[]>(() => {
+    this.pinVersion();
+    return this.pinsLoaded() ? this.boards().filter((b) => this.pinStorage.getPin(b.id)) : [];
+  });
+  readonly unpinnedBoards = computed<BoardCardData[]>(() => {
+    this.pinVersion();
+    return this.pinsLoaded() ? this.boards().filter((b) => !this.pinStorage.getPin(b.id)) : this.boards();
+  });
+  /** Pinned first, then unpinned (Sketch 001 Variant A). */
+  readonly displayBoards = computed<BoardCardData[]>(() => [...this.pinnedBoards(), ...this.unpinnedBoards()]);
+  readonly pinnedBoardIds = computed<string[]>(() => this.pinnedBoards().map((b) => b.id));
 
   private engagementId: string | null = null;
 
   async ngOnInit(): Promise<void> {
+    await this.pinStorage.load(); // hydrate the in-memory Map BEFORE first-render derivation
+    this.pinsLoaded.set(true);
+
     this.engagementId = (this.route.parent?.snapshot.params['id'] as string | undefined) ?? null;
     if (!this.engagementId) {
       this.loading.set(false);
@@ -57,11 +78,8 @@ export class EngagementBoardsTabComponent implements OnInit {
   }
 
   onPinToggle({ boardId, isPinned }: BoardPinToggle): void {
-    // In-memory pin state for Foundation Wave 1; persistence wired in Plan 32-05.
-    const current = this.pinnedBoardIds();
-    this.pinnedBoardIds.set(
-      isPinned ? [...current, boardId] : current.filter((id) => id !== boardId),
-    );
+    this.pinStorage.setPin(boardId, isPinned); // sync Map update + fire-and-forget write-through
+    this.pinVersion.update((v) => v + 1); // drive re-derivation (Map mutation is not signal-tracked)
   }
 
   openCreateBoard(): void {
