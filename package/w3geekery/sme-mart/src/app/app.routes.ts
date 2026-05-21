@@ -54,6 +54,12 @@ export const routes: Routes = [
       { path: 'engagements/:id', component: EngagementDetail, children: ENGAGEMENT_TAB_ROUTES },
       { path: 'engagements/:id/edit', component: EngagementEdit },
       { path: 'projects', component: MyProjectList },
+      // Board detail (L-2). Child of the guarded shell so ProjectContextService.isAdmin
+      // is hydrated on hard-refresh/deep-link (admin gating in board-detail).
+      {
+        path: 'boards',
+        loadChildren: () => import('./pages/boards/boards.routes').then((m) => m.BOARDS_ROUTES),
+      },
       // Legacy /my/* redirects (preserve any bookmarks / cached deep-links).
       { path: 'my/engagements', redirectTo: 'engagements', pathMatch: 'full' },
       { path: 'my/engagements/:id', redirectTo: 'engagements/:id' },
