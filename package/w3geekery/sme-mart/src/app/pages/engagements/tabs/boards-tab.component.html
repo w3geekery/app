@@ -1,3 +1,10 @@
+<div class="boards-tab-header">
+  <button mat-raised-button color="primary" (click)="openCreateBoard()">
+    <mat-icon>add</mat-icon>
+    Create Board
+  </button>
+</div>
+
 @if (loading()) {
   <div class="loading-container">
     <mat-spinner diameter="48" />
