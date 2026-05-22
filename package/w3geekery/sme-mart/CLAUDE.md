@@ -20,6 +20,7 @@ SME Mart is a **marketplace for Subject Matter Experts** in compliance/cybersecu
 | **Plan Archive (historical)** | `.claude/plans-archive/` — old PLAN.md + 55 plan files (local-only, gitignored) |
 | **Source Paths (SDKs, repos)** | [`.planning/docs/SOURCE_PATHS.md`](.planning/docs/SOURCE_PATHS.md) |
 | **🛑 SDK / API Verification — READ FIRST for any "what's the API for X" question** | [`.planning/docs/SDK_VERIFICATION_SOURCES.md`](.planning/docs/SDK_VERIFICATION_SOURCES.md) — authoritative sources are ZB MCP (`zerobias_search`/`zerobias_describe`), actual ZB platform source, and actual SDK source. The deprecated Next.js prototype is NOT authoritative. Memory entries can be wrong — verify against MCP/SDK before citing. |
+| **🧭 RDF Compass — long-term shape constraint** | [`.planning/docs/RDF-COMPASS.md`](.planning/docs/RDF-COMPASS.md) — every Engagement / Project / Task / Vetting / Record design MUST satisfy the 5-question compass checklist (C-1..C-5) so SME Mart doesn't paint corners blocking the future OWL/SHACL/RDF/Holon/Hologram audit-trail container (Brian directive 2026-05-19). Apply at plan-phase + design review. |
 | **Angular 21 Docs** | [`AGENTS.md`](AGENTS.md) — local docs index in `.angular-docs/` (refresh: `npx angular-agents-md`) |
 | **Next.js prototype** (archived) | `../sme-mart-nextjs-deprecated/` |
 | **ZeroBias UI** (Angular 21 reference) | `~/Projects/zb/ui` |
