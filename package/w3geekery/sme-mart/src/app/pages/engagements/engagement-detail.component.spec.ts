@@ -84,7 +84,7 @@ describe('EngagementDetail', () => {
   it('should have tab definitions', () => {
     expect(component.tabs).toHaveLength(7);
     expect(component.tabs.map(t => t.path)).toEqual([
-      'overview', 'projects', 'documents', 'tasks', 'vetting', 'timeline', 'notes',
+      'overview', 'projects', 'documents', 'boards', 'vetting', 'timeline', 'notes',
     ]);
   });
 
