@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: 3P Onboarding & Default Engagement
 status: executing
-last_updated: "2026-05-21T00:10:16.593Z"
+last_updated: "2026-05-22T00:00:00.000Z"
 last_activity: 2026-05-12 -- Phase 30 planning complete
 progress:
   total_phases: 23
@@ -19,7 +19,9 @@ progress:
 **Date Created:** 2026-04-24
 **Current Focus:** Phase 31-C UI dogfood walkthroughs (W3Geekery happy path Pass 1 + Brian's-Org orphan recovery Pass 2), then v1.4 closing artifacts (V14-01 smoke report, V14-05 promotion checklist, V14-06 friction log).
 
-**Latest (2026-05-20):** Phase 32 (Boards) discuss-phase complete — `32-CONTEXT.md` + `32-DISCUSSION-LOG.md` written, Director-scanned. Phase 32 added to ROADMAP under v1.5 candidate (SPLIT: Phase 32 Foundation + Phase 33 Polish). 4 pre-discuss research captures in `.planning/notes/` (board-api-shape, zb-ui-tasks-list-reference, board-switcher-reference, vetting-current-shape). Q-1..Q-12 resolved. Resume → `/gsd-plan-phase 32`.
+**Latest (2026-05-22):** ✅ **Phase 32 (Boards) FOUNDATION CLOSED** — Director-verified. 5 plans across 2 waves shipped; 7-commit ledger `c11b5a40`..`74d32fc3` (HEAD `74d32fc3`). Engagement Tasks→Boards tab, shared dependency-free `boards-grid`, `/boards/:boardId` detail page (switcher + zb-remote-table + admin link + config-panel surface), Create Board dialog, localStorage-backed PinStorage. 47 Vitest specs; tsc app+spec clean; scope walls held. E2E spec authored but DEFERRED (uncommitted — pre-existing e2e/eslint gap). Two pre-UAT follow-ups recorded in `32-CLOSE-OUT.md`: zb-remote-table live smoke + e2e lint-integration backlog item. Phase 33 (Polish) gated — see `32-CONTEXT.md` Re-Planning Triggers.
+
+**Prior (2026-05-20):** Phase 32 discuss-phase complete — `32-CONTEXT.md` + `32-DISCUSSION-LOG.md` written, Director-scanned. SPLIT into Foundation + Phase 33 Polish. Q-1..Q-12 resolved.
 
 ---
 

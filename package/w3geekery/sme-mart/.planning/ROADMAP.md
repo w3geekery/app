@@ -598,7 +598,7 @@ Plans:
 
 ### Phase 32: Boards (Engagement + Project + Cross-Org)
 
-**Status:** v1.5 candidate (do NOT execute against v1.4)
+**Status:** ✅ FOUNDATION COMPLETE 2026-05-22 (Director-verified close-out; HEAD `74d32fc3`). Polish work (cross-org `/boards` list, org filter, User/Private boards, Vetting migration, seed-task templates, PKV) deferred to Phase 33. See `.planning/phases/32-boards-engagement-project-cross-org/32-CLOSE-OUT.md`.
 **Brief:** `.planning/director/phase-32-boards-brief.md` (Director Parks, 2026-05-19)
 **Source backlog:** [[BACKLOG-100]] (shared component substrate), [[BACKLOG-106]] (engagement UX + cross-org list + Vetting migration + seed tasks)
 **Visual reference:** `.planning/sketches/001-boards-pin-expand/` Variant A (LOCKED)
@@ -609,7 +609,7 @@ Plans:
 
 **Open questions for discuss-phase:** Q-1 (one phase or split into Phase 32 Foundation + Phase 33 Polish — Director lean: SPLIT), Q-2 (platform.Board.search orgIds — RESEARCH VERDICT: NOT supported, plan-phase blocker, ask Kevin), Q-3 (User/Private boards — supported via userId), Q-4..Q-12 (Vetting specialized rendering, migration approach, seed tasks, create-board scope, switcher nav, cog drawer pattern, PKV plumbing, list-page entry point, URL rename).
 
-**Plans:** TBD (Director estimate: 6-8 plans across BACKLOG-100 + BACKLOG-106, total 32-48 hrs).
+**Plans (Foundation, all complete):** 32-01 shared boards-grid substrate · 32-02 engagement Boards tab + tab rename · 32-03 board-detail page + switcher + zb-remote-table · 32-04 Create Board dialog · 32-05 PinStorage (localStorage) + pin persistence. 47 Vitest specs; tsc app+spec clean. 7-commit ledger `c11b5a40`..`74d32fc3` (incl. the 32-02 boundaryId fix+revert that netted the correct `projectId=engId`).
 
 **UI hint:** yes (heavy frontend; sketch locked)
 
