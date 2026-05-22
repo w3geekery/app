@@ -33,3 +33,13 @@
   display: flex;
   justify-content: flex-end;
 }
+
+// Pin toggle: classic Material Icons has no outlined push_pin, so distinguish
+// pinned (accent, full) from unpinned (muted) via state classes on the button.
+button.pinned mat-icon {
+  color: var(--mat-sys-primary);
+}
+
+button.unpinned mat-icon {
+  opacity: 0.5;
+}
