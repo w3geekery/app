@@ -10,7 +10,70 @@
 
 ---
 
-## 📍 LATEST: 2026-05-20 parkit (14) — Phase 32 Boards discuss-phase + RDF-COMPASS + basic-memory provisioned + Brian SHACL/OWL/Holon meeting + Vetting shape locked + PKV-broken-on-UAT + BACKLOG-103 hotfix (all UNCOMMITTED)
+## 📍 LATEST: 2026-05-22 parkit (15) — Phase 32 Boards Foundation SHIPPED + CLOSED; PKV unblocked → PKV-primary prefs/pins live; Vercel ELIMINATED; memory→memex (local, NO cloud); BACKLOG-108 Option 5-prime; board-UX backlog 113-116 (ALL COMMITTED + PUSHED, clean tree)
+
+**TL;DR — HEAD `0dd96f82`, branch EVEN with origin (everything committed + pushed). Working tree clean except the intentionally-deferred `e2e/specs/boards-pin-persistence.spec.ts` (backlog 031). Big build+infra session: Phase 32 Boards Foundation planned/executed (2 waves)/CLOSED; PKV fixed on all envs → prefs/pins now PKV-primary (prefs verified live, pins smoke pending); Vercel fully removed + project deleted; memory moved to memex (local). On resume: Phase 33 still gated; decide 111/112 dangling stubs; PkvPinStorage live-smoke.**
+
+### What happened (parkit-14 → parkit-15)
+
+**1. Phase 32 Boards Foundation — PLANNED, EXECUTED, CLOSED.**
+- CONTEXT.md: 2 Director fixes applied (`platform.Board.listTasks` rename; C-7 = Phase-33-not-Foundation), `31d7d353`.
+- plan-phase: 5 plans / 2 waves (`e1501c9e`). UI gate `--skip-ui`. PinStorage = **option (c)**: sync getPin/setPin off a Map + async `load()` + fire-and-forget write-through (drop-in for PKV per D-Q10).
+- execute: Wave 1 `c11b5a40` (shared boards-grid/board-card/pinned-preview) + `4fa07b39` (engagement Boards tab, Tasks→Boards). Wave 2 `279f6d95` (Create Board dialog), `7e013826` (PinStorage+localStorage), `74d32fc3` (board-detail + switcher + zb-remote-table + guarded `/boards/:boardId`). Close-out `a47a896d`.
+- **Rulings:** (a) **deviation #3 RESOLVED — `projectId = engId` is CORRECT** (engagement IS a platform.Project; route `:id` IS the project UUID). I first wrongly said boundaryId; Clark corrected; retracted (`2d822c7f`→revert `20a0637a`, net correct). (b) **Admin: `getPrincipal().isAdmin` does NOT exist — use `ProjectContextService.isAdmin`** (fed by `getRequestOrgMember().admin`, hydrated by onboarding.guard); memory was stale. (c) boardType = kanban/list/timeline/calendar + status:'active'. (d) **E2E deferred** → backlog 031.
+
+**2. Committed parkit-14 pile:** vendor-profile BACKLOG-103 hotfix `4058fcbb`; planning docs (RDF-COMPASS, meeting notes, sketches, brief, walkthrough-31c, + the BACKLOG-108 amendment) `b3b3bb18`; CLAUDE.md RDF-Compass row `db40ca8b`.
+
+**3. BACKLOG-108 → Option 5-prime** (depth-3 Vetting Project, template-driven Board layout, **Nic `satisfies`/`satisfiedBy` Task link** supersedes twin_of/asymmetric, tags-not-customFields, +C-7). In `b3b3bb18`.
+
+**4. 3 stale specs fixed** (`d392fd34`): app.routes (/projects=MyProjectList), engagement-hierarchy (levelLabel boundary='Engagement'), engagement-detail (tab 'tasks'→'boards') + narrowed 3 pre-existing `as any`. Only surfaced at push (pre-commit type-checks; pre-push runs specs).
+
+**5. PKV FIXED on UAT/QA/prod** (Andrey — **env-var change, NOT IAM**). Verified live via ZB MCP write+read+delete on all three. Platform Ask #12 CLOSED. memex pkv note RESOLVED.
+
+**6. PKV-primary prefs + pins (`029f3133`), prefs verified live.** `prefsBackend`→'pkv' in environment.ts/uat/stack (prod already). UserPreferencesService PKV-primary+localStorage-fallback now active. New **`PkvPinStorage`** (PKV-primary + localStorage fallback/mirror) behind `PIN_STORAGE_TOKEN` via app.config factory. Verified: toggled user-role → PKV PUT 200 → `sme-mart.user-role` confirmed server-side. **Pins live-smoke PENDING** (needs boards on an engagement).
+
+**7. board-card pin icon `8d97aca9`:** heart→`push_pin` + .pinned/.unpinned styling.
+
+**8. Vercel ELIMINATED.** Repo config removed (`2db9991c`). Vercel project "app" DELETED (CLI). Local `app/.vercel/` removed. No git integration was connected — nothing auto-deployed. memex "never deploys to Vercel". **Smoke = LOCAL DEV (`npm run dev`→UAT), not Vercel.**
+
+**9. Board-UX backlog (`0dd96f82`):** `.planning/notes/zb-ui-boards-tab-reference.md` + BACKLOG **113** (group-by-project + relationship chips this/child/linked + scope selector), **114** (pinned-open embeds zb-remote-table w/ projection + Create Task — supersedes preview stub), **115** (resizable pinned boards — open Qs: PKV-auto vs "save layout" button), **116** (standard Overview/Boards/Tasks/Members/Hierarchy tabs). Mocks: `~/Projects/zb/ui/.claude/plans/public/projects-app-mocks/html/s5-boards-tab-composite.html` + `s4-tasks-tab-composite.html`.
+
+**10. Memory → memex.** Durable memory now in basic-memory project **`memex`** (`~/basic-memory/`), **LOCAL ONLY — NO CLOUD** (Clark emphatic). Legacy `~/.claude/projects/*/memory/` retired. Tags use `/` not `:`. Reindex after writes.
+
+**11. Backlog filed:** 031 (wire e2e/** into eslint), 032 (harden flaky error-path specs).
+
+### Working tree at parkit-15
+**HEAD `0dd96f82`, EVEN with origin (all pushed).** Clean except untracked `e2e/specs/boards-pin-persistence.spec.ts` (deferred — do NOT commit until backlog 031 fixes the e2e eslint config).
+
+### In-flight / pending on resume
+1. **111/112 dangling** — `[[BACKLOG-111]]` (template library) + `[[BACKLOG-112]]` (ontology spike) referenced by 106/108 but never filed. Clark asked; I offered to stub; NO answer — confirm + file.
+2. **PkvPinStorage live-smoke** — board-pin PKV path not yet exercised (needs an engagement with boards).
+3. **Phase 33 (Boards Polish)** gated: Kevin ask #9 (`orgIds[]`), Nic `satisfies`/`satisfiedBy`, 111 (templates), 112 (ontology spike). Board-UX 113-116 feed it.
+4. **e2e eslint integration** (backlog 031) unblocks the deferred spec.
+
+### Corrections this window
+- PKV fix = **env-var, not IAM**. Admin = `ProjectContextService.isAdmin`/`getRequestOrgMember().admin`, NOT `getPrincipal().isAdmin`. Engagement route `:id` IS the platform.Project UUID. Director reads BOTH `director/backlog/*.md` (#5) + `BACKLOG.md` (#9); GSD-native flows read only BACKLOG.md.
+
+### Quick-start prompt (Director Parks reads first on resume — parkit-15)
+
+You're Director Parks for SME Mart. **HEAD `0dd96f82`, branch EVEN with origin, clean tree** (only the deferred e2e spec untracked). Last window shipped + closed Phase 32 Boards Foundation, unblocked PKV (Andrey env-var fix on UAT/QA/prod) → flipped prefs/pins to PKV-primary (prefs verified live; pins smoke pending), eliminated Vercel entirely, moved memory to **memex (local, NO cloud)**, amended BACKLOG-108 to Option 5-prime, filed board-UX backlog 113-116 from zb/ui mocks.
+
+Immediate state:
+- **Phase 32 Boards Foundation = CLOSED.** Phase 33 (Polish) gated on: Kevin ask #9 (`orgIds[]`), Nic `satisfies`/`satisfiedBy` link, BACKLOG-111 (templates) + 112 (ontology spike) — and **111/112 aren't filed yet** (dangling refs).
+- **PKV works everywhere.** prefsBackend='pkv'; PkvPinStorage built. Smoke pins live when an engagement has boards.
+- **memory = memex, LOCAL ONLY, never cloud.** Tags `/` not `:`. Reindex after writes. Don't read legacy `~/.claude/projects/*/memory/`.
+- **Vercel GONE** — smoke on local dev (`npm run dev`→UAT), never Vercel.
+- **Commit discipline:** BATCH commits — don't commit every small change; accumulate + commit when Clark says.
+
+First actions: confirm whether to file 111/112 stubs; if continuing boards, 113-116 + `zb-ui-boards-tab-reference.md` feed Phase 33.
+
+Resume reading order: this parkit-15 → `git log/status` (verify `0dd96f82`, clean) → BACKLOG.md 106/108/113-116 → `zb-ui-boards-tab-reference.md` → memex recent notes.
+
+Rules carried over: Batch commits + wait for explicit commit instruction. No "let me X"+action. Read-before-Edit always. Never Slack anyone. `Tell gsd-X:` block on any relay. RDF Compass at design reviews. memex local-only NO cloud. ZB MCP profile lock before `meta.switchProfile` (restore profile after).
+
+---
+
+## 2026-05-20 parkit (14) — Phase 32 Boards discuss-phase + RDF-COMPASS + basic-memory provisioned + Brian SHACL/OWL/Holon meeting + Vetting shape locked + PKV-broken-on-UAT + BACKLOG-103 hotfix (all UNCOMMITTED)
 
 **TL;DR — HEAD still at `b4c52719` (NOTHING committed this window — large uncommitted pile). Phase 32 Boards Foundation discuss-phase essentially DONE; gsd-plan has 2 fixes to apply then commits CONTEXT.md. basic-memory now CLOUD-ROUTED and failing (needs `bm cloud login`). On resume: (1) let gsd-plan finish the CONTEXT.md commit, (2) decide whether to commit the big uncommitted pile, (3) apply the pending BACKLOG-108 Vetting-shape amendment.**
 
