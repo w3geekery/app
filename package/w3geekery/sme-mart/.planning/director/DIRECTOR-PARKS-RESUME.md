@@ -10,7 +10,333 @@
 
 ---
 
-## 📍 LATEST: 2026-05-15 parkit (12) — Surface-layering audit cascade + provisioner cross-org architecture fix (errata 040 + 041) + Brian's-Org dogfood VERIFIED
+## 📍 LATEST: 2026-05-20 parkit (14) — Phase 32 Boards discuss-phase + RDF-COMPASS + basic-memory provisioned + Brian SHACL/OWL/Holon meeting + Vetting shape locked + PKV-broken-on-UAT + BACKLOG-103 hotfix (all UNCOMMITTED)
+
+**TL;DR — HEAD still at `b4c52719` (NOTHING committed this window — large uncommitted pile). Phase 32 Boards Foundation discuss-phase essentially DONE; gsd-plan has 2 fixes to apply then commits CONTEXT.md. basic-memory now CLOUD-ROUTED and failing (needs `bm cloud login`). On resume: (1) let gsd-plan finish the CONTEXT.md commit, (2) decide whether to commit the big uncommitted pile, (3) apply the pending BACKLOG-108 Vetting-shape amendment.**
+
+### What happened this window (parkit-13 → parkit-14)
+
+A very large planning + discuss-phase session. NO code shipped beyond the BACKLOG-103 hotfix; everything is uncommitted.
+
+**1. BACKLOG-103 hotfix (vendor-profile-form theme + form-remount bug) — UNCOMMITTED.**
+- Theme tokens: dropped hardcoded `background-color: white`; `.renewal-notice` → `--mat-sys-error-container` / `--mat-sys-error` / `--mat-sys-on-error-container`.
+- Section-key formatter: `section() | snakeToSpaces | titlecase` in form h2 + 3 spots in parent tab (`ZbSnakeToSpacesPipe` from ngx-library). "Add Corporate_identity Item" → "Add Corporate Identity Item".
+- **ROOT-CAUSE FIX** found during chrome-devtools walkthrough: `<app-vendor-profile-form>` was permanently mounted in `<mat-sidenav>` → `ngOnInit` ran once → FormGroup built for first section only → "Cannot find control with name: serviceType" on every other section. Fix: wrap in `@if (sidenavOpen())` so the form remounts per-open. Spec updated (open sidenav before querying). 12/12 specs pass. Walked all 6 sections live — clean.
+- Files: `vendor-profile-form.component.{ts,html,scss}`, `vendor-profile-tab.component.html`, `vendor-profile-tab.component.spec.ts`.
+
+**2. Sketch 001 (boards-pin-expand) — Variant A (inline expand-in-place) WON.** `.planning/sketches/001-boards-pin-expand/` + `themes/default.css` + MANIFEST. Layout LOCKED: CSS Grid `repeat(auto-fill, minmax(320px,1fr))` + `grid-column: span 2` on pinned cards (full-width <760px).
+
+**3. RDF-COMPASS.md created** at `.planning/docs/RDF-COMPASS.md` — C-1..C-7 plan-phase checklist, ZB↔W3C vocabulary mapping, 6 non-negotiable constraints, scope walls. Cross-referenced from CLAUDE.md (Quick Reference), this RESUME (rules block), and basic-memory `zerobias/integration/`. Driven by Brian's 2026-05-19 SHACL/OWL/Holon directive (handoff `shacl-owl-holon-quantum-overlay-2026-05-19-fixed.html`).
+
+**4. BACKLOG churn:**
+- BACKLOG-106 (Boards) heavily expanded — engagement tab rename, pin+drill, cross-org `/boards` list, route `/boards/:boardId` LOCKED top-level, Vetting migration, seed tasks.
+- **Duplicate `**104**` resolved** — GRC Finding Schema → `**107**`; cross-ref in BACKLOG-105 updated `(#104)`→`(#107)`. (Phase 24 Plan 04 keeps 104.)
+- BACKLOG-108 (mirrored Vetting), 109 (RDF readiness standing constraint), 110 (Holon vocab Brian-ask) FILED. **BUT: BACKLOG-108's shape evolved through discussion AFTER it was filed — see "Vetting shape LOCKED" below. The filed 108 still says the older single-Board Option 3; needs amendment to Option 5-prime.**
+
+**5. basic-memory PROVISIONED.** Created `zerobias` + `meta` projects (`~/basic-memory/`), deleted empty `zb` + `sme-mart`. Folder skeletons (zerobias: sdk/platform/ui/sme-mart/login/team/integration; meta: preferences/workflow/tools/conventions/roles). **Tag convention: namespaced facets use `/` NOT `:`** (Clark updated indexes; I fixed 7 notes). Wrote memories: mermaid-system-sans (meta/tools), Board.list-no-orgIds (zerobias/platform), board-switcher-ref + tasks-list-panel (zerobias/ui), rdf-compass-pointer (zerobias/integration), pkv-broken-on-uat (zerobias/platform), board-vs-project-feature-split (zerobias/platform). **⚠️ basic-memory is now CLOUD-ROUTED and ALL calls fail with "Cloud routing requested but no credentials found — run `bm cloud login`." Clark switched it mid-reorg. Memory writes/reads BLOCKED until cloud creds configured.**
+
+**6. Brian meeting 2026-05-19 processed** (`/tt:transcript`, timer 260519-4). Summary at `.planning/notes/meetings/2026-05-19-marketplace.md`. Key: SHACL/OWL/RDF direction confirmed (SME Mart is the "data layer / what flows through the pipe"); Vetting reframed; engagement TEMPLATE LIBRARY wanted; industry-ontology research spike (W3C commerce/credentials, FIBO banking); "system graph" used interchangeably with "Holon"; NOT urgent (build scaffolding first).
+
+**7. Vetting shape LOCKED (Option 5-prime) through extended discussion:**
+- Vetting = a **depth-3 Project** (sub-project under depth-2 "ZeroBias Platform" Project), renamed from default middle-tier "Workspace". Maps to Brian's tier hierarchy (project_sme_mart_hierarchy_model).
+- **Template-driven Board layout:** DEFAULT = single Vetting Board with section-tags + direction-tags; ESCAPE HATCHES (template-selected) = section-split / direction-split / full-split into N Boards (or section sub-Projects at depth-4 when per-section membership/visibility/policy diverges).
+- Bidirectional confirmed: both buyer + provider have requirements (current schema's `buyer_requires`/`provider_requires`). "Vetting" stays the umbrella term.
+- **Wizard idea** (Clark): engagement-template parameterization via Q&A ("does Finance require access controls to banking info?") → drives section→sub-project promotion. Folds into BACKLOG-111.
+
+**8. Board vs Project + Task primitives VERIFIED via ZB MCP:**
+- **Project** has membership/RBAC (`addMember`/`listMembers`/`removeMember` = Project Scoped Access Rules, SHIPPED), visibility, membershipPolicy, parentId nesting. → reinforces Vetting-as-Project.
+- **Board** is THIN (name/desc/boardType/status/isDefault/scoping/tags). NO native roster/custom-fields/activity-scoping. Per Nic: custom fields + Activity-scoping = future **Board Settings** (not yet built); RACI stays task/activity; roster=Project.
+- **Task.customFields** EXISTS but is **catalog-locked** (defined by the Activity; `platform.Activity` has no create/update API). → use **hydra Tags** for ad-hoc metadata today; migrate to Board Settings custom fields later.
+- **Entangled twin link:** NO native `twin_of` link type. Task↔Task native links = `child_of/parent_to`, `blocked_by/blocks`, `relates_to`. **Decision: ask Nic for asymmetric `requires_supply_from ↔ supplies_demand_of` ResourceLink** (asymmetric matches platform idiom + bakes direction into the link → no separate direction tag needed). Interim: `relates_to` + tag.
+- **PKV (`dana.Pkv`)** = upsert/get/list/delete, value=free-form object. **WORKS ON CI, BROKEN ON UAT** (verified live): UAT gateway role `us-east-1-demo-gateway-role` lacks DynamoDB IAM policy on `uat-pkvs` (Query + BatchWriteItem denied). Slack drafted for Andrey (cc Kevin). → Phase 32 pin-state uses **localStorage behind `PinStorage` interface**, swap to PKV when fixed.
+
+**9. Phase 32 Boards Foundation discuss-phase (gsd-plan ran it; Director relayed directives):**
+- Q-1 SPLIT (Phase 32 Foundation + Phase 33 Polish). Q-4 drop-in Vetting variant via `boardKind` signal. Q-5 Option A migration. Q-7 minimal Create Board dialog. Q-8 full-nav switcher. Q-9 mat-sidenav cog drawer. Q-10 localStorage (PKV broken). Q-11 defer cross-org entry-point to Phase 33. Q-12 rename `/tasks`→`/boards` no redirect. Switcher IN Foundation.
+- CONTEXT.md drafted at `.planning/phases/32-boards-engagement-project-cross-org/32-CONTEXT.md`. Director scanned. **2 fixes requested (NOT yet applied by gsd-plan):** (a) Platform-Team Ask #11 says `platform.Task.listTasks` — WRONG, it's `platform.Board.listTasks` (2 spots); (b) C-7 Foundation-exposure paragraph wrongly implies Foundation provisions seed tasks (they're Phase 33) — C-7 belongs with C-1/C-3/C-5 as Phase 33, Foundation exposure is only C-2+C-4.
+- gsd-plan will apply the 2 fixes then batch-commit: `32-CONTEXT.md + 32-DISCUSSION-LOG.md + STATE.md + ROADMAP.md` as `docs(32): capture phase context`. Director told it to `git show HEAD --stat`-verify after.
+
+**10. Neon read-only JDBC for Kevin** — used EXISTING `tom_demo_readonly` role (Clark: don't create new). Direct + pooled endpoints both confirmed live (pooling enabled). Direct JDBC for dev tools; password `iwY5s3qRf22G3tpF0faQu39ObCkP`. Project `square-meadow-76427985`, db `neondb`, branch `production`/`br-wild-mode-affit7rf`. Memo of this (non-secret parts) parked until basic-memory cloud login.
+
+### Working tree at parkit-14
+
+**HEAD = `b4c52719` (UNCHANGED since parkit-13). 78 commits ahead of origin. Nothing committed this window.** Modified: `BACKLOG.md`, `ROADMAP.md`, `DIRECTOR-PARKS-RESUME.md`, `CLAUDE.md`, `vendor-profile-form.{ts,html,scss}`, `vendor-profile-tab.{html,spec.ts}`. Untracked: `phase-32-boards-brief.md`, `walkthrough-31c/`, `RDF-COMPASS.md`, `board-api-shape.md`, `board-switcher-reference.md`, `meetings/2026-05-19-marketplace.md`, `vetting-current-shape.md`, `zb-ui-tasks-list-reference.md`, `phases/32-.../`, `sketches/`. DO NOT PUSH.
+
+### In-flight / pending on resume
+
+1. **gsd-plan finishing Phase 32 CONTEXT.md** — applying 2 Director-requested fixes (Board.listTasks rename, C-7 exposure) then committing. CHECK: did the commit land? (`git log` should show a `docs(32):` commit; phase-32 dir should be tracked.)
+2. **BACKLOG-108 amendment NOT written** — the filed entry still has the older single-Board Option 3. Needs updating to **Option 5-prime** (Vetting depth-3 Project, template-driven Board layout, asymmetric twin link, tags-not-customFields). Director suggested-updates batch never got Clark's explicit "apply all" — confirm + apply.
+3. **basic-memory CLOUD-ROUTED, BLOCKED** — needs `bm cloud login` before any read/write/list. Pending Neon-creds memo + any new memories.
+4. **Slack messages drafted, NOT sent (Clark relays):** (a) Andrey/Kevin re PKV UAT IAM gap; (b) Nic re asymmetric `requires_supply_from ↔ supplies_demand_of` link type (discussed, not yet drafted as a message).
+5. **Big uncommitted pile** — decide commit grouping (BACKLOG-103 hotfix is a clean standalone `fix(vendor-profile)`; the planning docs are a `docs(planning)` group; sketch is `docs(sketch-001)`).
+
+### New findings added to Brian/Kevin list this window
+- #9 `platform.Board.list` no `orgIds[]` array filter (hard-blocks cross-org list).
+- #10 `platform.Board` boardType enum (timeline/calendar live or reserved?).
+- #11 `platform.Board.listTasks` soft-delete visibility.
+- #12 **PKV broken on UAT** — gateway role missing DynamoDB IAM policy on `uat-pkvs`.
+- (discussed, file when basic-memory back) Nic asks: asymmetric twin-link type; future Requirement-as-Resource; Board Settings custom-fields + Activity-scoping timeline.
+
+### Quick-start prompt (Director Parks reads first on resume — parkit-14)
+
+You're Director Parks for SME Mart. This was a heavy PLANNING window — Phase 32 Boards Foundation discuss-phase + a big architecture/Vetting design thread + basic-memory standup + Brian's SHACL/OWL/Holon meeting digest. **HEAD is `b4c52719`, nothing committed this window, large uncommitted pile, 78 ahead of origin, DO NOT PUSH.**
+
+Immediate state:
+- **Phase 32 Boards Foundation** discuss-phase basically done; gsd-plan owes 2 CONTEXT.md fixes (`platform.Board.listTasks` rename + C-7-not-Foundation) then a `docs(32):` batch-commit. First action: check whether that commit landed.
+- **Vetting shape LOCKED = Option 5-prime** (depth-3 Project, template-driven Board layout single-default + escape hatches, asymmetric `requires_supply_from↔supplies_demand_of` twin-link ask to Nic, tags-not-customFields today). **BACKLOG-108 still shows the older Option 3 — amend to 5-prime.**
+- **RDF-COMPASS.md is live** (`.planning/docs/RDF-COMPASS.md`, C-1..C-7) — apply the checklist at every Engagement/Project/Task/Vetting/Record/Board design.
+- **basic-memory is cloud-routed + BROKEN** — run `bm cloud login` before any memory op. New convention: namespaced tags use `/` not `:`.
+- **PKV broken on UAT** (IAM gap, Slack drafted for Andrey/Kevin); pin-state = localStorage interim.
+- 3 projects in basic-memory: `zerobias` (all ZB ecosystem), `meta` (cross-cutting Claude/workflow), `personal`.
+
+Resume reading order: this parkit-14 section → check `git log` for the `docs(32)` commit → `.planning/phases/32-boards-engagement-project-cross-org/32-CONTEXT.md` → BACKLOG.md entries 106/108/109/110/111(?)/112(?) → RDF-COMPASS.md → confirm with Clark whether to commit the uncommitted pile + apply the BACKLOG-108 amendment.
+
+Rules carried over (unchanged): No commit nags. No "let me X" + action. Read-before-Edit always. NEVER mention branch-ahead count outside this RESUME. Director delegates GSD to gsd-* subagents; surgical fixes OK. `Tell gsd-X:` block NON-NEGOTIABLE on any relay. Never Slack anyone (Clark relays). ZB MCP profile lock before `meta.switchProfile`. RDF Compass C-1..C-5+C-7 at design reviews. Touch-it=fix-it modernization. No unsolicited commits/recaps/breaks.
+
+---
+
+## 2026-05-18 parkit (13) — Parkit-12 uncommitted pile shipped + D-51 verbiage + PageBreadcrumb + cross-org leak fix + notes-bug sweep + Phase 24 PARTIAL CLOSE + Phase 31-C Pass 1 in flight
+
+**TL;DR — clean working tree, branch 73 commits ahead of origin, Phase 31-C Pass 1 walkthrough started, paused on Clark's `/clear`. On resume DO BACKLOG-103 HOTFIX FIRST, then resume walkthrough.**
+
+### What happened this session window (parkit-12 → parkit-13)
+
+Two phases of work, then a walkthrough that surfaced one more code fix:
+
+**1. Parkit-12 leftovers shipped (5 commits at session start):**
+- `807c6ff` `feat(global-styles)` — `--mat-card-elevated-container-color: var(--zb-background-card)` global mat-card override.
+- `f57d87b` `fix(project-card/boards)` — drop `appearance="outlined"` so the M3 elevated-container token applies.
+- `c471581` `refactor(org-list)` — adopt ngx-library `zb-chip square dense generic light-green` for the "Active" pill.
+- `2fcaec1` `fix(provisioner)` — cross-org scope orchestration (errata 040 + 041) + **D-51 verbiage** (supersedes D-32/33/35: drop `<-` arrow + `➡️`, adopt `Engagement with provider ZeroBias Platform` constant name + corporate-prose description with `provider`/`client` role labels). Both UAT seed engagements (Brian's-Org + W3Geekery) updated to new verbiage via `platform.Project.update` on `uat-zb` profile.
+- `65ff68a` `docs(planning)` — BACKLOG-103 filed; parkit-12 snapshot in this file.
+
+**2. New work this window (post-parkit-12 → today):**
+- `cef2076` `fix(projects-list)` — `platform.Project.list` was called WITHOUT ownerId in `sme-mart-project.service.ts`. Multi-org-membership users (super-admin or plain) saw cross-org leak in the depth-2 Project-tier cards on `/projects` and `/engagements/:id/projects`. Fixed by passing `currentOrgId` as the 4th positional arg, sourced from injected `ZerobiasClientOrgIdService`.
+- `5646531` `feat(nav)` — new shared `PageBreadcrumbComponent` (signal-input `items`, optional link/icon, last item rendered as non-link "current"). Replaces back buttons on ProjectDetail (renders `{EngagementName} > {ProjectName}`) and EngagementDetail (`Engagements > {EngagementTitle}`). Drops `goToEngagement` / `goBack` methods + their specs. Engagement name hydrated via `EngagementsService.getEngagement(parentEngagementId)` in ngOnInit.
+- `f52c3f8` `refactor(engagement-detail)` — trim header chips (drop duplicate tag chip + drop empty vetting-circle), replace status `mat-chip + titlecase` with `<zb-resource-status>` (snake-to-spaces + correct upper rendering), drop Details tab from TABS + route table (deleted `details-tab.component.{ts,html}`; `/details` redirects to `/overview`). Hierarchy-breadcrumbs `levelLabel('boundary')` renamed **"Boundary" → "Engagement"** (the internal `'boundary'` identifier is legacy pre-D-46; surfaces the engagement itself). Modernization sweep: drop unused VettingService, MatChipsModule, MatTooltipModule, TitleCasePipe imports; signal + isProtectedTag unused-import cleanup in hierarchy-service.
+- `b927930` `refactor(engagement-overview)` — drop Tag row from ZeroBias Integration card (duplicate of hierarchy-breadcrumbs row above); card now only renders when `zerobias_task_id` is set.
+- `0fac453` `fix(dialogs+nav)` — three things bundled:
+  1. Drop redundant `<h3>Projects</h3>` from engagement's Projects tab (`project-list.component.ts`).
+  2. `FolderDialog` auto-infers `kind: 'notebook' | 'folder'` from `parentId == null`. Title + name-field label now read "New Notebook" / "Notebook Name" when launched from the Notebooks column.
+  3. **Global floating-label fix:** `0.5rem margin-top` on the first form-field inside every `.mat-mdc-dialog-content`. Site-wide. Resolves the cutoff that affected most dialogs.
+- `2b4c946` `fix(notes)` — optimistic insert for user-created folders AND auto-created "General" folder (`hierarchy.ensureDefaultFolder` in `notes-panel.onNotebookSelected`). New public `NoteFolderTree.insertFolderOptimistically()` splices nodes into `_fullTree` + bumps subfolder_count + expands parent. Both create paths now do optimistic insert + `setTimeout(loadTree, 3000)` for Pipeline-lag reconcile. Heavy modernization touch-it=fix-it sweep on `note-folder-tree.component.ts` (4 @Input → input(), 4 @Output → output(), 4 `: any` → narrowed) and `notes-panel.component.ts` (2 @ViewChild → viewChild(), 2 @Input → input() with effect-sync for `filterByDocumentId`, 6 `: any`, 2 empty `catch {}` blocks commented).
+- `10bff37` `fix(notes-panel)` — template missed signal-call conversion in the "No notebooks" empty-state click handler: `notebooksCol?.openCreateDialog()` → `notebooksCol()?.openCreateDialog()`.
+- `abb308a` `fix(engagement-detail)` — re-remove `details-tab.component.{ts,html}` that got accidentally re-introduced via stash/checkout gymnastics during a baseline build-verification.
+- `ac1efce` `fix(markdown-editor)` — chicken-and-egg deadlock: `#editorRef` was inside `@if (!loading() && !previewMode())`. `loading` starts `true` and only flips after `ngAfterViewInit` initializes Crepe using `editorRef.nativeElement` — but editorRef was never in the DOM, so the guard short-circuited and loading stuck. Fix: keep `#editorRef` always rendered, hide visually via `.is-hidden { display: none }`.
+
+**3. Phase 24 partial close (3 commits):**
+- `b3017b5` `docs(phase-24)` — defer Plan 04 (admin delete-demo UI) to **BACKLOG-104**; reduce Plan 05 scope to verification of already-shipped Plans 01-03 (drop the admin-delete test files; depends_on `[01,02,03]`). STATE.md refreshed.
+- `ff3d1a4` `docs(phase-24)` — gsd-execute Plan 05 verification: 48/48 specs pass across `demo-visibility.service.spec.ts` (12) + `graphql-read.service.spec.ts` (15) + `engagements.service.spec.ts` (21); tsc app+spec configs clean; ESLint clean (docs-only). Three close-out artifacts created: `24-IMPLEMENTATION-NOTES.md` (Option X architecture, retroactive re-push dependency, Plan 04 deferral context), `24-FINAL-CHECKLIST.md` (DG-04 row marked DEFERRED v1.5 BACKLOG-104, DG-05 admin-delete sub-item also DEFERRED, all read-side rows verified ✓), `24-PHASE-SUMMARY.md` (PARTIAL CLOSE — Plans 01-03 + 05; Plan 04 in BACKLOG-104). No source files touched in Plan 05.
+- `bc7587e` `docs(roadmap+state)` — ROADMAP Phase 24 row flipped `[ ] → [x] PARTIAL CLOSE`. STATE current focus shifted to "Phase 31-C UI dogfood walkthroughs + v1.4 closing artifacts".
+
+**4. Phase 31-C Pass 1 walkthrough started TODAY (this session):**
+
+Chrome-devtools MCP went offline mid-session then came back online. Once back, kicked off Pass 1 via `mcp__chrome-devtools__*` against `localhost:4200` (no UAT deploy needed — `npm run dev` serves current code with UAT-platform-data via API key, no login required). Walkthrough covered ~10 surfaces before pause for `/clear`. One in-walkthrough fix landed:
+
+- `b4c5271` `fix(sme-mart-project)` — `transformPlatformProjectToSmeMartProject()` was hard-coding `engagementId: null` ("not available in platform.Project shape"). Per D-46/D-50 the depth-2 Project's `parentId` IS the depth-1 Engagement Project's id. Map `proj.parentId → engagementId` on the SmeMartProject scalar mirror. **User-visible bug it fixed:** project-detail breadcrumb fell back to `Engagements > {projectName}` (list-page parent link) instead of rendering `Engagement with provider ZeroBias Platform > {projectName}`. Verified live after the fix; crumb now correctly resolves to the parent engagement title and links to `/engagements/:engId/projects`.
+
+Pass 1 friction log captured at `.planning/director/walkthrough-31c/PASS-1-FRICTION.md` (8 findings; see "Carry-forward" section below).
+
+### Commits this window (parkit-12 → parkit-13)
+
+13 commits, branch is currently 73 commits ahead of `origin/poc/sme-mart`:
+
+```
+b4c5271 fix(sme-mart-project): hydrate engagementId from platform.Project.parentId on transform   [in-walkthrough]
+bc7587e docs(roadmap+state): mark Phase 24 PARTIAL CLOSE; focus shifts to Phase 31-C UI walkthroughs
+ff3d1a4 docs(phase-24): plan 05 verification + close-out artifacts (partial close)
+b3017b5 docs(phase-24): defer Plan 04 to BACKLOG-104; reduce Plan 05 scope to verification
+ac1efce fix(markdown-editor): keep #editorRef in DOM so ngAfterViewInit can bootstrap Crepe
+abb308a fix(engagement-detail): re-remove details-tab files reintroduced by stash gymnastics
+10bff37 fix(notes-panel): invoke viewChild signal in 'No notebooks' empty-state click handler
+2b4c946 fix(notes): optimistic insert for created + auto-default folders (no reload needed)
+0fac453 fix(dialogs+nav): drop redundant tab heading; auto-label Notebook vs Folder dialog; global floating-label breathing room
+b927930 refactor(engagement-overview): drop Tag row from ZeroBias Integration card
+f52c3f8 refactor(engagement-detail): trim header chips, drop Details tab, rename Boundary level to Engagement
+5646531 feat(nav): add PageBreadcrumb shared component; replace back buttons on project + engagement detail
+cef2076 fix(projects-list): scope platform.Project.list to current org (cross-org leak)
+65ff68a docs(planning): BACKLOG-103 + parkit-12 resume snapshot   [end of parkit-12 sweep]
+2fcaec1 fix(provisioner): cross-org scope orchestration + D-51 verbiage (errata 040, 041; supersedes D-32/33/35)
+[+3 other parkit-12 commits already in the parkit-12 section above]
+```
+
+### Working tree at parkit-13
+
+**CLEAN** — `git status -sb` reports no modified/untracked files. All in-flight work committed.
+
+### Phase status (v1.4)
+
+| Phase | Status |
+|---|---|
+| 24 — Demo Data Visibility Gate | ✅ **PARTIAL CLOSE** (Plans 01-03 + 05; Plan 04 deferred to BACKLOG-104) |
+| 25, 26, 27, 27.5, 28, 29.5, 30 | ✅ |
+| 29 | DEFERRED to v1.5 |
+| 31-A nav cleanup | ✅ (parkit-11 partially superseded — dropdown items restored when routes renamed; intentional) |
+| 31-B Org Profile auto-populate | ⚠️ form-pre-fill ships but V14-08 brief language expects section-level pre-pop. Mismatch. See F-6 below. |
+| **31-C UI dogfood walkthroughs** | ⬅ **IN FLIGHT** Pass 1 started; ~10 surfaces verified; paused on /clear |
+| V14 closing artifacts (smoke report, promotion checklist, friction log) | partial — Pass 1 friction-log captured; full v1.4 friction log + checklist not yet drafted |
+
+### Phase 31-C Pass 1 friction log — surface coverage
+
+**Verified ✅ (10 surfaces):**
+- Onboarding gate (unprovisioned org → holding page; ZeroBias Foundation correctly rejected)
+- Org switcher / Switch Organization submenu
+- `/` welcome with Buyer/Provider/Both cards
+- `/projects` list — cross-org leak fix verified live; D-51 description rendering; no Brian's-Org leak
+- Project drill-down (click ZeroBias Platform card → `/project/:id/overview`)
+- Project breadcrumb (FIXED IN-WALKTHROUGH at `b4c5271`; now reads `Engagement with provider ZeroBias Platform > ZeroBias Platform`)
+- Project tabs (Overview / Boards / Notes / Documents / More)
+- Project triple-dot menu correctly hidden (`hasProjectActions()` gate working for non-pilot Project tier)
+- Engagement page (page-breadcrumb + hierarchy-breadcrumbs with "Engagement" level label + In Progress status pill + 7 tabs no Details)
+- Engagement Projects tab (heading dropped, cross-org leak fix applies here too)
+
+**Remaining for Pass 1 (TBD on resume after BACKLOG-103 lands):**
+- Services + RFPs main nav routes (should hit Coming Soon)
+- Coming Soon placeholder routes: `/org-documents`, `/engagement-dashboard`, `/message-center`
+- `/my-profile` (only Settings tab functional; others should be Coming Soon)
+- `/admin` tabs (Provisioning needed for Pass 2 setup)
+
+**Pass 2 (Brian's-Org orphan recovery) — NOT STARTED in this walkthrough.** Backend provisioner already verified end-to-end at parkit-12; UI walkthrough specifically exercises onboarding-guard 403 blind spot (Brian-as-Brian can't switch to operator scope to see the engagement tag from his session).
+
+### Carry-forward issues from Pass 1 friction log
+
+Full log at `.planning/director/walkthrough-31c/PASS-1-FRICTION.md`. Headline items:
+
+| # | What | Severity | Status |
+|---|---|---|---|
+| F-1 | Holding page for unprovisioned org | verification only | ✅ as designed |
+| F-2 | `/projects` cross-org leak fix | verification | ✅ live |
+| F-3 | D-51 verbiage in card description | verification | ✅ live |
+| F-4 | Project breadcrumb parent → list link instead of engagement name | bug | ✅ **FIXED IN-WALKTHROUGH** (`b4c5271`) |
+| F-5 | Page-breadcrumb `max-width: 32ch` truncates "Engagement with provider ZeroBias Pl…" (43ch) | cosmetic | defer to polish-sweep — bump to 48ch later |
+| **F-6** | **Phase 31-B form-pre-fill ships but section card stays "0 items" until user Saves → mismatches V14-08 brief language** | brief vs code misalignment | **Director decision required:** relax V14-08 wording (path 1 — recommended) OR add auto-create-section-item logic (path 2, ~2-3 hrs) OR defer V14-08 to v1.5+ (path 3) |
+| **F-7** | **BACKLOG-103 (theme-blind Add-Item dialog + section-key formatter "Add Corporate_identity Item") reconfirmed in walkthrough — BLOCKS F-6 visibility** | bug, existing backlog | **PROMOTE to v1.4 hotfix. ~1-2 hrs. This is option (b) on resume.** |
+| F-8 | Hierarchy-breadcrumbs row redundant with page title for default engagement | IA cleanup | defer to v1.5+ when middle tiers land |
+
+**Withdrawn:** W-1 "My Engagements/My Projects in dropdown" (parkit-11 restored intentionally), W-2 "Settings top-level dropdown item" (pre-existing intentional).
+
+### Errata + decisions landed in this window
+
+**Decisions:**
+- **D-51 Engagement Display Verbiage** — drop arrows; provider/client asymmetric role label. Supersedes D-32, D-33, D-35. Filed in DECISIONS.md, applied in `platform-engagement-provisioner.service.ts` constants, both UAT seed engagements updated.
+
+**Errata:**
+- **errata 040** — `provisioner-ownerid-session-derived-cross-org` (high) — fixed at `2fcaec1`.
+- **errata 041** — `searchtags-session-scoped-visibility-blind-spot` (high) — fixed at `2fcaec1`.
+
+**BACKLOG additions:**
+- **BACKLOG-104** — Phase 24 Plan 04 (admin delete-demo UI) deferred from v1.4. Re-promote when admin UI use case surfaces.
+
+### Phase 24 close-out artifacts
+
+Created by gsd-execute at `ff3d1a4`:
+- `.planning/phases/24-demo-data-visibility-gate/24-IMPLEMENTATION-NOTES.md`
+- `.planning/phases/24-demo-data-visibility-gate/24-FINAL-CHECKLIST.md` (DG-04 + DG-05.admin-delete marked DEFERRED v1.5 BACKLOG-104)
+- `.planning/phases/24-demo-data-visibility-gate/24-PHASE-SUMMARY.md`
+
+ROADMAP Phase 24 row: `[x] PARTIAL CLOSE 2026-05-18`.
+
+### ZB SDK 2.0 family migration — held
+
+Coordinated `2.0.x` family release shipped Fri 2026-05-15:
+- `@zerobias-com/zerobias-angular-client` 1.1.41 → **2.0.1**
+- `@zerobias-com/zerobias-client` 1.1.42 → **2.0.1**
+- `@zerobias-com/zerobias-sdk` 1.1.27 → **2.0.0**
+- `@zerobias-com/hydra-sdk` 1.0.7 → **2.0.0**
+- `@zerobias-com/platform-sdk` 1.1.17 → **2.0.0**
+- `@zerobias-com/fileservice-sdk` 1.1.14 → **2.0.0**
+
+No partial-bump path — `zerobias-client@2.0.1` peer-requires `zerobias-sdk@^2.0.0` which requires every other SDK at `^2.0.0`. Likely API breaking changes across SDK family. **Held until Kevin/Nic publish migration notes.** No registry movement over the weekend (re-checked 2026-05-18).
+
+Safe small bump available now (deferred until walkthroughs done): `@zerobias-org/data-utils` `^2.1.3` → `^2.1.6` (patch).
+
+### Re-up since parkit-12
+
+- All parkit-12 uncommitted items committed in 5 commits at session start (807c6ff, f57d87b, c471581, 2fcaec1, 65ff68a).
+- Brian's-Org UAT verified state from parkit-12 remains intact; W3Geekery's UAT engagement was ALSO updated to D-51 verbiage at parkit-12 close.
+- Director Parks role rules carried over intact.
+
+### Next-action sequence (on /parks load after /clear)
+
+1. **Verify branch posture:** `git log --oneline -6` (expect `b4c5271` at top), `git status -sb` (expect clean), `git status` returns "Your branch is ahead of 'origin/poc/sme-mart' by 73 commits" (or thereabouts).
+
+2. **Read this parkit-13 section** for full context. Phase 24 partial-closed; Phase 31-C Pass 1 in flight with friction log captured.
+
+3. **CLARK'S EXPLICIT NEXT STEP — option (b):** land **BACKLOG-103 hotfix** BEFORE continuing the walkthrough. Scope per the existing backlog entry:
+   - **(1)** Migrate `vendor-profile-form.component.scss` from hardcoded white `background-color` to theme tokens (`--zb-background-card`, `--zb-text`, `--mat-sys-*`).
+   - **(2)** Add a section-key formatter (`'corporate_identity' → 'Corporate Identity'`) — underscore→space + title-case each word. Use in dialog title AND probably in `vendor-profile-tab.component.html` section headers (check).
+   - **(3)** Verify Cancel + Save button rendering inherits Material's themed defaults (don't hardcode).
+   - **(4)** Smoke test in both themes via `/my-profile/settings` toggle.
+   - Files: `vendor-profile-form.component.{ts,html,scss}` and possibly `vendor-profile-tab.component.{html,scss}`. Effort ~1-2 hrs. Touch-it=fix-it sweep on any pre-existing modernization rules in those files.
+
+4. **Decide F-6 disposition** alongside the BACKLOG-103 fix — recommended path 1: relax V14-08 wording in `.planning/director/phase-31-brief.md` to match shipped "form-pre-fill on Add" rather than "section auto-populated on load". Brief edit, no code.
+
+5. **After BACKLOG-103 + V14-08 wording adjustment land**, resume Pass 1 walkthrough on the remaining surfaces (Services/RFPs Coming Soon, /my-profile, /admin, Coming Soon placeholder routes), then start Pass 2 (Brian's-Org orphan recovery — the live D-49-MIGRATE + errata 036/040/041 verification path).
+
+6. **Once Pass 1 + Pass 2 done**, draft V14-01 smoke-test report + V14-05 production promotion checklist + finalize V14-06 friction log into `.planning/director/v1.4-smoke-test-report.md` and `.planning/director/v1.4-production-promotion.md`. Then milestone close.
+
+7. **DO NOT PUSH.** Cross-fork PR `w3geekery/app:poc/sme-mart` → `zerobias-org/app:uat` still deferred by Clark.
+
+8. **DO NOT TOUCH ZB SDK 2.0 family.** Hold until Kevin/Nic publish notes.
+
+### Director-side findings for Brian/Kevin meetings (carry from parkit-12 + new)
+
+1. (parkit-10) Portal service not in ZB MCP index.
+2. (parkit-10) `searchTasks` lives on portal client.
+3. (parkit-10) `platform.Project.tagId` vs hydra resourceLink discovery mismatch.
+4. (parkit-12) Hydra `createTag` returns 404 with hallucinated UUID on duplicate-name uniqueness check — should be 409 or return existing tag. Server-side bug worth flagging to Nic.
+5. (parkit-12) `NewProject` DTO has no `ownerId` field — server derives from session header. Cross-org provisioning fragility. Feature request to Kevin/Nic.
+6. (parkit-12) `hydra.Tag.searchTags` ignores explicit `ownerIds` body filter for visibility broadening; can't bypass session-scope visibility. Cross-org marketplace need.
+7. (parkit-12) Nic's response on `hydra.Resource.setMetadata()` — pending; unblocks BACKLOG-099 spike when received.
+
+**NEW this window:**
+8. (parkit-13) `@zerobias-org/util-connector` bundles `node:events` import — fails Angular esbuild for browser bundles. Pre-existing (not from this session's work; verified by stashing all changes and rebuilding at parkit-12 baseline). Likely transitive via `@zerobias-org/hub-sdk-interface-dataproducer`. Either SDK fix (don't import `node:events` in a package bundled for browsers) or workspace polyfill needed. Currently means `npm run build` fails for UAT/prod targets. Flag to Kevin/Nic.
+9. (2026-05-19, Phase 32 discuss-phase research) **`platform.Board.list` does NOT support `orgIds[]` array filter** — only a single `orgId`. **HARD blocker** for Phase 32's cross-org `/boards` list page (BACKLOG-106 part e). Without it, cross-org view requires N-per-org scatter-gather, which is untenable. Ask Kevin/Nic to add array support. Memory: `zerobias/platform/platform.Board.list does NOT support orgIds[] array filter`.
+10. (2026-05-19, Phase 32 discuss-phase research) **`platform.Board` boardType enum clarification** — `timeline` / `calendar` values: are these live, reserved, or deprecated? Affects Phase 32 Create-Board dialog dropdown content. Quick clarifying question for Kevin.
+11. (2026-05-19, Phase 32 discuss-phase research) **`platform.Board.listTasks` soft-delete visibility** — does it filter `markDeleted` tasks by default, or surface them with a flag? Affects Phase 32 board-detail tasks list display semantics. Quick clarifying question for Kevin.
+12. (2026-05-20) **PKV (`dana.Pkv`) is BROKEN on UAT — IAM gap.** Both read (`dynamodb:Query`) and write (`dynamodb:BatchWriteItem`) denied on `arn:aws:dynamodb:us-east-1:237041882429:table/uat-pkvs`. UAT gateway role `us-east-1-demo-gateway-role` lacks the DynamoDB policy that CI's role has. **CI works fine; UAT does not.** Verified live 2026-05-20 (switched to `uat-clark@w3geekery`). Owner: Andrey (cc Kevin) — quick IAM policy add (Query + BatchWriteItem + likely GetItem/PutItem/DeleteItem on `uat-pkvs`). Blocks SME Mart PKV use on UAT (active dev env) → Phase 32 pin-state falls back to localStorage + stub interface until fixed. This is the real cause of the stale "PKV 500s" friction-log entry. Memory: `zerobias/platform/pkv-broken-on-uat-iam-gap`. Slack message drafted for Andrey/Kevin 2026-05-20.
+
+### Memory updates this window
+
+None new in memory files this session window. parkit-12's memory entries all still in force.
+
+### Dev server state at parkit-13
+
+Angular dev server running on port 4200; chrome-devtools MCP came back online; one tab navigated to `localhost:4200`. After `/clear`, the dev server SHOULD still be up (Clark hasn't terminated). On resume, navigate to `/org/profile` to verify BACKLOG-103 fix in dark + light themes.
+
+### Quick-start prompt (Director Parks reads this first on resume — parkit-13)
+
+You're Director Parks for SME Mart. v1.4 milestone goal = **3P Onboarding & Default Engagement**. Phase 24 PARTIAL-CLOSED today (Plans 01-03 + 05; Plan 04 → BACKLOG-104). Phase 30 closed at parkit-12. Phase 31-A nav cleanup ✅. Phase 31-B form-pre-fill ships but has a V14-08 brief-vs-code mismatch (F-6). Phase 31-C UI dogfood walkthroughs IN FLIGHT — Pass 1 ~10 surfaces verified; one in-walkthrough fix landed (`b4c5271` engagementId hydration). Pass 1 friction log at `.planning/director/walkthrough-31c/PASS-1-FRICTION.md`.
+
+**Immediate state on /parks load:**
+- Branch `poc/sme-mart` @ `b4c5271`, **CLEAN tree**, 73 ahead of origin. DO NOT PUSH.
+- ZB SDK 2.0 family release on registry but HELD pending Kevin/Nic migration notes.
+- D-51 verbiage live across code + both UAT seed engagements.
+- Dev server still running on `:4200`; chrome-devtools MCP online (after a mid-session disconnect).
+
+**Clark's explicit next move on resume — option (b):**
+1. Land BACKLOG-103 hotfix (theme-aware Add-Item dialog SCSS + section-key formatter — `'corporate_identity' → 'Corporate Identity'`). Files: `src/app/pages/org/tabs/vendor-profile-form.component.{ts,html,scss}` and possibly `vendor-profile-tab.component.{html,scss}`. Effort ~1-2 hrs. Touch-it=fix-it on any modernization rules in those files (expect 4-12 violations).
+2. Relax V14-08 brief language in `.planning/director/phase-31-brief.md` to match shipped 31-B form-pre-fill behavior (Clark recommended path 1).
+3. Resume Pass 1 walkthrough on remaining surfaces (Services / RFPs / `/my-profile` / `/admin` / Coming Soon routes).
+4. Run Pass 2 (Brian's-Org orphan recovery).
+5. Draft V14 closing artifacts → milestone close.
+
+**Rules carried over (read once, don't violate):**
+- **🧭 RDF Compass active.** Read `.planning/docs/RDF-COMPASS.md` before any design review / plan-phase touching Engagement/Project/Task/Vetting/Record/Board shapes. Apply C-1..C-5 checklist. Failing checks need remediation OR explicit Director "accept the gap, file a debt entry" call. Compass surfaces in CLAUDE.md and `zerobias/integration/` basic-memory.
+- **No commit nags** (`feedback_no_commit_nags.md`) — never end response with "commit?" / "want me to commit?".
+- **No "let me X" + immediate action** (`feedback_let_me_violation.md`).
+- **Read-before-Edit ALWAYS** (`feedback_read_before_edit_always.md`).
+- **NEVER mention branch-ahead-of-origin count** in any update except in this RESUME doc.
+- **ZB MCP lock** — use `~/.claude/scripts/zb-mcp-profile-lock.sh acquire <profile>` before any `meta.switchProfile`.
+- **Touch-it=fix-it** — when modifying a file, fix every modernization-rule violation in that file as part of the same change. Pre-commit hook is diff-based + `--max-warnings=0`.
+- **Director Parks role** — invoke `/meta:director` first; delegate GSD work to gsd-* subagents; don't author PLAN.md or execute tasks directly. Surgical fixes during walkthroughs are OK (e.g., `b4c5271`).
+- **No unsolicited commits, recaps, break suggestions** (`feedback_no_unsolicited_commits_recaps.md`).
+- **Director walkthroughs are MANUAL** — agents fabricate UAT findings; don't delegate Pass 1/2 navigation to a subagent.
+
+**Reading order on resume:** this parkit-13 section → `.planning/director/walkthrough-31c/PASS-1-FRICTION.md` → BACKLOG entry 103 → DECISIONS.md tail for D-51 → STATE.md (focus = 31-C UI walkthroughs).
+
+---
+
+
 
 **TL;DR — TWO MAJOR THINGS LANDED, BOTH UNCOMMITTED:**
 

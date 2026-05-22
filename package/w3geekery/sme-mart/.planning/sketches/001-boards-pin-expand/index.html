@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sketch 001 — Boards Tab Pin-Expand Layouts</title>
+  <link rel="stylesheet" href="../themes/default.css" />
+  <style>
+    /* ────────────────────────────────────────────────────────
+       Variant nav (tab bar, fixed top)
+       ──────────────────────────────────────────────────────── */
+    #variant-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: var(--zb-background-elevated);
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      padding: 10px 16px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 16px;
+    }
+    #variant-nav .label {
+      color: var(--zb-text-dim);
+      margin-right: 12px;
+      font-weight: 500;
+    }
+    .variant-tab {
+      background: transparent;
+      color: var(--zb-text-dim);
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 15px;
+      transition: all 0.15s;
+    }
+    .variant-tab:hover { color: var(--zb-text); border-color: var(--mat-sys-outline); }
+    .variant-tab.active {
+      background: var(--zb-accent-soft);
+      color: var(--zb-text);
+      border-color: var(--zb-accent);
+    }
+
+    body { padding-top: 64px; }
+
+    .variant { display: none; }
+    .variant.active { display: block; }
+
+    /* ────────────────────────────────────────────────────────
+       Page header (shared across variants)
+       ──────────────────────────────────────────────────────── */
+    .page-header {
+      padding: 24px 32px 0;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    .breadcrumb {
+      font-size: 14px;
+      color: var(--zb-text-dim);
+      margin-bottom: 8px;
+    }
+    .breadcrumb a { color: var(--zb-text-dim); text-decoration: none; }
+    .breadcrumb a:hover { color: var(--zb-text); }
+    .breadcrumb .sep { margin: 0 8px; opacity: 0.5; }
+    .breadcrumb .current { color: var(--zb-text); }
+
+    .page-title { font-size: 32px; margin: 0 0 8px; font-weight: 600; }
+    .page-sub { color: var(--zb-text-dim); margin: 0 0 16px; font-size: 16px; }
+
+    .tab-strip {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      margin-top: 24px;
+    }
+    .tab-strip .tab {
+      padding: 12px 20px;
+      color: var(--zb-text-dim);
+      font-size: 16px;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+    }
+    .tab-strip .tab.active {
+      color: var(--zb-text);
+      border-bottom-color: var(--zb-accent);
+    }
+    .tab-strip .tab:hover { color: var(--zb-text); }
+
+    /* ────────────────────────────────────────────────────────
+       Boards toolbar (shared)
+       ──────────────────────────────────────────────────────── */
+    .boards-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 24px 0 16px;
+    }
+    .pin-count { color: var(--zb-text-dim); font-size: 15px; }
+    .create-btn {
+      background: var(--mat-sys-primary);
+      color: var(--mat-sys-on-primary);
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 15px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .create-btn:hover { filter: brightness(1.1); }
+
+    /* ────────────────────────────────────────────────────────
+       Board card — base (used by both variants)
+       ──────────────────────────────────────────────────────── */
+    .board-card {
+      background: var(--zb-background-card);
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: var(--radius-card);
+      box-shadow: var(--zb-card-shadow);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: box-shadow 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .board-card:hover {
+      background: var(--zb-background-card-hover);
+      box-shadow: var(--zb-card-shadow-hover);
+    }
+    .board-card.pinned {
+      border-color: var(--zb-accent);
+    }
+
+    .board-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .board-card-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .board-card-name {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--zb-text);
+      margin: 0;
+    }
+    .board-card-meta {
+      font-size: 14px;
+      color: var(--zb-text-dim);
+    }
+
+    .board-card-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .icon-btn {
+      background: transparent;
+      color: var(--zb-text-dim);
+      border: none;
+      width: 32px; height: 32px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: all 0.15s;
+    }
+    .icon-btn:hover { background: var(--zb-background-elevated); color: var(--zb-text); }
+    .icon-btn.active {
+      background: var(--zb-accent-soft);
+      color: var(--zb-accent);
+    }
+    .icon-btn[title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      bottom: -28px;
+      background: var(--zb-background-elevated);
+      color: var(--zb-text);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .board-card-stats {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    /* Chips */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: var(--radius-chip);
+      line-height: 1.2;
+      letter-spacing: 0.02em;
+    }
+    .chip.default { background: var(--default-chip-bg); color: var(--default-chip-fg); }
+    .chip.status-todo { background: var(--status-todo-bg); color: var(--status-todo-fg); }
+    .chip.status-progress { background: var(--status-progress-bg); color: var(--status-progress-fg); }
+    .chip.status-done { background: var(--status-done-bg); color: var(--status-done-fg); }
+    .chip.status-paused { background: var(--status-paused-bg); color: var(--status-paused-fg); }
+    .chip.board-type {
+      background: var(--zb-background-elevated);
+      color: var(--zb-text-dim);
+    }
+    .task-count { color: var(--zb-text-dim); font-size: 14px; }
+
+    /* ────────────────────────────────────────────────────────
+       Tasks-mini-table (inside expanded/pinned card)
+       ──────────────────────────────────────────────────────── */
+    .tasks-mini {
+      margin-top: 8px;
+      background: var(--zb-background-sunken);
+      border-radius: var(--radius-table);
+      border: 1px solid var(--mat-sys-outline-variant);
+      overflow: hidden;
+    }
+    .tasks-mini table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .tasks-mini thead th {
+      text-align: left;
+      padding: 10px 12px;
+      color: var(--zb-text-dim);
+      font-weight: 500;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+    }
+    .tasks-mini tbody td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      color: var(--zb-text);
+    }
+    .tasks-mini tbody tr:last-child td { border-bottom: none; }
+    .tasks-mini tbody tr:hover { background: var(--zb-background-card); }
+    .tasks-mini-footer {
+      padding: 8px 12px;
+      color: var(--zb-text-dim);
+      font-size: 13px;
+      text-align: center;
+      border-top: 1px solid var(--mat-sys-outline-variant);
+      background: var(--zb-background-card);
+    }
+    .assignee-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--zb-text-dim);
+      font-size: 13px;
+    }
+    .avatar {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--zb-accent-soft);
+      color: var(--zb-accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* ════════════════════════════════════════════════════════
+       VARIANT A — Inline expand-in-place (CSS Grid span)
+       ════════════════════════════════════════════════════════ */
+    .v-a .boards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+      padding: 0 32px 60px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    .v-a .board-card.pinned {
+      grid-column: span 2;
+    }
+    @media (max-width: 760px) {
+      .v-a .board-card.pinned { grid-column: 1 / -1; }
+    }
+
+    /* ════════════════════════════════════════════════════════
+       VARIANT B — Left-right split (Outlook reading-pane)
+       ════════════════════════════════════════════════════════ */
+    .v-b .split-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 16px;
+      padding: 0 32px 60px;
+      max-width: 1600px;
+      margin: 0 auto;
+      align-items: start;
+    }
+    .v-b .left-col-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      color: var(--zb-text-dim);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+    }
+    .v-b .left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: sticky;
+      top: 80px;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .v-b .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    /* Compact chip card on left */
+    .v-b .chip-card {
+      background: var(--zb-background-card);
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: var(--radius-card);
+      padding: 10px 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .v-b .chip-card:hover {
+      background: var(--zb-background-card-hover);
+      border-color: var(--mat-sys-outline);
+    }
+    .v-b .chip-card.pinned {
+      background: var(--zb-accent-soft);
+      border-color: var(--zb-accent);
+    }
+    .v-b .chip-card .chip-card-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .v-b .chip-card-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--zb-text);
+      margin: 0 0 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .v-b .chip-card-sub {
+      font-size: 12px;
+      color: var(--zb-text-dim);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .v-b .chip-card-pin {
+      flex-shrink: 0;
+      background: transparent;
+      border: none;
+      color: var(--zb-text-dim);
+      font-size: 14px;
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .v-b .chip-card-pin:hover { background: var(--zb-background-elevated); color: var(--zb-text); }
+    .v-b .chip-card.pinned .chip-card-pin { color: var(--zb-accent); }
+
+    /* Empty right pane */
+    .v-b .right-empty {
+      background: var(--zb-background-card);
+      border: 1px dashed var(--mat-sys-outline-variant);
+      border-radius: var(--radius-card);
+      padding: 60px 32px;
+      text-align: center;
+      color: var(--zb-text-dim);
+    }
+    .v-b .right-empty .icon { font-size: 32px; opacity: 0.5; margin-bottom: 8px; }
+
+    @media (max-width: 900px) {
+      .v-b .split-layout { grid-template-columns: 1fr; }
+      .v-b .left-col { position: static; max-height: none; }
+    }
+
+    /* ────────────────────────────────────────────────────────
+       Sketch toolbar (fixed bottom-right)
+       ──────────────────────────────────────────────────────── */
+    #sketch-tools {
+      position: fixed;
+      bottom: 12px; right: 12px;
+      z-index: 200;
+      font-family: system-ui;
+      font-size: 12px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      opacity: 0.4;
+      transition: opacity 0.2s;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    #sketch-tools:hover { opacity: 1; }
+    #sketch-tools .tool-label { color: rgba(255,255,255,0.6); }
+    #sketch-tools button {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+    #sketch-tools button.active { background: var(--zb-accent); color: black; }
+
+    .viewport-frame {
+      max-width: none;
+      margin: 0 auto;
+      transition: max-width 0.2s;
+    }
+    .viewport-frame.phone { max-width: 375px; }
+    .viewport-frame.tablet { max-width: 768px; }
+    .viewport-frame.desktop { max-width: 1280px; }
+  </style>
+</head>
+<body>
+
+  <!-- ────────────────────────────────────────────────────────
+       Variant nav
+       ──────────────────────────────────────────────────────── -->
+  <div id="variant-nav">
+    <span class="label">Sketch 001 — Boards pin-expand:</span>
+    <button class="variant-tab active" onclick="showVariant('a', this)">A: Inline expand-in-place ★ Selected</button>
+    <button class="variant-tab" onclick="showVariant('b', this)">B: Left-right split</button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+       VARIANT A — Inline expand-in-place
+       ════════════════════════════════════════════════════════ -->
+  <div id="variant-a" class="variant v-a active">
+    <div class="viewport-frame">
+    <div class="page-header">
+      <div class="breadcrumb">
+        <a href="#">Engagements</a>
+        <span class="sep">›</span>
+        <span class="current">Engagement with provider ZeroBias Platform</span>
+      </div>
+      <h1 class="page-title">Engagement with provider ZeroBias Platform</h1>
+      <p class="page-sub">In progress · W3Geekery × ZeroBias</p>
+      <div class="tab-strip">
+        <div class="tab">Overview</div>
+        <div class="tab active">Boards</div>
+        <div class="tab">Projects</div>
+        <div class="tab">Documents</div>
+        <div class="tab">Vetting</div>
+        <div class="tab">Members</div>
+        <div class="tab">More</div>
+      </div>
+      <div class="boards-toolbar">
+        <div class="pin-count"><span id="v-a-count">2</span> of 6 boards pinned</div>
+        <button class="create-btn">+ Create Board</button>
+      </div>
+    </div>
+
+    <div class="boards-grid" id="v-a-grid">
+      <!-- Cards populated via JS for cleaner toggle logic -->
+    </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+       VARIANT B — Left-right split
+       ════════════════════════════════════════════════════════ -->
+  <div id="variant-b" class="variant v-b">
+    <div class="viewport-frame">
+    <div class="page-header">
+      <div class="breadcrumb">
+        <a href="#">Engagements</a>
+        <span class="sep">›</span>
+        <span class="current">Engagement with provider ZeroBias Platform</span>
+      </div>
+      <h1 class="page-title">Engagement with provider ZeroBias Platform</h1>
+      <p class="page-sub">In progress · W3Geekery × ZeroBias</p>
+      <div class="tab-strip">
+        <div class="tab">Overview</div>
+        <div class="tab active">Boards</div>
+        <div class="tab">Projects</div>
+        <div class="tab">Documents</div>
+        <div class="tab">Vetting</div>
+        <div class="tab">Members</div>
+        <div class="tab">More</div>
+      </div>
+      <div class="boards-toolbar">
+        <div class="pin-count"><span id="v-b-count">2</span> of 6 boards pinned</div>
+        <button class="create-btn">+ Create Board</button>
+      </div>
+    </div>
+
+    <div class="split-layout">
+      <div>
+        <div class="left-col-header">
+          <span>All boards (6)</span>
+        </div>
+        <div class="left-col" id="v-b-left"></div>
+      </div>
+      <div class="right-col" id="v-b-right"></div>
+    </div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────────────────────────────
+       Sketch toolbar
+       ──────────────────────────────────────────────────────── -->
+  <div id="sketch-tools">
+    <span class="tool-label">Viewport:</span>
+    <button class="active" onclick="setViewport('full', this)">Full</button>
+    <button onclick="setViewport('desktop', this)">1280</button>
+    <button onclick="setViewport('tablet', this)">768</button>
+    <button onclick="setViewport('phone', this)">375</button>
+  </div>
+
+  <!-- ────────────────────────────────────────────────────────
+       Scripts
+       ──────────────────────────────────────────────────────── -->
+  <script>
+    // Mock boards data (mirrors realistic engagement state)
+    const BOARDS = [
+      {
+        id: 'b1', name: 'General', boardType: 'default', isDefault: true,
+        status: 'in_progress', statusClass: 'status-progress', taskCount: 5,
+        tasks: [
+          { name: 'Welcome to your engagement', status: 'Todo', statusClass: 'status-todo', assignee: 'CS' },
+          { name: 'How to get help', status: 'Todo', statusClass: 'status-todo', assignee: 'CS' },
+          { name: 'Add a corporate profile item', status: 'Todo', statusClass: 'status-todo', assignee: 'CS' },
+          { name: 'Invite a team member', status: 'Todo', statusClass: 'status-todo', assignee: 'CS' },
+          { name: 'Review pricing tiers', status: 'Todo', statusClass: 'status-todo', assignee: 'CS' },
+        ],
+      },
+      {
+        id: 'b2', name: 'Vetting', boardType: 'vetting', isDefault: false,
+        status: 'in_progress', statusClass: 'status-progress', taskCount: 8,
+        tasks: [
+          { name: 'Submit certifications', status: 'In progress', statusClass: 'status-progress', assignee: 'CS' },
+          { name: 'Review insurance docs', status: 'Todo', statusClass: 'status-todo', assignee: 'ZB' },
+          { name: 'Complete background check', status: 'Done', statusClass: 'status-done', assignee: 'CS' },
+          { name: 'Sign NDA', status: 'Done', statusClass: 'status-done', assignee: 'CS' },
+          { name: 'Schedule kickoff call', status: 'Todo', statusClass: 'status-todo', assignee: 'ZB' },
+        ],
+      },
+      {
+        id: 'b3', name: 'Q3 Audit Prep', boardType: 'custom', isDefault: false,
+        status: 'in_progress', statusClass: 'status-progress', taskCount: 12,
+      },
+      {
+        id: 'b4', name: 'Onboarding Checklist', boardType: 'custom', isDefault: false,
+        status: 'in_progress', statusClass: 'status-progress', taskCount: 4,
+      },
+      {
+        id: 'b5', name: 'Quarterly Reviews', boardType: 'custom', isDefault: false,
+        status: 'paused', statusClass: 'status-paused', taskCount: 3,
+      },
+      {
+        id: 'b6', name: 'Findings Followup', boardType: 'custom', isDefault: false,
+        status: 'in_progress', statusClass: 'status-progress', taskCount: 7,
+      },
+    ];
+
+    // Initial pin state — General + Vetting pinned (matches reading-pane intuition)
+    const pinnedInitial = new Set(['b1', 'b2']);
+    const pinnedA = new Set(pinnedInitial);
+    const pinnedB = new Set(pinnedInitial);
+
+    function statusLabel(s) {
+      return ({
+        in_progress: 'In progress',
+        paused: 'Paused',
+        todo: 'Todo',
+        done: 'Done',
+      })[s] || s;
+    }
+
+    // ──────────────── Variant A ────────────────
+    function renderA() {
+      const grid = document.getElementById('v-a-grid');
+      grid.innerHTML = BOARDS.map(b => boardCardA(b)).join('');
+      document.getElementById('v-a-count').textContent = pinnedA.size;
+    }
+    function boardCardA(b) {
+      const pinned = pinnedA.has(b.id);
+      const defaultChip = b.isDefault ? '<span class="chip default">Default</span>' : '';
+      const typeChip = `<span class="chip board-type">${b.boardType}</span>`;
+      const statusChip = `<span class="chip ${b.statusClass}">${statusLabel(b.status)}</span>`;
+      const pinIcon = pinned ? '★ Pinned' : '☆ Pin';
+      const tasksTable = pinned ? tasksMini(b) : '';
+      return `
+        <div class="board-card ${pinned ? 'pinned' : ''}">
+          <div class="board-card-head">
+            <div>
+              <div class="board-card-title-row">
+                <h3 class="board-card-name">${b.name}</h3>
+                ${defaultChip}
+              </div>
+              <div class="board-card-meta">${b.taskCount} tasks</div>
+            </div>
+            <div class="board-card-actions">
+              <button class="icon-btn ${pinned ? 'active' : ''}" title="${pinned ? 'Unpin' : 'Pin this'}" onclick="togglePinA('${b.id}')">${pinned ? '★' : '☆'}</button>
+              <button class="icon-btn" title="Open detail">↗</button>
+              <button class="icon-btn" title="More">⋯</button>
+            </div>
+          </div>
+          <div class="board-card-stats">
+            ${statusChip}
+            ${typeChip}
+          </div>
+          ${tasksTable}
+        </div>
+      `;
+    }
+    function togglePinA(id) {
+      if (pinnedA.has(id)) pinnedA.delete(id); else pinnedA.add(id);
+      renderA();
+    }
+
+    // ──────────────── Variant B ────────────────
+    function renderB() {
+      const left = document.getElementById('v-b-left');
+      const right = document.getElementById('v-b-right');
+      left.innerHTML = BOARDS.map(b => chipCardB(b)).join('');
+      const pinnedBoards = BOARDS.filter(b => pinnedB.has(b.id));
+      if (pinnedBoards.length === 0) {
+        right.innerHTML = `
+          <div class="right-empty">
+            <div class="icon">📌</div>
+            <div>Pin a board on the left to preview its tasks here.</div>
+          </div>
+        `;
+      } else {
+        right.innerHTML = pinnedBoards.map(b => expandedCardB(b)).join('');
+      }
+      document.getElementById('v-b-count').textContent = pinnedB.size;
+    }
+    function chipCardB(b) {
+      const pinned = pinnedB.has(b.id);
+      const def = b.isDefault ? ' · Default' : '';
+      return `
+        <div class="chip-card ${pinned ? 'pinned' : ''}" onclick="togglePinB('${b.id}')">
+          <div class="chip-card-body">
+            <div class="chip-card-name">${b.name}</div>
+            <div class="chip-card-sub">${b.taskCount} tasks · ${statusLabel(b.status)}${def}</div>
+          </div>
+          <button class="chip-card-pin" title="${pinned ? 'Unpin' : 'Pin'}">${pinned ? '★' : '☆'}</button>
+        </div>
+      `;
+    }
+    function expandedCardB(b) {
+      const defaultChip = b.isDefault ? '<span class="chip default">Default</span>' : '';
+      const typeChip = `<span class="chip board-type">${b.boardType}</span>`;
+      const statusChip = `<span class="chip ${b.statusClass}">${statusLabel(b.status)}</span>`;
+      return `
+        <div class="board-card pinned">
+          <div class="board-card-head">
+            <div>
+              <div class="board-card-title-row">
+                <h3 class="board-card-name">${b.name}</h3>
+                ${defaultChip}
+              </div>
+              <div class="board-card-meta">${b.taskCount} tasks</div>
+            </div>
+            <div class="board-card-actions">
+              <button class="icon-btn active" title="Unpin" onclick="togglePinB('${b.id}')">★</button>
+              <button class="icon-btn" title="Open detail">↗</button>
+              <button class="icon-btn" title="More">⋯</button>
+            </div>
+          </div>
+          <div class="board-card-stats">
+            ${statusChip}
+            ${typeChip}
+          </div>
+          ${tasksMini(b)}
+        </div>
+      `;
+    }
+    function togglePinB(id) {
+      if (pinnedB.has(id)) pinnedB.delete(id); else pinnedB.add(id);
+      renderB();
+    }
+
+    // ──────────────── Shared: tasks mini-table ────────────────
+    function tasksMini(b) {
+      const tasks = b.tasks || syntheticTasks(b);
+      const rows = tasks.slice(0, 5).map(t => `
+        <tr>
+          <td>${t.name}</td>
+          <td><span class="chip ${t.statusClass}">${t.status}</span></td>
+          <td><span class="assignee-pill"><span class="avatar">${t.assignee}</span></span></td>
+        </tr>
+      `).join('');
+      const footer = b.taskCount > 5
+        ? `<div class="tasks-mini-footer">Showing 5 of ${b.taskCount} · <a href="#" style="color:var(--zb-accent);text-decoration:none">Open board for full list ↗</a></div>`
+        : '';
+      return `
+        <div class="tasks-mini">
+          <table>
+            <thead><tr><th>Task</th><th>Status</th><th>Assignee</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+          ${footer}
+        </div>
+      `;
+    }
+    function syntheticTasks(b) {
+      // generic placeholder tasks for boards without curated lists
+      const prefixes = ['Review ', 'Draft ', 'Approve ', 'Complete ', 'Submit '];
+      const subjects = ['Q3 report', 'security checklist', 'meeting notes', 'risk register', 'audit plan'];
+      const statuses = [
+        { status: 'Todo', statusClass: 'status-todo' },
+        { status: 'In progress', statusClass: 'status-progress' },
+        { status: 'Done', statusClass: 'status-done' },
+      ];
+      return Array.from({ length: Math.min(5, b.taskCount) }, (_, i) => ({
+        name: prefixes[i % 5] + subjects[i % 5],
+        ...statuses[i % 3],
+        assignee: i % 2 ? 'ZB' : 'CS',
+      }));
+    }
+
+    // ──────────────── Variant switch ────────────────
+    function showVariant(id, btn) {
+      document.querySelectorAll('.variant').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.variant-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('variant-' + id).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    // ──────────────── Viewport toggle ────────────────
+    function setViewport(size, btn) {
+      document.querySelectorAll('.viewport-frame').forEach(f => {
+        f.classList.remove('phone', 'tablet', 'desktop');
+        if (size !== 'full') f.classList.add(size);
+      });
+      document.querySelectorAll('#sketch-tools button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    // ──────────────── Init ────────────────
+    renderA();
+    renderB();
+  </script>
+</body>
+</html>
