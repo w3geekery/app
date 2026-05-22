@@ -95,6 +95,11 @@ describe('VendorProfileTab', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
+    // Form only mounts when the sidenav is open (rebuilds per section to avoid
+    // stale FormGroup carrying controls from a previous section).
+    component.openAddForm('corporate_identity');
+    fixture.detectChanges();
+
     const formDe = fixture.debugElement.query(By.directive(VendorProfileForm));
     expect(formDe).toBeTruthy();
     const formCmp = formDe.componentInstance as VendorProfileForm;

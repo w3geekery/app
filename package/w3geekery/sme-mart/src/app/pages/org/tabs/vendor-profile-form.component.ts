@@ -20,6 +20,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ZbSnakeToSpacesPipe } from '@zerobias-org/ngx-library';
 import type {
   MarketplaceProfileItem,
   SectionType,
@@ -55,6 +56,7 @@ type SectionData =
     MatIconModule,
     MatSelectModule,
     MatCardModule,
+    ZbSnakeToSpacesPipe,
   ],
   templateUrl: './vendor-profile-form.component.html',
   styleUrl: './vendor-profile-form.component.scss',

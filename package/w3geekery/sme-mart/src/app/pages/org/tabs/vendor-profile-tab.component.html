@@ -41,7 +41,7 @@
             <ul>
               @for (item of expiredItems(); track item.id) {
                 <li class="renewal-item">
-                  <span>{{ item.name }} ({{ item.section | titlecase }})</span>
+                  <span>{{ item.name }} ({{ item.section | snakeToSpaces | titlecase }})</span>
                   <button mat-stroked-button (click)="openEditForm(item); dismissRenewalCard()" type="button">
                     Update Now
                   </button>
@@ -56,7 +56,7 @@
             <ul>
               @for (item of expiringSoonItems(); track item.id) {
                 <li class="renewal-item">
-                  <span>{{ item.name }} ({{ item.section | titlecase }}) — Expires: {{ item.expires_at | date }}</span>
+                  <span>{{ item.name }} ({{ item.section | snakeToSpaces | titlecase }}) — Expires: {{ item.expires_at | date }}</span>
                   <button mat-stroked-button (click)="openEditForm(item); dismissRenewalCard()" type="button">
                     Renew Soon
                   </button>
@@ -76,14 +76,16 @@
       #drawer
       position="end"
       [opened]="sidenavOpen()">
-      <app-vendor-profile-form
-        [mode]="formMode()"
-        [section]="selectedSection()"
-        [item]="editingItem()"
-        [orgName]="currentOrgName()"
-        (save)="onFormSave($event)"
-        (close)="onFormClose()">
-      </app-vendor-profile-form>
+      @if (sidenavOpen()) {
+        <app-vendor-profile-form
+          [mode]="formMode()"
+          [section]="selectedSection()"
+          [item]="editingItem()"
+          [orgName]="currentOrgName()"
+          (save)="onFormSave($event)"
+          (close)="onFormClose()">
+        </app-vendor-profile-form>
+      }
     </mat-sidenav>
 
     <!-- Main Content -->
@@ -105,7 +107,7 @@
               <button
                 mat-icon-button
                 (click)="openAddForm(section); $event.stopPropagation()"
-                [title]="'Add ' + section + ' Item'"
+                [title]="'Add ' + (section | snakeToSpaces | titlecase) + ' Item'"
                 type="button">
                 <mat-icon>add</mat-icon>
               </button>
