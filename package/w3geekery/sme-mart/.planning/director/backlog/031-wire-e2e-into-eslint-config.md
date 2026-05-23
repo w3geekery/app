@@ -4,9 +4,12 @@ priority: medium
 scope: sme-mart (app)
 effort: small
 found: 2026-05-22
-status: open
+status: resolved
+resolved: 2026-05-22
 promoted_to: null
 ---
+
+> **RESOLVED 2026-05-22.** Added `e2e/tsconfig.json` (extends root, includes `e2e/**`, relaxes `noPropertyAccessFromIndexSignature` + `noImplicitOverride` — Angular-app strictness knobs that are noise for a Playwright suite) and an `e2e/**/*.ts` eslint override pointed at it, placed AFTER the `**/*.spec.ts` block so its `project` wins. Enabling lint surfaced + fixed 4 findings in 2 grandfathered files (unused `Locator` import + 2 dead `no-new-func` disable directives in `zb-autocomplete.ts`; unused `requestHeadersAfterSwitch` var + `any`-typed request handler in `org-switcher.spec.ts`). Verified: `eslint e2e/**/*.ts --max-warnings=0` exit 0; `tsc -p e2e/tsconfig.json --noEmit` exit 0; src spec gate (`tsconfig.spec.json`) unaffected. The deferred `e2e/specs/boards-pin-persistence.spec.ts` is now clean + committable.
 
 # Wire e2e/** into the eslint config so Playwright specs are lintable and committable
 

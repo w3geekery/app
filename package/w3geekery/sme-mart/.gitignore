@@ -88,3 +88,4 @@ demo-seed-output.json
 .DS_Store
 Thumbs.db
 .claude/handoffs/
+.claude/session-handoffs/

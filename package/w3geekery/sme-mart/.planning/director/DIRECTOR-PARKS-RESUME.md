@@ -30,7 +30,7 @@
 
 **5. PKV FIXED on UAT/QA/prod** (Andrey — **env-var change, NOT IAM**). Verified live via ZB MCP write+read+delete on all three. Platform Ask #12 CLOSED. memex pkv note RESOLVED.
 
-**6. PKV-primary prefs + pins (`029f3133`), prefs verified live.** `prefsBackend`→'pkv' in environment.ts/uat/stack (prod already). UserPreferencesService PKV-primary+localStorage-fallback now active. New **`PkvPinStorage`** (PKV-primary + localStorage fallback/mirror) behind `PIN_STORAGE_TOKEN` via app.config factory. Verified: toggled user-role → PKV PUT 200 → `sme-mart.user-role` confirmed server-side. **Pins live-smoke PENDING** (needs boards on an engagement).
+**6. PKV-primary prefs + pins (`029f3133`), prefs verified live.** `prefsBackend`→'pkv' in environment.ts/uat/stack (prod already). UserPreferencesService PKV-primary+localStorage-fallback now active. New **`PkvPinStorage`** (PKV-primary + localStorage fallback/mirror) behind `PIN_STORAGE_TOKEN` via app.config factory. Verified: toggled user-role → PKV PUT 200 → `sme-mart.user-role` confirmed server-side. **Pins live-smoke PASSED 2026-05-22** — pinned a board, `dana.Pkv` returned key `sme-mart.pins` value `{ "642db132-4cce-4fc5-94cb-2e54c67ad373": true }` (board-UUID→bool map). Both PKV-primary paths now verified live (prefs + pins).
 
 **7. board-card pin icon `8d97aca9`:** heart→`push_pin` + .pinned/.unpinned styling.
 
@@ -43,13 +43,13 @@
 **11. Backlog filed:** 031 (wire e2e/** into eslint), 032 (harden flaky error-path specs).
 
 ### Working tree at parkit-15
-**HEAD `0dd96f82`, EVEN with origin (all pushed).** Clean except untracked `e2e/specs/boards-pin-persistence.spec.ts` (deferred — do NOT commit until backlog 031 fixes the e2e eslint config).
+**HEAD `0dd96f82`, EVEN with origin (all pushed).** Untracked: `e2e/specs/boards-pin-persistence.spec.ts` — backlog 031 RESOLVED 2026-05-22 (e2e eslint wiring done), so this spec is now clean + committable. Also uncommitted this window: `e2e/tsconfig.json` (new), `eslint.config.js` (e2e override), `e2e/helpers/zb-autocomplete.ts` + `e2e/specs/org-switcher.spec.ts` (lint fixes), plus director-doc updates (RESUME, backlog 031, BACKLOG.md 111/112, memex pins note). Awaiting Clark's batch-commit call.
 
 ### In-flight / pending on resume
-1. **111/112 dangling** — `[[BACKLOG-111]]` (template library) + `[[BACKLOG-112]]` (ontology spike) referenced by 106/108 but never filed. Clark asked; I offered to stub; NO answer — confirm + file.
-2. **PkvPinStorage live-smoke** — board-pin PKV path not yet exercised (needs an engagement with boards).
+1. ~~**111/112 dangling**~~ — FILED 2026-05-22 as stubs in BACKLOG.md (111 = engagement template library + Q&A wizard; 112 = industry-ontology research spike, W3C/FIBO/OSCAL). Both marked "expand at plan-phase"; dangling refs from 106/108 resolved.
+2. ~~**PkvPinStorage live-smoke**~~ — DONE 2026-05-22 (pinned a board, `dana.Pkv` returned `sme-mart.pins`→`{642db132…: true}`). Both PKV-primary paths verified live.
 3. **Phase 33 (Boards Polish)** gated: Kevin ask #9 (`orgIds[]`), Nic `satisfies`/`satisfiedBy`, 111 (templates), 112 (ontology spike). Board-UX 113-116 feed it.
-4. **e2e eslint integration** (backlog 031) unblocks the deferred spec.
+4. ~~**e2e eslint integration**~~ (backlog 031) — DONE 2026-05-22. Added `e2e/tsconfig.json` + `e2e/**/*.ts` eslint override (after the spec block so its project wins); fixed 4 surfaced findings in 2 grandfathered files. eslint + tsc both exit 0 on `e2e/**`. **The deferred `boards-pin-persistence.spec.ts` is now clean + committable** (NOT yet committed — awaiting Clark's batch-commit call).
 
 ### Corrections this window
 - PKV fix = **env-var, not IAM**. Admin = `ProjectContextService.isAdmin`/`getRequestOrgMember().admin`, NOT `getPrincipal().isAdmin`. Engagement route `:id` IS the platform.Project UUID. Director reads BOTH `director/backlog/*.md` (#5) + `BACKLOG.md` (#9); GSD-native flows read only BACKLOG.md.
@@ -60,7 +60,7 @@ You're Director Parks for SME Mart. **HEAD `0dd96f82`, branch EVEN with origin, 
 
 Immediate state:
 - **Phase 32 Boards Foundation = CLOSED.** Phase 33 (Polish) gated on: Kevin ask #9 (`orgIds[]`), Nic `satisfies`/`satisfiedBy` link, BACKLOG-111 (templates) + 112 (ontology spike) — and **111/112 aren't filed yet** (dangling refs).
-- **PKV works everywhere.** prefsBackend='pkv'; PkvPinStorage built. Smoke pins live when an engagement has boards.
+- **PKV works everywhere.** prefsBackend='pkv'; PkvPinStorage built + **pins live-smoke PASSED 2026-05-22** (`dana.Pkv` returned `sme-mart.pins`→`{642db132…: true}`). Both PKV-primary paths verified live.
 - **memory = memex, LOCAL ONLY, never cloud.** Tags `/` not `:`. Reindex after writes. Don't read legacy `~/.claude/projects/*/memory/`.
 - **Vercel GONE** — smoke on local dev (`npm run dev`→UAT), never Vercel.
 - **Commit discipline:** BATCH commits — don't commit every small change; accumulate + commit when Clark says.
