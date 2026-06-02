@@ -1000,9 +1000,16 @@ Both were caught by Clark and corrected. The mistake was rooted in stale memory 
 - **Dissolves** parkit-19 Lock #1 (identity tag), Lock #3 (Program-root name), and provisioner-brief DEC #1 (identity namespace) + DEC #3 (Program name).
 - **D-34** (`"ZeroBias Platform"`) — revisit: it named the depth-2 Project-tier node under the old Engagement-rooted tree; under the governance-node model the delivery root name is an org-domain customer-renameable default. Tracked for reconciliation, not load-bearing.
 
-## D-53 SME Mart Is the Platform Commerce Engine — ZB Takes a Cut on ALL Commerce ("nothing escapes") — Brian directive 2026-06-01
+## D-53 SME Mart ORIGINATES Commerce for the Transparency OS (Ledger transacts + takes the cut) — Brian directive 2026-06-01, corrected 2026-06-01
 **Date:** 2026-06-01
-**Status:** LOCKED (business directive — Brian, CEO). Seam (authoring vs transacting) is the Clark-confirmed working model; collection/billing mechanics TBD.
+**Status:** LOCKED (business directive — Brian, CEO). **Seam superseded by the 2026-06-01 CORRECTION below — SME Mart ORIGINATES commerce; the new Ledger app transacts/accounts it.**
+
+**⚠️ CORRECTION (Clark, 2026-06-01) — read the commerce-engine language in this decision as FIGURATIVE positioning, not literal routing.** SME Mart does **not** route, hold, or transact money. The model is a **three-way split**:
+- **SME Mart** — *originates* commerce: RFPs, Services/Products discovery + match, vetting. The front door where a cross-org deal *begins*. After origination, work and money move elsewhere.
+- **Projects App (zb/ui)** — *authors* deal terms (MSA/SOW/pricing → Requirements rows, req<>sat) and *executes* the work (boards/tasks/members/vetting/requirements/readiness); surfaces budget summaries; does NOT transact.
+- **Ledger** — new app, **green-lit by Brian 2026-06-01** ("Go with it!"). *Transacts/accounts* money, rolls up spend across engagements, takes the <5% cut, disburses payouts. Blockchain support on the roadmap ("at some point"). **This is where "the cut" and "nothing escapes" actually live** — not SME Mart.
+
+Brian's "ALL commerce runs through the App Store / SME Mart commerce engine / nothing escapes" quotes (preserved verbatim below as the source record) are **category positioning** — transparency + continuous compliance as the prime foundation of all multi-org trading — NOT a per-engagement requirement that dollars pass through SME Mart. Treat every "transacts" / "routes commerce through SME Mart" / "commerce engine" phrasing in the rest of this decision as superseded by this split. Canonical cross-ref: memex note *SME Mart is the ZeroBias Transparency OS commerce engine* (its "DO NOT read literally" clarification + Ledger naming rationale).
 
 **Decision:** SME Mart is the **App Store / commerce engine** for the ZeroBias platform — not merely a matchmaking marketplace. It sells **three offering kinds: services, apps, and agents** (the "Whop" model — productized/reusable offerings are in scope; resolves S9 = yes). **ALL commerce between parties**, routed through the **Transparency Center**, **runs through the SME Mart commerce engine**, and **ZeroBias takes a cut (under 5%) on all of it.**
 
@@ -1023,19 +1030,20 @@ Both were caught by Clark and corrected. The mistake was rooted in stale memory 
 **Canonical positioning (Brian 2026-06-01):** *"The ZeroBias Transparency OS is the world's first deep real-time vetting solution for sellers and buyers who have the deepest security and compliance requirements on the planet — built into a multi-party transparency platform that enables deep secure sharing among multiple parties, nations, and the secure ecosystem."* **SME Mart is the marketplace + commerce layer of that Transparency OS** — the buy/sell surface and the commerce engine; the OS is the transparency / continuous-vetting / secure-sharing substrate it runs on. The category is **deep real-time vetting**, not "a gig marketplace."
 
 **What this changes:**
-- **Scope expands** from "matchmaking + handoff" to ALSO the **commerce/billing rail under ALL engagements** — including engagements whose *work* executes in the Projects App, and the default-ZB engagement. Commerce is universal, not matchmaking-origin-scoped.
+- **Scope expands** from "matchmaking + handoff" to the **origination front door for ALL commerce** — but origination only. The transaction/billing rail itself is the **Ledger** app, not SME Mart (see CORRECTION).
 - **S9 RESOLVED — yes.** Products (apps + agents) are first-class alongside services.
-- **Seam reframe** (working model, Clark-confirmed 2026-06-01): Projects App *authors* the deal (MSA/SOW/pricing, the work); **SME Mart commerce engine *transacts* the money + takes the cut, for every engagement.** Authoring-of-terms vs transacting-the-money. This amends the scope-reduction pivot's "per-project $ → Projects App" line: the Projects App authors $ terms; SME Mart transacts them.
+- **Three-way split** (corrected 2026-06-01, supersedes the earlier two-way "authoring vs transacting" reframe): **SME Mart *originates*** (RFPs/discovery/match/vetting); **Projects App *authors* terms + *executes* work**; **Ledger *transacts/accounts* money + takes the cut**. The scope-reduction pivot's "per-project $ → Projects App" line means term-authoring; the money itself lands in Ledger.
 - **Nav direction:** likely **RFPs / Services / Products** (split Products = apps + agents from Services = bespoke). Candidate per Clark 2026-06-01; needs a product-vs-service discriminator on `ServiceOffering` (current model is generic; `pricing_type` already has `subscription`/`fixed`).
 
 **Open / TBD:**
-- Collection/billing mechanics for the cut — payment rails, when/how the <5% is taken.
-- Exact authoring-vs-transacting boundary with the Projects App (confirm the pivot's per-project $ = term-authoring, not transaction).
-- Product fulfillment/delivery + licensing/entitlement for apps/agents — the build beyond listing (per the code finding: listing ~80% there; the transaction/delivery layer is the gap).
+- Collection/billing mechanics for the cut — payment rails, when/how the <5% is taken — **owned by the Ledger app** (not yet scoped/dated).
+- Exact origination boundary between SME Mart (match) and Projects App (term-authoring) — where does match end and authoring begin.
+- Product fulfillment/delivery + licensing/entitlement for apps/agents — the build beyond listing (per the code finding: listing ~80% there; the transaction/delivery layer is the gap, and lives in Ledger + delivery, not SME Mart routing).
+- Ledger app scope/timeline; blockchain support is roadmap-only ("at some point," Brian 2026-06-01).
 
 **How to apply:**
-- SME Mart features now legitimately include the **commerce engine** (catalog, checkout, billing, the cut) — core, not out-of-scope.
-- Do NOT treat the pivot's "$ → Projects App" as final — commerce/transaction/cut is SME Mart; Projects App authors terms.
-- Every engagement — Projects-App-executed and default-ZB included — routes commerce through SME Mart.
+- SME Mart features = the **origination front door** (catalog, RFPs, discovery, match, vetting). **Do NOT build a transaction/checkout/billing rail in SME Mart** — that's the Ledger app; leave space (summary panels / read endpoints) only.
+- The pivot's "$ → Projects App" = term-authoring (MSA/SOW/pricing → Requirements). The money itself is Ledger's.
+- "Nothing escapes" / the <5% cut is a **Ledger** property, not an SME Mart routing requirement.
 
-**Related:** PERSONAS.md (updated to capture this), `director/sme-mart-scope-reduction-pivot-2026-05-27.md` (commerce reconciliation amends its "$→Projects App"), the provisioning thread (default-ZB engagement also routes commerce here).
+**Related:** PERSONAS.md (updated to the three-way split), `director/sme-mart-scope-reduction-pivot-2026-05-27.md`, memex *SME Mart is the ZeroBias Transparency OS commerce engine* (Ledger naming rationale + figurative-language clarification), the provisioning thread (default-ZB engagement).

@@ -32,7 +32,12 @@ Vocabulary (per D-51): **provider** = supply side · **client** = demand side.
 | "Agree to engage" handoff trigger | Vetting / Requirements / Readiness / Boundaries |
 | Reputation + reusable offerings catalog | Work execution + evidence + Crosswalk tracking |
 
-**The work/UI split above is pre/post-handoff. Commerce is a SEPARATE axis that does NOT split that way:** ALL commerce — including engagements whose *work* runs in the Projects App, and the default-ZB engagement — transacts through the **SME Mart commerce engine** so ZeroBias takes its cut (D-53). Working model (Clark-confirmed 2026-06-01): **Projects App *authors* the deal (MSA / SOW / pricing); SME Mart *transacts* the money + takes the cut.** Still don't build engagement *work* surfaces (boards/tasks/vetting) in SME Mart — but commerce / checkout / billing IS SME Mart, for every engagement.
+**The work/UI split above is pre/post-handoff. Commerce is a SEPARATE axis, and it is a THREE-WAY split (corrected 2026-06-01, D-53):**
+- **SME Mart** *originates* commerce — RFPs, Services/Products discovery + match, vetting. The front door where a deal begins. **SME Mart does NOT route, hold, or transact money.**
+- **Projects App** *authors* deal terms (MSA / SOW / pricing → Requirements rows) and *executes* the work; surfaces budget summaries; does NOT transact.
+- **Ledger** (new app, green-lit by Brian 2026-06-01) *transacts/accounts* the money, rolls up spend, takes the <5% cut, disburses payouts. **This is where "the cut" and "nothing escapes" live.**
+
+Still don't build engagement *work* surfaces (boards/tasks/vetting) in SME Mart — and don't build a transaction/checkout/billing rail either (that's Ledger). Leave space (summary panels / read endpoints) only.
 
 ---
 
@@ -90,7 +95,7 @@ An *org-level* provider (not an individual) delivering products or services unde
 - **S11** (P4/P5/P6) As a provider, I want to browse open RFPs and submit bids so I win work.
 - **S12** (P4/P6/P7) As a provider, I want my completed engagements / reputation visible so I build marketplace trust.
 - **S16** (P5/P7) As a provider, I want to list and sell **apps and agents** as packaged products (not only bespoke services) so buyers can buy them directly. *[The "Whop" / App Store half — D-53.]*
-- **S17** (P4-P7) As a provider, I want to get paid through the marketplace when a buyer transacts — ZeroBias takes its cut — so all commerce runs on one rail. *[SME Mart commerce engine; <5% cut; "nothing escapes."]*
+- **S17** (P4-P7) As a provider, I want to get paid when a buyer transacts — ZeroBias takes its cut — so all commerce runs on one rail. *[Origination in SME Mart; the actual transaction/payout/<5%-cut runs through the **Ledger** app, where "nothing escapes" lives — NOT SME Mart. D-53 CORRECTION.]*
 - **S18** (P6) As an assessor, I want to continuously, real-time assess the apps / agents / stacks in the marketplace so every offering is held to the highest scrutiny and buyers can trust what they buy. *[Continuous assessment is core marketplace infrastructure — D-53; the assessor corps is supply-side, not only buyer-hired.]*
 
 ### Engagement & relationship — the buy/sell outcome
@@ -124,13 +129,13 @@ SUPPLY: publish profile / bid  -------+                                  |
 - The default-ZB engagement is an invariant baseline, not a marketplace transaction — its provisioning ownership is a pending Kevin/standup decision (may move to platform).
 - **Every offering (app / service / agent) must be transparency-driven** — integrated into the ZB platform, secure, real-time transparent, fully auditable (audit playback). A non-integrated / non-transparent listing doesn't belong on SME Mart; that integration is the moat vs generic marketplaces (D-53 / Brian 2026-06-01).
 - **Everything in the marketplace is continuously assessed** — real-time, deep, ongoing assessment ("most scrutiny ever," an army of assessors), NOT a one-time vetting gate. Marketplace entry AND standing = continuous assessment; the assessor corps is supply-side infrastructure. (D-53)
-- **Commerce is SME Mart's even when work is the Projects App's.** If a feature is about transacting money / taking the cut / checkout / billing for ANY engagement -> SME Mart. If it's about authoring terms or executing work -> Projects App.
+- **Commerce is a three-way split.** Origination (RFP/discovery/match/vetting) -> **SME Mart**. Term-authoring + work execution -> **Projects App**. Transacting money / checkout / billing / taking the cut / payouts -> **Ledger** (new app, green-lit Brian 2026-06-01). **SME Mart never builds a transaction/billing rail** — leave space (summary panels / read endpoints) only.
 
 ## Open questions (affect scope)
 
 1. Provisioning of the default-ZB engagement — **platform will own it** (direction set 2026-06-01); mechanism details TBD (auto org-create hook / admin action / backfill). SME Mart's provisioner deprecates once platform ships. See `provisioner-refactor-governance-node-2026-05-29.md`.
 2. **Resolved:** SME Mart shows only the **pre-handoff matchmaking pipeline** (open RFPs, bids, shortlist) as a simple table/cards; from the moment the other party is locked, the **Platform Projects App is canonical** for the engagement portfolio. Zero duplication.
-3. **Resolved (Brian 2026-06-01, D-53):** the "Whop half" IS in scope — SME Mart sells services, apps, and agents and is the commerce engine taking a cut on all commerce. Remaining build: product *fulfillment/delivery* + licensing/entitlement (listing is ~80% there per the code finding; the transaction/delivery layer is the gap).
+3. **Resolved (Brian 2026-06-01, D-53):** the "Whop half" IS in scope — SME Mart sells services, apps, and agents (originates the commerce; the cut is collected by the **Ledger** app, not SME Mart). Remaining build: product *fulfillment/delivery* + licensing/entitlement (listing is ~80% there per the code finding; the transaction/delivery layer is the gap, split across Ledger + delivery).
 4. Reputation/track-record model (S12) — what the trust signal is. **Strong signal from Brian 2026-06-01** ("army of deep assessors," "most scrutiny ever"): trust is likely **continuous-assessment-driven** (real-time deep assessment of the app/stack), not subjective star-ratings. Lean assessment-driven; confirm with Brian. **Brian owns it.**
 5. **Nav:** candidate split to **RFPs / Services / Products** (Clark 2026-06-01) — Products = apps + agents, Services = bespoke. Needs a product-vs-service discriminator on `ServiceOffering` (current model is generic; `pricing_type` already has `subscription`/`fixed`).
-6. **Commerce-engine mechanics (D-53):** how the cut is collected, payment rails, the buy-now / checkout lane, and the exact authoring-vs-transacting boundary with the Projects App.
+6. **Commerce mechanics (D-53):** how the cut is collected, payment rails, the buy-now / checkout lane — all **owned by the Ledger app** (green-lit Brian 2026-06-01; scope/timeline TBD, blockchain on roadmap). For SME Mart the open boundary is narrower: where match (SME Mart) ends and term-authoring (Projects App) begins.
