@@ -121,7 +121,7 @@ These need resolution as the RDF/SHACL/Holon framing matures. They don't block a
 1. **Holon / Hologram vocabulary adoption** — schema-of-record (new ZB entities) vs narrative-only (external pitch language only)? Brian/Kevin/Nic decision per handoff section 9 item #6. Filed as BACKLOG-110.
 2. **Engagement-pinned SHACL profile versioning** — does ZB platform support per-engagement profile versioning today, or is that platform-team gap?
 3. **PROV-O integration on Records** — when does ZB Records gain PROV-O attribution surfaces? Affects how Records are emitted from SME Mart provisioner / Vetting workflows.
-4. **Mirrored Engagement+Vetting shape** — locked as **Option 3 (single Vetting Board, perspective-aware projection)** per 2026-05-19 Director decision. Confirms compass C-1 (entangled-pair preserved) + C-4 (party-boundary scoping via per-task direction tag). Filed as BACKLOG-108.
+4. **Mirrored Engagement+Vetting shape** — vetting boards live on the **Engagement node** (the standalone `engagement`-role `platform.Project`) per DECISIONS **D-52**; BACKLOG-108 is **Option 5-prime** (template-driven board layout). Earlier "Option 3 single Board" + "depth-3 Vetting sub-Project" framings are superseded. Still confirms compass C-1 (entangled-pair preserved) + C-4 (party-boundary scoping via per-task direction). Filed as BACKLOG-108.
 5. **`platform.Board` boardType + soft-delete behavior** — clarify with Kevin (Director-side Brian/Kevin findings list items #10, #11).
 6. **JSONL container shape** — Brian's "final deliverable" framing references JSONL/RDF. Is the container JSONL-of-RDF-quads, JSON-LD, TriG, or something else? Pending platform-team spec.
 
@@ -139,6 +139,6 @@ These need resolution as the RDF/SHACL/Holon framing matures. They don't block a
 **See also:**
 - `.claude/handoffs/shacl-owl-holon-quantum-overlay-2026-05-19-fixed.html` — source of vision (Clark's overlay doc, May 2026)
 - `.claude/handoffs/transparency-center-entangled-tasks-2026-04-21.html` — Hierarchy Editor + entangled-task framing predecessor
-- BACKLOG-108 (mirrored Vetting Option 3 — applies compass C-1 + C-4)
+- BACKLOG-108 (mirrored Vetting — Option 5-prime, vetting boards on the Engagement node per D-52 — applies compass C-1 + C-4)
 - BACKLOG-109 (RDF readiness constraint for SME Mart provisioner / data shapes)
 - BACKLOG-110 (Holon/Hologram vocabulary adoption — Brian/Kevin/Nic ask)

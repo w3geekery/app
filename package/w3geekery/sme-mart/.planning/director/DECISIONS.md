@@ -947,3 +947,95 @@ Both were caught by Clark and corrected. The mistake was rooted in stale memory 
 - D-49 (engagement tag namespace — tags stay UUID-stable, only display verbiage changes)
 - D-43 (anti-pattern (d) on UUID churn — applies here: no tag rename, only display rename)
 - D-50 (canonical tier mapping — display verbiage hooks attach to Engagement (depth 1) and Project (depth 2) tiers per the mapping)
+
+## D-52 Program & Engagement Are Node-Roles, Not Tiers (ui-meta-director ruling + PMI input via Bob Cheek, 2026-06-01)
+**Date:** 2026-06-01
+**Status:** LOCKED (design). SC-001 seed change is umd+Kevin's side; node-role tagType mechanics + engagement re-type are tracked open items below.
+
+**Decision:** Two orthogonal axes, and NEITHER `program` NOR `engagement` belongs on the structural tier ladder.
+
+**Axis 1 — Tier ladder** (structural containment; the parentId tree; one `tagId` per Project):
+- `project` / `workspace` / `aperture` / `thread`. **depth-0 = `project`.**
+- `engagement` is **REMOVED** from the ladder (was D-50 depth-1). `program` is **NOT ADDED** to the ladder.
+- Verified tier tag IDs (live UAT 2026-05-29, parkit-19): `project` = `a1d2373c-c4b2-42d3-880a-05b1951d6361`, `workspace` = `2c6dafc0…`, `aperture` = `d3cd5e73…`, `thread` = `bcd15bb0…`.
+
+**Axis 2 — Node-role tags** (purpose; separate namespace; optional; applicable at ANY tier; applied as additional resource-tags via `hydra.Tag.tagResource`, NOT as `Project.tagId`):
+- **`program`** — node coordinates related work → maps to **cost-center / fiscal rollup** up the parentId tree.
+- **`engagement`** — the **commercial axis**: parties, MSA, vetting boards, revenue side; carries the `governs` link to the tree it governs.
+- Both optional, both purpose-applied, both any-tier. A node can wear neither, either, or both.
+
+**Why:** Program-ness and engagement-ness are *purposes stamped on a node*, not *positions in the tree*. Keeping both OFF the tier ladder is what keeps **fiscal rollup unambiguous** — cost rolls straight up the parentId containment tree with no double-counting, while the commercial axis (`governs`) stays a separate stapled relationship that never tangles the containment math. PMI (Bob Cheek): a Program is a coordination role that can appear at any level, not a fixed rung; symmetric with engagement as the commercial role.
+
+**Provisioner lock (SME Mart default-ZB flow):**
+1. **Delivery root** — `platform.Project`, `parentId = null`, `tagId = project` (`a1d2373c`). Created in the target org's scope (server-derives `ownerId` = buyer org). Org-domain default name, customer-renameable (NOT a SME-Mart-coined "Program" string — Lock #3 / DEC #3 dissolved). `program` node-role tag is **NOT applied** in the default flow (optional; a single-engagement compliance root isn't necessarily a coordinating program).
+2. **Engagement node** — `platform.Project`, standalone (`parentId = null`), `tagId = project` (`a1d2373c`), plus the **`engagement` node-role tag** applied via `tagResource`. Display name/description per **D-51** (unchanged). **No per-engagement identity tag** (D-49 / parkit-19 Lock #1 reversed — redundant: buyer = node `ownerId`, provider = constant ZeroBias).
+3. **`governs` link** — `engagement → delivery root`. **Deferred/stubbed** in the interim (external blocker: `governs` ResourceLink type id from umd/Nic). Backfilled in one additive pass (~5 pairs) when the type lands; ungoverned interim is a valid state (R3 dropped).
+4. **`isOrgProvisioned` probe** — lives entirely on the Engagement side: a node in this org's scope wearing the `engagement` node-role tag whose **provider party = ZeroBias**. Depends on NO identity tag and NO Program marker. Tighten to also require the `governs` link once it lands.
+
+**Tag work required:**
+- **NO `project-tier` package PR.** Do not add `program` to project-tier; do not keep `engagement` as a project-tier entry long-term.
+- **`program` (+ `engagement`) node-role tags** live in a separate node-role namespace. The ONLY possible creation is a `program` node-role tag if it doesn't already exist — and it's a node-role tag, NOT a project-tier entry. Not required by the default provisioner flow, so not blocking the lock.
+- SC-001 `projectTierHierarchy` depth-0: `engagement → project` (because engagement leaves the ladder, not because program replaces it). getStructure traversal otherwise unchanged. **umd confirms the seed change with Kevin.**
+
+**How to apply:**
+- Lock the provisioner on `tagId = project` for BOTH roots (delivery + engagement node). Disambiguate via node-role tags + the `governs` link, never via tier.
+- Any plan/recipe/brief that tags a root `engagement` (as a tier) or proposes a `program` tier entry is WRONG — strike at plan-checker, cite this entry.
+- Any probe that keys on a per-engagement identity tag is WRONG — the discriminator is `engagement` node-role + provider = ZeroBias.
+
+**Anti-patterns:**
+- (a) Re-adding `engagement` or `program` to the tier ladder "for symmetry with the old 7-tier model." They are roles; the ladder is `project/workspace/aperture/thread`.
+- (b) PR-ing a `program` entry into the `project-tier` package. Wrong tagType. If `program` needs creating, it's a node-role tag in the node-role namespace.
+- (c) Re-introducing the per-engagement identity tag as a probe key. Use `engagement` node-role + provider party.
+- (d) Applying the `program` node-role tag to the default-ZB delivery root by reflex. It's optional and purpose-driven; the default single-engagement root doesn't get it unless it actually coordinates related sub-work.
+- (e) Reading fiscal rollup through the commercial axis. Cost rolls up parentId; `governs` is revenue-side and must not enter the containment sum.
+
+**Open items (do not block the provisioner lock):**
+- **Node-role tagType mechanics — RESOLVED 2026-06-01 (no new tagType needed interim).** Verified parties are NOT structurally modeled: `platform.Project` schema (expanded) has NO provider/client/party field (only `ownerId` = buyer, one-sided); the provisioner creates zero party `linkResources`; `provider = ZeroBias` lives only in the D-51 display string (human-only). Consequence: **engagement role is NOT derivable today** (no structural provider; governs deferred regardless) — a marker is required, and the existing `engagement` tag `70d33288` serves as interim scaffolding. Because SME Mart is currently the only minter of engagements and all are default-ZB, the interim probe collapses to "org has a node tagged `engagement`." Do NOT register a new node-role tagType now. **Program role IS derivable** (structural rollup / child-Projects) — no tag. Sunset path: when Projects-App formation models parties structurally (design brief `clientOrgId`/`providerOrgId`, §230/§144 — not yet built), engagement becomes derivable (governs-source + provider party) and the `70d33288` scaffolding retires.
+- **`engagement` tag `70d33288-abfb-4712-b489-00f1ce1f7f8e` is currently typed `project-tier`** (shipped in PR #5 / package 2.0.2). Target state types it as a node-role tag. Re-type vs. new-UUID migration is intertwined with umd's project-tier cleanup + the SC-001 seed change (umd+Kevin own that side). The provisioner can apply `70d33288` as the engagement marker in the interim regardless of its declared type — functional, pending the clean re-type.
+
+**Related decisions:**
+- **Supersedes the tier portion of D-50** (engagement is no longer the depth-1 tier; ladder is now `project/workspace/aperture/thread`, depth-0 = `project`). D-50's depth-2-is-Project / no-Workspace-by-default warnings still hold for the renameable middle.
+- **Supersedes D-49** (per-engagement engagement tag namespace — the identity tag is dropped entirely, not renamed).
+- **D-51 unchanged** — Engagement node display name/description still applies; only the tier/tag substrate changed.
+- **Dissolves** parkit-19 Lock #1 (identity tag), Lock #3 (Program-root name), and provisioner-brief DEC #1 (identity namespace) + DEC #3 (Program name).
+- **D-34** (`"ZeroBias Platform"`) — revisit: it named the depth-2 Project-tier node under the old Engagement-rooted tree; under the governance-node model the delivery root name is an org-domain customer-renameable default. Tracked for reconciliation, not load-bearing.
+
+## D-53 SME Mart Is the Platform Commerce Engine — ZB Takes a Cut on ALL Commerce ("nothing escapes") — Brian directive 2026-06-01
+**Date:** 2026-06-01
+**Status:** LOCKED (business directive — Brian, CEO). Seam (authoring vs transacting) is the Clark-confirmed working model; collection/billing mechanics TBD.
+
+**Decision:** SME Mart is the **App Store / commerce engine** for the ZeroBias platform — not merely a matchmaking marketplace. It sells **three offering kinds: services, apps, and agents** (the "Whop" model — productized/reusable offerings are in scope; resolves S9 = yes). **ALL commerce between parties**, routed through the **Transparency Center**, **runs through the SME Mart commerce engine**, and **ZeroBias takes a cut (under 5%) on all of it.**
+
+**"Nothing escapes."** Every engagement's commerce is *trapped* through this rail so ZB collects its cut — explicitly modeled on Apple App Store / AWS Marketplace / Azure Marketplace (the platform takes a cut on all commerce; nothing transacts outside it). 100% of engagements, via Transparency Center + the SME Mart commerce engine.
+
+**Brian quotes (2026-06-01):**
+- "SME mart is for services / app / and 'agents'. So yes the whop."
+- "ALL COMMERCE between parties via transparency center is run through the App Store and we take a cut % under 5% for all commerce."
+- "ALL COMMERCE from ALL TRANsparency activity. NOTHING ESCAPES the Apple app store ... AWS marketplace ... azure marketplace."
+- "We 100% trap all engagements. All of them via transparency center and the SME market commerce engine to charge our cut."
+
+**Value proposition (Brian 2026-06-01) — the moat:** a marketplace of **transparency-driven** apps/services/agents. Buyers come because every offering is **fully integrated into the ZB platform, fully secure, and fully transparent for compliance** — real-time transparency + **full audit playback for all things, all the time, secure**. It's the store for **deep, real-time vendor risk management**, native to the platform. Quotes: "This is a marketplace of TRANSPARENCY driven apps / services / agents"; "People buy from this marketplace cause they are fully integrated, and fully secure and fully transparent for all compliance"; "the store you go to for deep deep vendor risk mgmt real time but Also fully integrated into platform"; "its secure real time transparency and full audit playback for all things. All things all the time secure."
+
+**Mental model (Brian 2026-06-01):** *NATO wartime secure apps + info-sharing among allied nations* — apps locked down, fully secure and hardened, real-time, lots of people working full-time to harden them, then all of it shared among nations as fast and securely as possible. (Extended: DoD / NSA / Intel apps shared among allied nations *and their agencies* — secure sharing under **deep data-governance rules**, every app **real-time locked down and continuously assessed, always**.) Maps to SME Mart: orgs = nations; SMEs/providers = the people continuously hardening; the marketplace + Transparency Center = the secure, real-time rail for sharing hardened apps/agents/compliance work across parties. The bar is **maximum-security, hardened, real-time, secure multi-party sharing** — not a generic gig/app store. Quote: "NATO war time secure apps and info sharing among countries during wartime when all the apps must be locked down. Fully secure and hardened real time with lots of folks working full time to harden and then sharing all of it among nations as fast and secure as possible."
+
+**Security & assessment posture (Brian 2026-06-01):** everything that enters the marketplace is **held to the highest scrutiny ever** — real-time, deep, **continuous** assessment by *"an army of deep assessors"* assessing all apps / stacks, always. Implications: (1) marketplace entry + standing is **continuous real-time assessment**, NOT a one-time vetting gate; (2) the assessors are the supply-side 3PAO/SME corps (P6) — continuous assessment is **core marketplace infrastructure**, not a side feature; (3) **trust/reputation is assessment-driven** (continuous deep assessment of the app/stack), which strongly steers open question S12 away from subjective star-ratings; (4) cross-party sharing runs on **deep data-governance rules** — the Transparency Center's controlled-disclosure / grant mechanism. Quotes: "All these people must be able to share securely with deep sharing data governance rules"; "all the apps they want to use must be realtime locked down all the time and assesses all the time"; "All things that go into marketplace will be held to the most scrutiny ever. Real time deep deep assessment by an army of deep assessors assessing all the apps / the stacks etc always."
+
+**Canonical positioning (Brian 2026-06-01):** *"The ZeroBias Transparency OS is the world's first deep real-time vetting solution for sellers and buyers who have the deepest security and compliance requirements on the planet — built into a multi-party transparency platform that enables deep secure sharing among multiple parties, nations, and the secure ecosystem."* **SME Mart is the marketplace + commerce layer of that Transparency OS** — the buy/sell surface and the commerce engine; the OS is the transparency / continuous-vetting / secure-sharing substrate it runs on. The category is **deep real-time vetting**, not "a gig marketplace."
+
+**What this changes:**
+- **Scope expands** from "matchmaking + handoff" to ALSO the **commerce/billing rail under ALL engagements** — including engagements whose *work* executes in the Projects App, and the default-ZB engagement. Commerce is universal, not matchmaking-origin-scoped.
+- **S9 RESOLVED — yes.** Products (apps + agents) are first-class alongside services.
+- **Seam reframe** (working model, Clark-confirmed 2026-06-01): Projects App *authors* the deal (MSA/SOW/pricing, the work); **SME Mart commerce engine *transacts* the money + takes the cut, for every engagement.** Authoring-of-terms vs transacting-the-money. This amends the scope-reduction pivot's "per-project $ → Projects App" line: the Projects App authors $ terms; SME Mart transacts them.
+- **Nav direction:** likely **RFPs / Services / Products** (split Products = apps + agents from Services = bespoke). Candidate per Clark 2026-06-01; needs a product-vs-service discriminator on `ServiceOffering` (current model is generic; `pricing_type` already has `subscription`/`fixed`).
+
+**Open / TBD:**
+- Collection/billing mechanics for the cut — payment rails, when/how the <5% is taken.
+- Exact authoring-vs-transacting boundary with the Projects App (confirm the pivot's per-project $ = term-authoring, not transaction).
+- Product fulfillment/delivery + licensing/entitlement for apps/agents — the build beyond listing (per the code finding: listing ~80% there; the transaction/delivery layer is the gap).
+
+**How to apply:**
+- SME Mart features now legitimately include the **commerce engine** (catalog, checkout, billing, the cut) — core, not out-of-scope.
+- Do NOT treat the pivot's "$ → Projects App" as final — commerce/transaction/cut is SME Mart; Projects App authors terms.
+- Every engagement — Projects-App-executed and default-ZB included — routes commerce through SME Mart.
+
+**Related:** PERSONAS.md (updated to capture this), `director/sme-mart-scope-reduction-pivot-2026-05-27.md` (commerce reconciliation amends its "$→Projects App"), the provisioning thread (default-ZB engagement also routes commerce here).
