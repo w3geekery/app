@@ -14,8 +14,14 @@ Brian directive. Rebuild/replace the lead-generation form on https://zerobias.co
 
 ## Two core goals
 
-1. **Add Foundation-eligibility fields.** Capture the fields needed to determine whether the submitter's Org is eligible for the **ZeroBias Foundation 'community/guild'** on the ZB platform. The current form does not capture these.
-   - **OPEN — blocking:** the actual eligibility *criteria* are undefined. Need them from Brian / platform before we know which fields to add. (Form fields are derived from criteria, not the reverse.)
+1. **Add Foundation/Guild-eligibility fields.** Capture the signal needed to classify whether the submitter's Org is eligible for the **ZeroBias Foundation 'community/guild'**. The current form does not capture these.
+   - **CRITERIA KNOWN (locked from Brian, May 2026).** `guildEligible = (nonprofit OR gov OR <100 employees) AND NOT (publicly-traded OR PE-backed OR >100 employees)`. Sources: `.planning/notes/meetings/2026-05-12-catalin-1-1.md:20` and `.planning/director/default-engagement-onboarding-backend-requirements-2026-06-02.md:290` (which names the Contact-Us form as the "Classify" capture surface — Layer 2 of the onboarding feature).
+   - **The two new fields (derived):**
+     - **Business classification / entity type** (dropdown, required): nonprofit · government · hospital/healthcare institution · not-for-profit · publicly-traded company · PE-backed company · privately-held company.
+     - **Number of employees** (size signal; threshold = 100; bands TBD pending Brian).
+   - **Design stance:** capture type + size as neutral business-profile questions; compute eligibility downstream (Chris at the approval gate / classify op). Do NOT surface "eligibility" to the applicant.
+   - **NOT a repurpose:** the existing "Organization Type" field is almost certainly the Auditor/Auditee axis (invitation model) — a different axis than business classification. Confirm its current options on inspection.
+   - **4 confirmations sent to Brian (2026-06-15), non-blocking:** (1) size band granularity, (2) self-attested vs proof, (3) silent-capture vs explicit eligibility framing, (4) edge case: large (>100) nonprofit/gov — eligible or capped? Form base/build can proceed with provisional defaults while these settle.
 2. **Re-own the form under the Org.** Current form is owned by user **`evaughn`** (departed employee) — see permalink owner segment. New form must be owned by the **Org**, not a single user, so it survives staff changes.
 
 Then **replace** the existing form on the contact-us page with the new Org-owned form.
@@ -30,11 +36,18 @@ Then **replace** the existing form on the contact-us page with the new Org-owned
 ## Tasks / investigations
 
 - [x] Investigate a **Zoho CRM MCP server or CLI** — DONE 2026-06-15 (findings below).
-- [ ] **Define Foundation community/guild eligibility criteria** (from Brian/platform) → derive form fields. *(blocker for goal 1)*
-- [ ] Inspect current form (chrome-devtools) — inventory existing fields + their CRM Lead mappings.
-- [ ] Map new fields → Zoho CRM **Lead** fields (create custom fields in CRM as needed).
-- [ ] Build the new **Org-owned** Zoho Form.
+- [x] **Define Foundation/Guild eligibility criteria** — DONE: already locked from Brian (May 2026); see Goal 1. Only 4 minor confirmations outstanding (sent to Brian, non-blocking).
+- [x] **Draft build-ready field spec** — DONE 2026-06-15: `.planning/director/contact-us-form-field-spec-2026-06-15.md`.
+- [ ] **Clark:** inspect current form (chrome-devtools) — confirm which fields are actually *presented* vs gated, and the current "Organization Type" options.
+- [ ] **Clark:** export/share the Zoho CRM **Lead** field schema → fill the CRM-mapping column in the field spec.
+- [ ] Map new fields → CRM Lead fields (create custom fields in CRM as needed).
+- [ ] Build the new **Org-owned** Zoho Form (manual, Zoho UI).
 - [ ] Swap it onto https://zerobias.com/contact-us/ (coordinate site edit access).
+
+## Related work
+- **Layer 2 ("Classify")** of the onboarding feature — `.planning/director/default-engagement-onboarding-backend-requirements-2026-06-02.md` (this form is its capture surface).
+- `GUILD-ELIGIBILITY-CLASSIFICATION-1` (model org business classification + gate Guild membership) — this form is the front-end capture half.
+- Field spec: `.planning/director/contact-us-form-field-spec-2026-06-15.md`.
 
 ## Approach
 
@@ -51,4 +64,4 @@ Splits along CRM vs Forms:
 **Decision:** Do NOT stand up a Zoho MCP just for this form. The form build is manual Zoho UI work (no automation lever). For the CRM half, Clark hands over the Lead field schema directly (he has CRM access) — faster/safer than wiring an OAuth MCP into prod CRM. Revisit the **official** Zoho MCP only if ongoing CRM automation becomes a need. → confirms the "manual step-by-step" approach.
 
 **Why now:** Brian directive (2026-06-15); current form is orphaned under a departed employee and misses the Foundation-eligibility signal the platform needs from inbound leads.
-**Blocked by:** Foundation community/guild eligibility criteria (undefined — needed from Brian/platform) before the eligibility-field work can proceed. Org-ownership migration + site swap are not blocked.
+**Blocked by:** Nothing hard-blocking. Eligibility criteria are known; 4 minor confirmations are out to Brian (band granularity, attest-vs-verify, visibility, large-nonprofit edge) but the field spec, current-form inspection, CRM-schema gathering, base rebuild, and Org-ownership migration all proceed in parallel. Final field options + the site swap (needs site edit access) are the only true gates.
