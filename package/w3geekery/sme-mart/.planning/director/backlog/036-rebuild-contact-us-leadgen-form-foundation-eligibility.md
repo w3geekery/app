@@ -16,9 +16,10 @@ Brian directive. Rebuild/replace the lead-generation form on https://zerobias.co
 
 1. **Add Foundation/Guild-eligibility fields.** Capture the signal needed to classify whether the submitter's Org is eligible for the **ZeroBias Foundation 'community/guild'**. The current form does not capture these.
    - **CRITERIA KNOWN (locked from Brian, May 2026).** `guildEligible = (nonprofit OR gov OR <100 employees) AND NOT (publicly-traded OR PE-backed OR >100 employees)`. Sources: `.planning/notes/meetings/2026-05-12-catalin-1-1.md:20` and `.planning/director/default-engagement-onboarding-backend-requirements-2026-06-02.md:290` (which names the Contact-Us form as the "Classify" capture surface — Layer 2 of the onboarding feature).
-   - **The two new fields (derived):**
+   - **The new fields (derived):**
      - **Business classification / entity type** (dropdown, required): nonprofit · government · hospital/healthcare institution · not-for-profit · publicly-traded company · PE-backed company · privately-held company.
-     - **Number of employees** (size signal; threshold = 100; bands TBD pending Brian).
+     - **Number of employees** (size signal; bands 1-10/11-50/51-100/101-500/500+).
+     - **Identity Provider / SSO** (Brian 2026-06-15): dropdown of Auth0-supported IDPs + "Other (specify)" — alt IDPs still submit but flag a "needs Auth0 support" follow-up. Maps to the EXISTING CRM `Identity Provider` field (not a new custom field). Supported-IDP list + flag mechanism = open from Chris.
    - **Design stance:** capture type + size as neutral business-profile questions; compute eligibility downstream (Chris at the approval gate / classify op). Do NOT surface "eligibility" to the applicant.
    - **NOT a repurpose:** the existing "Organization Type" field is almost certainly the Auditor/Auditee axis (invitation model) — a different axis than business classification. Confirm its current options on inspection.
    - **Brian confirmed all 4 (2026-06-15), LOCKED:** (1) employee bands = 1-10/11-50/51-100/101-500/500+; (2) self-attested at form, Chris verifies; (3) silent capture (eligibility not shown to applicant); (4) large nonprofit/gov >100 = still eligible (type-based eligibility wins; <100 cap applies only to private for-profits). See field spec for the locked formula.

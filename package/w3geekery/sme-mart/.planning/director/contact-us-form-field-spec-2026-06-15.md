@@ -27,10 +27,17 @@ Legend: **KEEP** = presented today, carry over · **NEW** = add · **HIDDEN** = 
 | 5 | Work Email | email | ✓ | | **Email** (std) | KEEP |
 | 6 | **Business classification** | dropdown | ✓ | nonprofit · government · hospital/healthcare institution · not-for-profit · publicly-traded company · PE-backed company · privately-held company | **NEW custom field** — confirmed not present; distinct from CC Org Type / Partner Service Focus / Lead-Contact Type | **NEW** |
 | 7 | **Number of employees** | dropdown | ✓ | bands (Brian-confirmed): 1-10 / 11-50 / 51-100 / 101-500 / 500+ | **NEW custom field** — confirmed no std "No. of Employees" on this layout | **NEW** |
+| 8 | **Identity Provider (SSO)** | dropdown + conditional "Other" text | ✓ | "Which identity provider does your organization use to sign in?" Options = ZB-supported IDPs (**list TBD from Auth0/Chris**) + **"Other (please specify)"**. "Other" still submits, but flags a *needs-Auth0-support* follow-up. | existing CRM **Identity Provider** field (confirm picklist + vs "Default Login Provider"); "Other" free-text → flag/notes | **NEW (Brian 6-15)** |
 | — | Privacy policy notice | static text + link | — | "By submitting this form, I consent…" — **notice text, NOT a checkbox** | — | KEEP |
-| 8 | Terms & Conditions | checkbox | ✓ | "I accept the Terms and Conditions." | (consent capture; optional custom checkbox if CRM should record it) | KEEP |
+| 9 | Terms & Conditions | checkbox | ✓ | "I accept the Terms and Conditions." | (consent capture; optional custom checkbox if CRM should record it) | KEEP |
 
-**Placement:** insert the 2 new fields (#6, #7) after Work Email and before the privacy notice — i.e. company-profile questions grouped together.
+**Placement:** insert the 3 new fields (#6, #7, #8) after Work Email and before the privacy notice — company-profile questions grouped together.
+
+### Identity Provider field (Brian directive, 2026-06-15)
+- **Intent:** ZeroBias wants leads whose work email is backed by a supported **IDP** (SSO-capable org), and to know which IDP up front. **Auth0** is the broker — it supports most IDPs; an unsupported one just means adding the Auth0 connection.
+- **Behavior:** list supported IDPs; selecting **"Other (specify)"** does NOT block submission — it captures the IDP name and flags a "needs Auth0 support added" follow-up (workflow/tag/note — mechanism TBD with Chris).
+- **Form copy (suggested):** brief line — "ZeroBias signs you in through your identity provider. Select yours below; if it's not listed, choose Other — we'll add support."
+- **OPEN (from Chris):** (a) the actual supported-IDP list = the configured Auth0 connections; (b) the existing CRM `Identity Provider` picklist values + whether the form should map to `Identity Provider` or `Default Login Provider`; (c) how "needs support" is flagged in CRM.
 
 **Dropped (not presented on the live form, do NOT carry over):** Organization Type, Cloud Version, Cloud Provider, Hypervisor, Secrets Manager.
 
@@ -79,8 +86,9 @@ Spec is fully LOCKED — Brian confirmed all 4 (2026-06-15), live form + CRM sch
 ## Build checklist (start once admin access lands — 2026-06-16)
 
 1. ~~Inspect live form~~ ✅ DONE · ~~Capture CRM Lead schema~~ ✅ DONE · ~~Brian's 4 answers~~ ✅ LOCKED.
-2. **Create 2 custom Lead fields:** Business Classification (picklist, 7 values from #6) + Number of Employees (picklist, 5 bands from #7).
-3. **Build the Org-owned form** per the field table (5 contact fields + the 2 new + privacy notice + T&C), owned by the Org (not a user).
-4. **Wire form → Lead mapping** per the table; set a Lead Source value for web-form leads (e.g. "Contact Us / Web Form"); **preserve the `Review Status` approval gate** (do not auto-approve).
-5. **Swap onto** `zerobias.com/contact-us/` (may need site edit access — Chris).
-6. Decommission the old `evaughn`-owned form.
+2. **Get from Chris (gates the IDP field #8):** supported-IDP list (Auth0 connections) + the existing `Identity Provider` picklist values + how to flag "needs Auth0 support."
+3. **Create 2 custom Lead fields:** Business Classification (picklist, 7 values from #6) + Number of Employees (picklist, 5 bands from #7). *(IDP #8 maps to the EXISTING `Identity Provider` field — may just need added picklist values, not a new field.)*
+4. **Build the Org-owned form** per the field table (5 contact fields + the 3 new: business class, employees, IDP + "Other" + privacy notice + T&C), owned by the Org (not a user).
+5. **Wire form → Lead mapping** per the table (incl. IDP → `Identity Provider`); set a Lead Source value for web-form leads (e.g. "Contact Us / Web Form"); **preserve the `Review Status` approval gate** (do not auto-approve).
+6. **Swap onto** `zerobias.com/contact-us/` (may need site edit access — Chris).
+7. Decommission the old `evaughn`-owned form.
