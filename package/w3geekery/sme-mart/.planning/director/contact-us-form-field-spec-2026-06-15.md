@@ -20,21 +20,37 @@ Legend: **KEEP** = presented today, carry over · **NEW** = add · **HIDDEN** = 
 
 | # | Field | Type | Req | Options / notes | CRM Lead mapping | Status |
 |---|---|---|---|---|---|---|
-| 1 | Your Name (First & Last) | text (2-part) | ✓ | | First/Last Name | KEEP |
-| 2 | Phone | phone (+country code) | ✓ | | Phone | KEEP |
-| 3 | Company Name | text | ✓ | | Company | KEEP |
-| 4 | Company Website | text | ✓ | drives `getOrgByEmailDomain` pairing downstream | Website | KEEP |
-| 5 | Work Email | email | ✓ | | Email | KEEP |
-| 6 | **Business classification** | dropdown | ✓ | nonprofit · government · hospital/healthcare institution · not-for-profit · publicly-traded company · PE-backed company · privately-held company | **NEW custom field** (TBD) | **NEW** |
-| 7 | **Number of employees** | dropdown | ✓ | threshold = 100. Provisional bands (pending Brian Q1): 1-10 / 11-50 / 51-100 / 101-500 / 500+ | **NEW custom field** (TBD) | **NEW** |
+| 1 | Your Name (First & Last) | text (2-part) | ✓ | | **First Name** + **Last Name** (std) | KEEP |
+| 2 | Phone | phone (+country code) | ✓ | | **Phone** (std) | KEEP |
+| 3 | Company Name | text | ✓ | | **Company** (std) | KEEP |
+| 4 | Company Website | text | ✓ | drives `getOrgByEmailDomain` downstream | **Company Website** (custom; NOT the separate std "Website" field) | KEEP |
+| 5 | Work Email | email | ✓ | | **Email** (std) | KEEP |
+| 6 | **Business classification** | dropdown | ✓ | nonprofit · government · hospital/healthcare institution · not-for-profit · publicly-traded company · PE-backed company · privately-held company | **NEW custom field** — confirmed not present; distinct from CC Org Type / Partner Service Focus / Lead-Contact Type | **NEW** |
+| 7 | **Number of employees** | dropdown | ✓ | threshold = 100. Provisional bands (pending Brian Q1): 1-10 / 11-50 / 51-100 / 101-500 / 500+ | **NEW custom field** — confirmed no std "No. of Employees" on this layout | **NEW** |
 | — | Privacy policy notice | static text + link | — | "By submitting this form, I consent…" — **notice text, NOT a checkbox** | — | KEEP |
-| 8 | Terms & Conditions | checkbox | ✓ | "I accept the Terms and Conditions." | (existing) | KEEP |
+| 8 | Terms & Conditions | checkbox | ✓ | "I accept the Terms and Conditions." | (consent capture; optional custom checkbox if CRM should record it) | KEEP |
 
 **Placement:** insert the 2 new fields (#6, #7) after Work Email and before the privacy notice — i.e. company-profile questions grouped together.
 
-**Dropped from the raw definition (not presented on the live form, do NOT carry over unless CRM explicitly needs them):** Organization Type (Auditor/Auditee), Cloud Version, Cloud Provider, Hypervisor, Secrets Manager.
+**Dropped (not presented on the live form, do NOT carry over):** Organization Type, Cloud Version, Cloud Provider, Hypervisor, Secrets Manager.
 
-**Possible hidden attribution fields:** Lead Source, Channel Source may be hidden fields auto-populated for CRM attribution — confirm in CRM mapping; keep as hidden if the CRM workflow uses them, otherwise drop.
+---
+
+## CRM Lead schema (captured 2026-06-15, "Auditmation Lead" layout)
+
+**Approval gate:** the **`Review Status`** field — options `-None- / Needs Review / Approved Dev / Approved QA / Approved UAT / Approved Prod / Rejected`. **Chris Scarola** is the default **Lead Owner**. A web-form lead lands un-approved; Chris sets `Review Status` to approve (per environment) → becomes a valid sign-up. The form must NOT set Review Status.
+
+**Form does NOT touch these (set later by invite/provisioning flow):** Org Invitation Id, Inviting Org Name/Id, Inviting User Name/Id, Organization Slug, Email Domain, Default Login Provider, Allow Self Registration, Identity Provider, Referring Organization, Organization Logo URL.
+
+**Existing role/sector axes — leave alone (NOT eligibility):** `CC Org Type` (Auditee/Advisory Firm/Auditor/Client/Technology Partner), `Partner Service Focus` (Advisory/Auditor/Government/Insurer/Law Firm/MSP-MSSP/Technology), `Lead/Contact Type` (Advisor/Auditee/Auditor/Competitor/MSP/Platform/Vendor Manager). Business classification (#6) is a separate new axis — do not overload these.
+
+**Attribution:** `Lead Source` (existing; e.g. "Platform API" — web submissions should set a value like "Contact Us / Web Form"), `Channel Source` (existing, free text). Confirm desired Lead Source value for web-form leads.
+
+### Two custom Lead fields to create (the precise ask for the Zoho admin / Chris)
+1. **Business Classification** — picklist, values = the 7 in row #6. (Requires Setup access — Clark was permission-denied, so Chris or an admin creates it.)
+2. **Number of Employees (band)** — picklist, values per Brian's Q1 answer (provisional 5 bands). (Same — needs admin.)
+
+> **Access gap:** creating these fields + building/owning the form are Setup-level ops Clark lacks (Permission Denied 2026-06-15). Chris (Lead Owner / form backend owner / likely Zoho admin) either grants Clark Setup rights or executes the Zoho-side build from this spec.
 
 ---
 
