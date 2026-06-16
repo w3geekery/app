@@ -26,7 +26,7 @@ Legend: **KEEP** = presented today, carry over · **NEW** = add · **HIDDEN** = 
 | 4 | Company Website | text | ✓ | drives `getOrgByEmailDomain` downstream | **Company Website** (custom; NOT the separate std "Website" field) | KEEP |
 | 5 | Work Email | email | ✓ | | **Email** (std) | KEEP |
 | 6 | **Business classification** | dropdown | ✓ | nonprofit · government · hospital/healthcare institution · not-for-profit · publicly-traded company · PE-backed company · privately-held company | **NEW custom field** — confirmed not present; distinct from CC Org Type / Partner Service Focus / Lead-Contact Type | **NEW** |
-| 7 | **Number of employees** | dropdown | ✓ | threshold = 100. Provisional bands (pending Brian Q1): 1-10 / 11-50 / 51-100 / 101-500 / 500+ | **NEW custom field** — confirmed no std "No. of Employees" on this layout | **NEW** |
+| 7 | **Number of employees** | dropdown | ✓ | bands (Brian-confirmed): 1-10 / 11-50 / 51-100 / 101-500 / 500+ | **NEW custom field** — confirmed no std "No. of Employees" on this layout | **NEW** |
 | — | Privacy policy notice | static text + link | — | "By submitting this form, I consent…" — **notice text, NOT a checkbox** | — | KEEP |
 | 8 | Terms & Conditions | checkbox | ✓ | "I accept the Terms and Conditions." | (consent capture; optional custom checkbox if CRM should record it) | KEEP |
 
@@ -47,42 +47,40 @@ Legend: **KEEP** = presented today, carry over · **NEW** = add · **HIDDEN** = 
 **Attribution:** `Lead Source` (existing; e.g. "Platform API" — web submissions should set a value like "Contact Us / Web Form"), `Channel Source` (existing, free text). Confirm desired Lead Source value for web-form leads.
 
 ### Two custom Lead fields to create (the precise ask for the Zoho admin / Chris)
-1. **Business Classification** — picklist, values = the 7 in row #6. (Requires Setup access — Clark was permission-denied, so Chris or an admin creates it.)
-2. **Number of Employees (band)** — picklist, values per Brian's Q1 answer (provisional 5 bands). (Same — needs admin.)
+1. **Business Classification** — picklist, values = the 7 in row #6.
+2. **Number of Employees (band)** — picklist, values = `1-10 / 11-50 / 51-100 / 101-500 / 500+` (Brian confirmed the 5-band option, 2026-06-15).
 
-> **Access gap:** creating these fields + building/owning the form are Setup-level ops Clark lacks (Permission Denied 2026-06-15). Chris (Lead Owner / form backend owner / likely Zoho admin) either grants Clark Setup rights or executes the Zoho-side build from this spec.
+> **Access:** creating these fields + building/owning the form are Setup-level ops. **Chris is making Clark a Zoho admin tomorrow (2026-06-16)** → Clark builds the Zoho side from this spec once access lands.
 
 ---
 
 ## Eligibility computation (downstream, NOT in the form)
 
 ```
-guildEligible = (nonprofit OR gov OR <100 employees)
-                AND NOT (publicly-traded OR PE-backed OR >100 employees)
+eligible if: nonprofit OR government OR hospital OR not-for-profit          (type-based — any size)
+          OR (privately-held for-profit AND <100 employees)
+NOT eligible: publicly-traded OR PE-backed                                  (any size)
 ```
-Computed at the classify/approval step from fields #7 + #8. The form only captures the two signals.
+Computed at the classify/approval step from fields **#6 (classification) + #7 (employee band)**. The form only captures the two signals.
 
 ---
 
-## Pending Brian (4 confirmations sent 2026-06-15) — provisional defaults in use
+## Brian confirmed all 4 (2026-06-15) — LOCKED
 
-1. **Size bands (#8):** provisional = 5 brackets above. If Brian wants simple, collapse to `<100 / 100+`.
-2. **Attest vs verify:** provisional = self-attested at form, Chris verifies at approval. (No proof upload added.)
-3. **Visibility:** provisional = silent capture (no eligibility shown to user).
-4. **Large nonprofit/gov (>100) edge:** affects downstream computation only, not the form fields — no form change either way.
+1. **Size bands (#7):** 5 brackets — `1-10 / 11-50 / 51-100 / 101-500 / 500+`.
+2. **Attest vs verify:** self-attested at the form; Chris verifies at approval. No proof upload.
+3. **Visibility:** silent capture — eligibility is NOT shown to the applicant; computed internally.
+4. **Large nonprofit/gov (>100) edge:** applied the plain-language reading — **type-based eligibility wins regardless of size** (a large nonprofit/gov is still eligible); the <100 cap applies only to privately-held for-profits; public/PE are never eligible. Reflected in the formula above. (No form-field impact either way.)
 
-None block building the form. Only #7's final employee-band list is soft-pending Brian (provisional bands stand in the meantime).
+Spec is fully LOCKED — Brian confirmed all 4 (2026-06-15), live form + CRM schema captured. Build is gated only on Zoho admin access (Chris grants Clark admin **2026-06-16**).
 
 ---
 
-## What Clark can do now (parallel, non-blocked)
+## Build checklist (start once admin access lands — 2026-06-16)
 
-1. ~~Inspect the live form~~ **DONE 2026-06-15** (screenshot) — presented set confirmed; table above is reality.
-2. **Export the Zoho CRM Lead field schema** → fill the "CRM Lead mapping" column; confirm `Business classification` / `Number of employees` need **new custom Lead fields** (likely yes); confirm whether Lead Source / Channel Source hidden fields are in use.
-3. **Org-ownership prep:** confirm in Zoho how to create the new form under the Org (not a user) — admin/ownership settings.
-
-## Then (gated)
-- Create the 2 new CRM custom Lead fields (#7, #8).
-- Build the Org-owned form per this spec.
-- Wire form→Lead mapping; preserve Chris's approval gate.
-- Swap onto zerobias.com/contact-us/ (needs site edit access — Chris).
+1. ~~Inspect live form~~ ✅ DONE · ~~Capture CRM Lead schema~~ ✅ DONE · ~~Brian's 4 answers~~ ✅ LOCKED.
+2. **Create 2 custom Lead fields:** Business Classification (picklist, 7 values from #6) + Number of Employees (picklist, 5 bands from #7).
+3. **Build the Org-owned form** per the field table (5 contact fields + the 2 new + privacy notice + T&C), owned by the Org (not a user).
+4. **Wire form → Lead mapping** per the table; set a Lead Source value for web-form leads (e.g. "Contact Us / Web Form"); **preserve the `Review Status` approval gate** (do not auto-approve).
+5. **Swap onto** `zerobias.com/contact-us/` (may need site edit access — Chris).
+6. Decommission the old `evaughn`-owned form.

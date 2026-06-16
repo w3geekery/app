@@ -3516,3 +3516,220 @@ Clark called `parkit` so this session can be `/clear`-ed and resumed in fresh sh
 ## Session log — 2026-04-29 (Phase 26 closure + UAT deploy saga + upstream sync + Phase 20 full lifecycle)
 
 [Preserved from prior parkit; see git history.]
+
+---
+
+## 2026-06-05 parkit (26) — v1.4 CLOSED + ROADMAP/PROJECT drift reconciled · Vercel PURGED (docs) · FR doc reconciled to brief · **GQL SCHEMA CONSOLIDATION KICKED OFF** (decisions locked, branch synced+renamed, process docs read fresh, task-8 verified). ZERO git commits (big uncommitted pile).
+
+**TL;DR — app HEAD `a5b93945` (unchanged; ZERO commits). Schema fork branch `feat/w3geekery-smemart-profile-consolidation` synced clean to upstream/main `539b603` (no schema commits yet — authoring is the next action).** MCP `ci-ui-dev`, lock FREE.
+
+### ⏭️ RESUME HERE — start the schema authoring (DO THIS FIRST on /parks load)
+**Goal: author the OrgProfile schema-consolidation PR (ONE PR) so it's released before the matchmaking milestone needs it. Schema work is Clark+Director hands-on (agents commit locally, never push/PR).**
+
+1. **READ FIRST — the master plan:** [`.planning/director/schema-consolidation-kickoff-2026-06-05.md`](schema-consolidation-kickoff-2026-06-05.md). It has: fork-6 status (DONE — synced), the full class inventory, the locked decisions, the `OrgProfile` field set + **overlap guardrail** (§1b), the `Address` design, the commit sequence (§3), and **§3b "Process truth"** (the verified `zbb gate` recipe + doc-drift flags). Everything below is a pointer INTO this doc.
+2. **Re-read the process fresh** (docs drift — don't trust memory): app [`.planning/docs/SCHEMA_CHANGE_PROCESS.md`](../docs/SCHEMA_CHANGE_PROCESS.md) (canonical, corrected 2026-06-05) + Daniel-maintained schema-repo `~/Projects/w3geekery/zb-forks/org/schema/{CLAUDE.md,zbb.yaml}`. **`zbb gate` = THE compass** for dataloader/pre-CI (→ `./gradlew :w3geekery:smemart:gate`). **IGNORE schema-repo `CONTRIBUTING.md`** (ours, Clark 2026-04-13, pre-gradle, Daniel never updated — preaches dev/npm-validate/lerna) **+ package `smemart/CLAUDE.md`** (stale: 7-classes/npm-verify). **PR base = `main`** (empirical; confirm with Daniel before PR). Stale-doc cleanup tracked as BACKLOG `SCHEMA-DOCS-REFRESH-1`.
+3. **Read the existing class YAMLs to model against** (don't re-grep the world): `~/Projects/w3geekery/zb-forks/org/schema/package/w3geekery/smemart/classes/{OrgCredential,UserCredential,SecurityCredential,Review,MarketplaceProfileItem}.yml` + a few `fields/*.yml` for the field-YAML shape + `package.json` for `zerobias.imports`.
+4. **Author** (on `feat/w3geekery-smemart-profile-consolidation`, commit-staged, ONE PR): `OrgProfile` + `Address` → `OrgSegment` + 6 re-homed expertise junctions (`ProviderSkill/Role/Product/Framework/Segment/ServiceSegment`, all **org-scoped** now) → `InsuranceCoverage`/`ClientReference`/`FinancialProfile`/`Personnel` → mark `MarketplaceProfileItem` deprecated. Run `zbb gate` green (scratch DB up: `docker start supabase-pg-content-dev`; dataloader@latest) → commit `gate-stamp.json` + YAMLs locally. Push/PR = walk with Clark.
+
+### LOCKED DECISIONS (Clark, 2026-06-05) — don't re-litigate
+- **`OrgProfile`** (name), 1:1 per org, our `smemart` schema. Carries the task-8 11-field set (verified live on prod) MINUS `industry`.
+- **`industry` is DEAD** → classification via **`OrgSegment`** (typed Catalog segment links, Domain/Category). Confirmed superseded.
+- **`Address` = owner-generic** (`ownerType`+`ownerId`, not org-locked): providers + buyers (both `ownerType=org`) + future personnel/user. `addressType` typed enum (HQ/BILLING/SHIPPING/MAILING/REGISTERED/PHYSICAL_OFFICE/OTHER, machine-routable) **+ `userLabel`** free text (human disambiguation, display-only). Mirrors platform SC-004 for clean future supersede.
+- **Org-scoped EVERYTHING** (#2 resolved): all junctions key to `org_id`, no separate "provider" entity (buyer-org = zero expertise rows).
+- **ONE PR**, multiple commits (schema propagation has lead time).
+- **Overlap guardrail** (don't collide with backend-request tasks): OrgProfile carries identity/marketing only. NOT on it: address (→`Address`), money/contract terms (→Requirements + SC-006), project lifecycle code/dates (→platform.Project SC-003), tier (→platform SC-001), engagementStage/orgTypes (→read-only AppOrgProfile), name/avatar/slug (→read from dana.Org), onboarding_complete (→PKV).
+
+### What happened (parkit-26)
+1. **v1.4 CLOSED + ROADMAP/PROJECT drift reconciled.** Fixed Phase 27 checkbox (was `[ ]`, actually validated 2026-05-01) + Phase 26 parenthetical; rebuilt the stale Progress table; marked v1.4 ✅ COMPLETE 2026-05-13; Phase 29 + 31 deferred to v1.5; moved P24/25/30 to Validated in PROJECT.md. NOT formally `/gsd:complete-milestone`-archived (pairs with `/gsd:new-milestone` for matchmaking).
+2. **Vercel PURGED (docs).** Code/config was already clean (removed 2026-05-22). Swept ~14 live docs (PROJECT/PROJECT-CONTEXT by me + 12 via background agent) → ZB-platform-publishing reality; BACKLOG `VERCEL-PURGE-1` marked ✅ DONE. Frozen historical mentions (resume/errata/phases) left intact.
+3. **FR doc reconciled to the brief.** `docs/BACKEND_FEATURE_REQUESTS.md` got a superseded-banner + fixed carrier map (was pointing at withdrawn SC-002) + rewrote MPI disposition from "keep+cleanup" → "**MPI deprecates ENTIRELY** → typed OrgProfile + classes."
+4. **Schema kickoff.** Wrote the kickoff doc. Renamed schema branch + **synced upstream** (fast-forward to `539b603` — disproved the parkit-25 "local-only/unbacked" worry; everything's in upstream/main). Read schema-repo process docs fresh (spotted dev-vs-main + stale-package-CLAUDE drift). **Read prod task-8 live** (switched profile prod-zb → read → restored ci-ui-dev, lock acquired+released cleanly) — confirmed the 11-field OrgProfile set is canonical, nothing slipped through.
+
+### State (parkit-26)
+- **App repo:** HEAD `a5b93945`, ZERO commits. **Large uncommitted pile** (commit when Clark says): this session added/modified `ROADMAP.md`, `PROJECT.md`, `director/PROJECT-CONTEXT.md`, `BACKLOG.md`, `docs/BACKEND_FEATURE_REQUESTS.md`, 12 Vercel-swept docs (`codebase/*`, `research/STACK.md`, `notes/*`, `backlog/003`, `PLATFORM-DATA-INVENTORY.md`), NEW `director/schema-consolidation-kickoff-2026-06-05.md`, this resume — on top of the parkit-22..25 carryover pile.
+- **Schema fork** (`~/Projects/w3geekery/zb-forks/org/schema`): branch `feat/w3geekery-smemart-profile-consolidation` @ `539b603`, clean, 0 ahead/0 behind upstream/main. NO schema commits yet.
+- **MCP:** `ci-ui-dev`, lock FREE, profile restored.
+
+### Key docs (read fresh on resume — pointers for schema work)
+- Master plan: `director/schema-consolidation-kickoff-2026-06-05.md` ← START HERE
+- Design brief: `director/profile-classification-consolidation-brief-2026-06-02.md`
+- FR doc (reconciled): `docs/BACKEND_FEATURE_REQUESTS.md`
+- Process: `docs/SCHEMA_CHANGE_PROCESS.md` (canonical, corrected 2026-06-05) + Daniel's schema-repo `CLAUDE.md`/`zbb.yaml`. **`zbb gate` = THE compass.** IGNORE schema-repo `CONTRIBUTING.md` + package `smemart/CLAUDE.md` (both stale). Cleanup → BACKLOG `SCHEMA-DOCS-REFRESH-1`.
+- Catalog segment taxonomy: `docs/ZEROBIAS_CATALOG_API_GUIDE.md` §6
+- DECISIONS: D-52 (governance node), D-53 (vetting/commerce), D-54 (profile dispositions, amended by the brief)
+- Existing class YAMLs to model against: schema-fork `package/w3geekery/smemart/classes/{OrgCredential,UserCredential,SecurityCredential,Review,MarketplaceProfileItem}.yml`
+- Code to re-home (provider junctions): app `src/app/pages/my-profile/my-profile-expertise.component.ts`, `core/models/provider.model.ts`, `core/services/catalog.service.ts`, `onboarding/company-info-sections.ts`, `core/models/marketplace-profile-item.model.ts`
+
+### Quick-start prompt (parkit-26)
+You're Director Parks for SME Mart. **App HEAD `a5b93945`, ZERO commits, big uncommitted pile (commit only when Clark says). Schema fork branch `feat/w3geekery-smemart-profile-consolidation` synced clean @ upstream/main `539b603`, no schema commits yet.** The mission NOW: **author the OrgProfile schema-consolidation PR** (ONE PR, Clark+Director hands-on, agents never push/PR). **READ FIRST:** `director/schema-consolidation-kickoff-2026-06-05.md` — it has the locked decisions, class inventory, OrgProfile field set + overlap guardrail, and the verified `zbb gate` process recipe (§3b). Decisions are LOCKED: `OrgProfile` (no `industry` — use `OrgSegment` Catalog links); owner-generic `Address` (`ownerType`+`ownerId`, `addressType` enum + free `userLabel`); org-scoped everything; ONE PR. Validate with **`zbb gate`** (not stale `npm run verify`); scratch DB Supabase PG17 :15432; dataloader@latest; commit `gate-stamp.json`. **VERIFY PR base `main` vs `dev`** before the PR (upstream docs disagree). Model new YAMLs on the existing `OrgCredential`/`Review` class files. Rules carried: schema PRs are Clark+Director hands-on (commit local only); LOOK FIRST; never broad-grep the filesystem (Clark flagged — scope searches, ask before big ones); release MCP lock + restore profile after any prod read; the prod-zb profile is a near-prod hazard (verify env before any write).
+
+### Pinned moments from this session
+Session JSONL: `~/.claude/projects/-Users-cstacer-Projects-w3geekery-zerobias-org-forks-app-package-w3geekery-sme-mart/<this session>.jsonl`. No new `[[PIN:]]` markers; durable capture is the kickoff doc + this parkit.
+
+---
+
+---
+
+## 2026-06-08 parkit (27) — OrgProfile schema consolidation **AUTHORED → GATED GREEN → COMMITTED → PR #58 MERGED** by Daniel. **But PUBLISH BLOCKED** on a base-schema 3.0.1 regression (NOT ours). Discovered + captured the **canonical AuditgraphDB deprecation recipe** (`deprecated.yml` manifest).
+
+**TL;DR — the parkit-26 kickoff mission is DONE through merge.** 12 new typed classes + MarketplaceProfileItem retired; gated green; committed schema-fork `1283225` (145 files); PR **#58** merged to `zerobias-org/schema:main` by Daniel (merge `88481c0` + release `74edf82` v2.0.3 + stamp `d904bdc`). **HOWEVER the Publish Schema workflow FAILED twice** — root cause is the base dep `@zerobias-org/schema-zerobias-zerobias-base@3.0.1` (`Property 'virtual' already exists on extended class … cannot overload`), a base regression — our gate passed on base 3.0.0. **npm still 2.0.2, no GQL reload yet.** App HEAD `a5b93945` UNCHANGED (zero app commits — all work in the schema fork). MCP `ci-ui-dev`, lock FREE.
+
+### ⏭️ RESUME HERE (parkit-27)
+1. **Check if base-schema 3.0.1 `virtual` conflict is fixed** (Daniel/Chris/Nic own it). A paste-ready note for Daniel was drafted in-session (Clark to send) — refs runs `27154671452` + `27156195088`, error `Property 'virtual' already exists on extended class and the fields do not match. You cannot overload an extended properties field` in `schema-zerobias-zerobias-base@3.0.1/interfaces`. Our dep is `latest`, so base bump to 3.0.1 broke the publish.
+2. Once base is fixed → **re-run the smemart Publish Schema** (no change to our PR/branch needed) → confirm npm `@zerobias-org/schema-w3geekery-smemart` bumps to **2.0.3**.
+3. **Verify GQL reload on CI** (~15 min post-publish): the 12 new classes queryable + `MarketplaceProfileItem` retired (ZB MCP `zerobias_search`/`zerobias_describe` on `w3geekery.smemart`, or GQL introspection).
+4. Then the **matchmaking + product-listing milestone** can consume the typed classes — re-home the provider-expertise UI off legacy Neon shapes (`my-profile-expertise.component.ts`, `core/models/provider.model.ts`, `core/services/catalog.service.ts`) onto the new GQL classes.
+
+### What happened (parkit-27)
+1. **Authored the full consolidation** on schema-fork branch `feat/w3geekery-smemart-profile-consolidation`: **OrgProfile** (1:1 company identity/marketing), **Address** (owner-generic `ownerType`+`ownerId`, typed `addressType` enum + free `userLabel`), **OrgSegment** (Catalog-segment classification, replaces `industry`), **6 Provider* expertise junctions** (Skill/Role/Product/Framework/Segment/ServiceSegment — org-scoped, scalar Catalog-UUID FKs, one row per claim, `verified`/`verificationSource` per D-53), **InsuranceCoverage / ClientReference / FinancialProfile / Personnel** (typed homes for the old MPI blob sections). Locked design calls (Clark): **no denorm names on junctions** (resolve on read); **single `segmentId`** (reified — per-claim provenance); **FinancialProfile carries NO disclosure-gating field** (gate at read, 033 owns it); **Personnel = typed class** (person certs via `UserCredential.userId`). Mirrors the `SecurityCredential` opaque-UUID-FK precedent.
+2. **Toolchain bumped:** dataloader 2.0.8→**2.0.14**, zbb 0.3.72→**0.3.73**.
+3. **Gate saga (3 runs):** (a) `catalog.migrated_artifact does not exist` → content-master was stale, **Chris refreshed it**; (b) `No such DataType: datetime` → fixed `address.verifiedAt` to `date` (**only string/boolean/date/number/integer are valid** field types — `datetime` is NOT); (c) **GREEN** (BUILD SUCCESSFUL 20m53s). The recurring 404 (`BranchProducerImpl.deleteBranch`) is benign branch-teardown after a passing run.
+4. **MPI deprecation — the big reusable learning.** Clark corrected "deprecation removes files + leaves a marker, not just a flag." Dug through **`auditlogic/schema`** history (commits `eac088628` single-class, `230a26409` "deprecate content properly") → **canonical recipe = DELETE the content files + record their names in a package-root `deprecated.yml` manifest (by category) + whitelist `deprecated.yml` in `package.json` `files`.** The per-class `deprecated: true` flag (what 29.5 did) is NOT the mechanism. Applied to MPI (deleted class+5 fields+enum, created `deprecated.yml`, whitelisted), re-gated green. Captured in a clean **memex** note.
+5. **Committed → pushed → PR'd → merged:** `1283225` → origin → PR #58 → Daniel merged + bumped v2.0.3. Then diagnosed the publish failure via `gh run` logs.
+
+### State (parkit-27)
+- **App repo:** HEAD `a5b93945`, **ZERO app commits** this session. The parkit-26 uncommitted planning pile (~22 mod + 8 untracked) is **untouched/unchanged** — still uncommitted.
+- **Schema fork** (`~/Projects/w3geekery/zb-forks/org/schema`): local `feat/w3geekery-smemart-profile-consolidation` @ `1283225` (3 behind / 1 ahead of `upstream/main` — content is merged as `88481c0`; local branch is now stale and can be deleted/re-synced, the work lives in upstream).
+- **upstream/main:** `88481c0` (our PR #58) + `74edf82` (release v2.0.3) + `d904bdc` (stamp refresh).
+- **npm:** `@zerobias-org/schema-w3geekery-smemart` still **2.0.2** (2.0.3 NOT published — publish blocked).
+- **MCP:** `ci-ui-dev`, lock FREE.
+
+### In-flight / blockers (parkit-27)
+- **PUBLISH BLOCKED** on base-schema 3.0.1 `virtual` overload conflict (Daniel/Chris/Nic). Paste-ready Daniel note drafted (Clark sends). Re-run publish after base fix; no PR change needed.
+- **29.5 cleanup debt:** `Engagement`/`SmeMartProject`/`EngagementVettingItem` are still the flag-only (wrong) deprecation — proper retirement = delete files + `deprecated.yml`, future follow-up (per the memex recipe).
+- **Matchmaking milestone** (the real v1.5 goal): consume the typed classes once schema lands; migrate any MPI rows (test-only).
+
+### Key docs / artifacts (parkit-27)
+- **Memex (canonical):** `memex/zerobias/integration/deprecating-auditgraph-db-schema-canonical-recipe-delete-files-deprecated.yml-manifest` — the deprecation recipe (DRAFT predecessor deleted).
+- Master plan (still the design ref): `director/schema-consolidation-kickoff-2026-06-05.md`.
+- Schema fork package: `~/Projects/w3geekery/zb-forks/org/schema/package/w3geekery/smemart` (classes/fields/enums + `deprecated.yml`).
+- PR: https://github.com/zerobias-org/schema/pull/58 (merged).
+
+### Quick-start prompt (parkit-27)
+You're Director Parks for SME Mart. The OrgProfile schema-consolidation (parkit-26 kickoff) is **DONE through merge**: 12 new typed classes + MarketplaceProfileItem retired, gated green, committed `1283225`, PR #58 merged to `zerobias-org/schema:main` by Daniel (`88481c0` + release v2.0.3). **BUT the Publish Schema workflow FAILED twice — NOT our fault:** base dep `@zerobias-org/schema-zerobias-zerobias-base@3.0.1` has a `virtual` property overload conflict (our gate passed on base 3.0.0). npm still 2.0.2, no GQL reload. **FIRST on resume:** check whether base 3.0.1 is fixed (Daniel/Chris/Nic — paste-ready note drafted for Clark to send); once fixed, re-run the smemart publish (no PR change), then verify the 12 classes are live in CI GQL + MPI gone. **Big reusable win to carry:** the canonical AuditgraphDB deprecation recipe = delete content files + package-root `deprecated.yml` manifest + whitelist it (NOT a `deprecated: true` flag) — memex note above. App HEAD `a5b93945` unchanged; the parkit-26 uncommitted planning pile is still uncommitted. Rules that bit this session: **`datetime` is not a valid field type** (date/string/boolean/number/integer only); **publish resolves deps at `latest`** so a base bump can break us even when our content is fine; **deprecation = files + `deprecated.yml`, not a flag**; schema-PR work is Clark+Director hands-on (agents commit local, push/PR together — done this round). NEXT real milestone = matchmaking + product listing (re-home provider-expertise UI onto the new typed GQL classes once the schema publishes).
+
+### Pinned moments (parkit-27)
+Session JSONL: `~/.claude/projects/-Users-cstacer-Projects-w3geekery-zerobias-org-forks-app-package-w3geekery-sme-mart/6e484b1a-ae18-44fa-a3e9-2eedeea3d5f4.jsonl`
+
+| Pin | What it marks |
+|---|---|
+| `[auditgraph-schema-deprecation-process]` | the canonical schema-deprecation recipe (delete files + `deprecated.yml` manifest, not a flag) — the session's big reusable learning |
+
+Drill in: `/pins auditgraph-schema-deprecation-process`.
+
+---
+
+<!-- ===== demoted from RESUME at parkit-30 (2026-06-15): UPDATE-06-12 + parkit-29 + parkit-28 ===== -->
+
+## 🔼 UPDATE: 2026-06-12 (later, same day) — Chris answered → L0 `d_svc` PR OPEN
+
+**Chris unblocked the net-new-tree question.** His answer (Slack 11:03 AM): *"we do not allow inside-dep publishing anymore. So yes you would publish top level first. Then once published continue down."* → publish **top-down, one level at a time** (resolves parkit-29 scenario #3).
+
+**Done this update:** Split the monolithic `69c600e` (169 pkgs) into **Level PRs**. **L0 = `d_svc` domain only** is authored, pushed, and PR'd:
+- Branch `feat/service-segments-l0-dsvc` @ `43552dd`, off clean base `b3a0a2e` (= upstream/main). Full-tree branch `feat/service-segments` @ `69c600e` kept intact as the archive to carve L1/L2 from.
+- **PR #28** → `zerobias-org/segment:main` (OPEN, MERGEABLE, no label yet). 6 files: the 4 `d_svc` files + `zbb.yaml` (ZB_TOKEN fix) + **`d_svc/gate-stamp.json`**.
+
+**⚠️ CORRECTION to parkit-29 guidance below:** the "**DO NOT commit `gate-stamp.json`**" instruction (items 2, 6, and the SAVE block) was **WRONG**. Repo `CLAUDE.md:20` is authoritative: *"`gate` writes `gate-stamp.json` (publish preflight requires it)"* and lists it as an expected package file — all 129 existing packages ship a committed stamp. **The gate-stamp MUST be committed in each level PR.** Our local stamp is valid (real `sourceHash`, gate GREEN); the `branch` field reading `feat/service-segments` is cosmetic (d_sd shipped with a non-current branch field too; the version job rewrites `version` on publish).
+
+**⏭️ RESUME (this update):**
+1. PR #28 needs Daniel's `approved` label + CI **SUCCESS** before merge (no autonomous merge).
+2. **After d_svc PUBLISHES to npm** → carve **L1** from `69c600e`: branch off updated main, `git checkout 69c600e -- package/zerobias/c_*` (37 categories + their gate-stamps), commit, PR. They now resolve `segment-zerobias-d_svc@latest`.
+3. **After L1 publishes** → same for **L2** `s_*` (131), resolving their `c_*@latest` parents.
+4. Memex final-model update (still pending from parkit-28).
+
+---
+
+## 📍 LATEST: 2026-06-12 parkit (29) — Training granularity RESOLVED (c_train 3->7 L3) · **169 packages COMMITTED** (`69c600e`) · long toolchain saga to make `zbb gate` work on NEW prod · **`d_svc` GATED GREEN** · `c_train` blocked on unpublished-parent · **WAITING ON CHRIS** (CI publish-matrix ordering for net-new tree).
+
+**TL;DR — the Services taxonomy is committed and the gate mechanism is proven, but full-tree local gating is blocked by the net-new-parent chicken-and-egg, and we're parked pending Chris.** Resolved Training granularity (de-catch-all'd `s_techtraining` -> 7 real L3). Committed all 169 packages. Then a deep toolchain saga (Java 21, zbb 1.0.4, dataloader-service auth, wiped-prod-DB key mint) to get `zbb gate` working — `d_svc` gates GREEN end-to-end. `c_train` then 404'd because `d_svc` isn't published (gating != publishing; each pkg gates in an isolated ephemeral Neon branch). Sent Chris the tree in Slack; **do not proceed with the PR until he answers whether the CI publish matrix orders topologically.** Segment fork branch `feat/service-segments`. App HEAD `f5593c4e` unchanged. MCP `prod-zb`.
+
+### ⏭️ RESUME HERE (parkit-29) — BLOCKED, waiting on Chris
+1. **WAIT for Chris's Slack answer:** "For a net-new segment tree (new domain + 37 categories + 131 services in ONE PR), does the publish matrix order topologically / does `zbb publish` handle unpublished-sibling deps? Or do parents need to land first?" The per-package publish job is a parallel matrix — if unordered, CI hits the same `d_svc not found` 404 we hit locally. THIS is the gate to proceeding.
+2. **Once Chris confirms ordering is handled** -> commit the **`zbb.yaml` ZB_TOKEN fix** (`M zbb.yaml`, uncommitted) and open the cross-fork PR `w3geekery/segment:feat/service-segments` -> `zerobias-org/segment:main`. Tell Daniel it's deliberately over-broad (169) for moderation/culling. **Do NOT commit `package/zerobias/d_svc/gate-stamp.json`** (stray from the local gate — CI's `version` job writes gate-stamps itself).
+3. **If Chris says the matrix needs staging** -> follow his guidance (likely: land `d_svc` first, then categories, then services; or a one-shot ordered command).
+4. **THEN (still pending from parkit-28):** update the service-segment **memex** note to the FINAL model (1 domain / 37 L2 / 131 L3; "L2 = things people buy"; SCF was only gap-finder; Brian "requirement = any hoop to get paid/approved"; offered-segment -> Engagement vetting-task -> Boundary proof; 96 existing tool-segments = ready feature vocab).
+
+### What happened (parkit-29) — the arc
+1. **Training granularity (Clark+Kevin):** `c_train` at 3 L3 was median-normal, but `s_techtraining` ("Technical and Certification Training") was a catch-all. Kevin confirmed the level ("enough to compare solutions, not tiny buckets") and added OSHA + privacy/HIPAA. **Final = 7 L3:** kept `s_awareness`, `s_tabletop`; added `s_certtrain`, `s_securecode`, `s_cyberrange`, `s_regtrain`, `s_safetytrain`; **retired `s_techtraining`**. Verified the deletion was safe: prod catalog has ZERO training segments, the whole Services taxonomy is net-new, and the `auditlogic`/`auditmation` GitHub orgs have NO `segment` repo (only `zerobias-org/segment` holds segment `index.yml`s). The deleted UUID was minted this session — nothing pointed at it.
+2. **Committed 169 packages:** `69c600e` (676 files = 169 dirs x 4). Pre-flight green: UUID-unique repo-wide across all 298, every service parents to a real category, every category to `d_svc`, segmentTypes valid.
+3. **Toolchain saga (the time sink) — all now fixed:**
+   - **Java:** Gradle 8.10.2 breaks on Java 25 (Homebrew default). JDK 21 lives at `/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home`. Created **`~/.zbb/config.yaml`** with a `java: home:` pin (zbb-only scope — Clark's explicit choice over a global JAVA_HOME). zbb auto-applies it via `findDefaultJavaHome()`.
+   - **CLIs bumped:** `zbb` 0.3.73 -> **1.0.4**, `dataloader` -> **2.0.19** (global npm).
+   - **NEW prod had a WIPED DB (Chris):** Clark's months-old prod API key (in `ZB_TOKEN`) no longer authenticates the platform (npm kept working via a bypass). Minted a fresh **non-expiring** key via MCP `dana.Me.createApiKey` (name `clark-dev-gate-20260612`, value `360d626e-ea5c-4f58-abfc-53fbf30ed7d7`), updated **`~/dev_env_vars`** `ZB_TOKEN` (old keys commented). Verified the new key returns 200 on BOTH `app.zerobias.com/api/dana/me` AND `pkg.zerobias.org` — one token serves platform + registry.
+   - **zbb 1.0.4 changed the gate model:** `gate` no longer hits Neon directly — it calls a **dataloader-SERVICE** `POST app.zerobias.com/api/dataloader/branches` authenticated with **`ZB_TOKEN`** (superuser/org-admin; 403 otherwise). zbb's **hermetic seal** strips `ZB_TOKEN` (gate's contract is only `BASE_CREDS`). Chris's fix: declare `ZB_TOKEN` in the repo **`zbb.yaml` `env:`** with `source: env`. DONE (`M zbb.yaml`, copied the dana/platform/hub pattern).
+   - **Stale `ZB_SLOT=sme-mart-dev`** lingered in the shell -> cleared with `unset ZB_SLOT` (gate runs slotless, like CI).
+4. **`d_svc` gated GREEN** — dataloader imported + committed to an ephemeral Neon branch, gate-stamp written. Proves the full chain (Java 21 + valid `ZB_TOKEN` + seal passthrough + dataloader-service + Neon load).
+5. **`c_train` gate 404'd:** `npmInstallContent` can't find `@zerobias-org/segment-zerobias-d_svc@latest` — `d_svc` was only **gated**, never **published**. Deeper: each package gates in its OWN isolated ephemeral branch forked from `content-master`, so a child can't see a previously-gated parent. **Per-package bottom-up gating cannot validate a net-new tree locally** — parents must be npm-resolvable (published, or local verdaccio via `zbb registry`).
+6. **CI flow understood** (`zbb-publish-reusable.yml@main`): detect changed -> **version (writes `package.json` + `gate-stamp.json` in one commit -> CI manages stamps, we don't)** -> publish matrix per package -> sync. The OPEN RISK = the publish matrix is parallel; a net-new tree needs parents first. -> the Chris question. Sent Chris a truncated tree illustration in Slack.
+
+### State (parkit-29)
+- **Segment fork** (`~/Projects/w3geekery/zb-forks/org/segment`): branch `feat/service-segments`, HEAD **`69c600e`** (169 packages). **Uncommitted:** `M zbb.yaml` (ZB_TOKEN env fix — commit when proceeding) + `?? package/zerobias/d_svc/gate-stamp.json` (stray local-gate artifact — DO NOT commit). origin `w3geekery/segment`, upstream `zerobias-org/segment`.
+- **App repo:** HEAD `f5593c4e`, unchanged (zero app commits this session).
+- **New persistent machine config:** `~/.zbb/config.yaml` (Java 21 pin); `~/dev_env_vars` (`ZB_TOKEN` = new `360d626e…`, old keys commented).
+- **MCP:** `prod-zb` connected.
+
+### In-flight / blockers (parkit-29)
+- **BLOCKED on Chris** (Slack sent): CI publish-matrix topological ordering for a net-new tree. Do not open the PR until answered.
+- Stray `d_svc/gate-stamp.json` to discard (or leave untracked — never commit).
+- Memex final-model update for service-segments still pending (carried from parkit-28).
+
+### Key docs / learnings (parkit-29)
+- **Memex created:** `zerobias/integration/dataloader-gate-bite-platform-content-schema-must-be-loaded-in-content-master-not-bundled-by-dataloader` — the `PLATFORM_CONTENT_ARTIFACT = @zerobias-com/schema-zerobias-zerobias-platform`, validate-only, content-master must be SDLC-loaded; dataloader does NOT bundle it.
+- **Worth a follow-up memex (TODO):** the zbb-1.0.4 gate toolchain — dataloader-service (ZB_TOKEN) replaces direct-Neon; `ZB_TOKEN` needs `zbb.yaml env: source: env` to survive the hermetic seal; NEW prod DB was wiped (old keys dead); Gradle 8.10.2 needs Java 21 via `~/.zbb/config.yaml`.
+- Service-segment authoring how-to + final model: see parkit-28 below.
+
+### Quick-start prompt (parkit-29)
+You're Director Parks for SME Mart. The **Services segment taxonomy** (1 domain `d_svc` + 37 categories + 131 services = 169 pkgs) is **COMMITTED** (`69c600e`) on segment-fork branch `feat/service-segments`. Training granularity is resolved (`c_train` 7 L3; de-catch-all'd `s_techtraining`). You spent this session getting `zbb gate` working on the rebuilt prod: Java 21 via `~/.zbb/config.yaml`, fresh non-expiring prod `ZB_TOKEN` (`360d626e…`, minted because new prod's DB was wiped) in `~/dev_env_vars`, and `ZB_TOKEN` added to the repo `zbb.yaml` `env:` (source:env) so zbb's hermetic seal stops stripping it — because zbb 1.0.4 changed `gate` to call a dataloader-SERVICE that auths with `ZB_TOKEN`. **`d_svc` gates GREEN**; `c_train` then 404'd because `d_svc` isn't published (gating != publishing, and each package gates in an isolated ephemeral branch). Conclusion: **per-package bottom-up local gating can't validate a net-new tree** — CI (`zbb-publish-reusable`) is meant to detect->version(writes gate-stamps)->publish-matrix in order. **YOU ARE PARKED WAITING ON CHRIS** (Slack sent): does the parallel publish matrix order topologically for a net-new tree, or do parents need to land first? **Do NOT open the PR until he answers.** When cleared: commit `M zbb.yaml` (NOT the stray `d_svc/gate-stamp.json`), open cross-fork PR -> `zerobias-org/segment:main`, tell Daniel it's deliberately over-broad for moderation, then update the service-segment memex to the final model. Rules: content/segment PRs are Clark+Director hands-on (agents author + local-commit; push/PR walked together); LOOK FIRST.
+
+### Pinned moments (parkit-29)
+Session JSONL: `~/.claude/projects/-Users-cstacer-Projects-w3geekery-zerobias-org-forks-app-package-w3geekery-sme-mart/9d616c3e-6fde-418d-b3ec-1dfe165973ce.jsonl`
+
+No `[[PIN:]]` markers dropped this session. Key teleport targets if needed: the dataloader-service 401 diagnosis (search "err.unable.to.authenticate"), the wiped-prod-DB reveal (Chris: "new prod had a wiped DB"), the net-new-tree ordering question (search "publish matrix").
+
+---
+
+## 2026-06-11 parkit (28) — NEW WORKSTREAM: built the **Services segment taxonomy** (165 packages) in the `w3geekery/segment` fork. NOT committed/gated/pushed. **RESUME TASK: revisit Training granularity** (Kevin: "training should be huge", we have only 3 L3).
+
+**TL;DR — pivoted off the matchmaking arc into a Catalog content contribution.** The `ProviderServiceSegment` build-breaker (provider service-lines were hand-rolled hydra tags, not real Catalog entities) → resolved by **defining service lines as real Catalog service-type Segments** in the `zerobias-org/segment` content repo. Authored a full **Services taxonomy: 1 domain + 37 L2 + 127 L3 = 165 npm packages** on fork branch `feat/service-segments`. **App HEAD `a5b93945` unchanged (ZERO app commits) — all work is in the segment fork, uncommitted/ungated/unpushed.** MCP `ci-ui-dev`, lock FREE.
+
+### ⏭️ RESUME HERE (parkit-28)
+1. **FIRST — Training granularity (Clark's explicit ask):** Kevin said "training should be huge" / "TONS of stuff", but `c_train` has only **3 L3** (Security Awareness Training, Tabletop Exercises, Technical & Certification Training). Decide if that's enough for the initial commit or expand. Candidate training service-lines: role-based/secure-coding training, compliance training (HIPAA/PCI/etc.), phishing simulation, certification bootcamps/exam prep, executive/board briefings, IR drills/wargaming, hands-on cyber ranges/labs, onboarding/policy training, OT/ICS training. **BUT weigh against the calibration insight:** much "training stuff" is FEATURES (course catalog) under an L3, not new L3s. Apply a bounded expansion if warranted (use the `gen()` pattern — see "How to author"). [DONE in parkit-29: 7 L3.]
+2. **THEN commit + gate** (hands-on w/ Clark — first PR into the *segment* repo): in `~/Projects/w3geekery/zb-forks/org/segment` → commit `feat/service-segments` locally → `./gradlew validateUniqueIds` (repo-wide UUID check) → `./gradlew :zerobias:<code>:gate` on a sample then broaden. Watch: `dataloader-version 3.29.26`; intra-repo `latest` deps on the new `d_svc`/`c_*` parents resolve within the one PR. [parkit-29: committed; gate switched to `zbb`; intra-repo dep resolution is now the Chris blocker.]
+3. **THEN update the memex note** (was written at the flat-7 stage) to the FINAL model: 1 domain/37 L2/127 L3; "L2 = things people buy" (NOT SCF domains); SCF was only the gap-FINDER; Brian's "requirement = any hoop to get paid/approved"; vetting linkage (offered-segment → Engagement vetting-task → Boundary proof); features-below-L3 + **the 96 existing tool-segments = ready feature vocabulary**.
+4. **THEN push fork → cross-fork PR into `zerobias-org/segment`** (base `main`) → Daniel reviews. Tell Daniel it's intentionally over-broad (165) for moderation/culling, not finished.
+
+### What happened (parkit-28) — the arc
+1. **Gap #1 verified (CI):** `loadServiceSegments()` loads 9 **hydra tags** (`tagType service-segment`); schema's `ProviderServiceSegment.serviceSegmentId` expects a **Catalog Service-type Segment** — different UUID spaces → build-breaker.
+2. **Kevin's model:** Segments classify; a Product/Service *"says what Segments it is in, does not define them"*; **Product/Service (forward declaration) ↔ Boundary (proof)** = 2 sides of one coin, like Vendor↔Org.
+3. **Resolution:** service lines = real **Catalog service-type Segments** in `zerobias-org/segment` (NOT tags, NOT a shadow class). `ProviderServiceSegment.serviceSegmentId` was **right as written** — just needed the Catalog populated.
+4. **Structure (Clark+Kevin):** L1 `Services` (domain) → L2 "**things people buy**" (categories) → L3 service lines (provider-comparison unit) → **Features** (below L3, head-to-head comparison/deliverables — FUTURE layer).
+5. **SCF detour (resolved):** briefly considered SCF domains as L2 base; **Kevin: "SCF not relevant; L2 = thing people buy."** Kept SCF only as a gap-FINDER. Brian widened it: **"a Requirement is any hoop you jump through to get paid/approved"** → cyber is just the obvious slice; vision = "net for iron-clad promises tied to verifiable data."
+6. **165 packages**, 4 zones: Security/Compliance (16 L2), IT/Ops (5), Professional/Business (6), Business-Financial-Regulatory Enablement (10: insurance/tax/procurement/biz-certs/regulatory/KYC-AML/labor/EHS/accessibility/notary).
+7. **Granularity calibration:** existing catalog has 96 specialized **tool-segments** (AppSec: SAST/DAST/IAST/RASP/SCA…). Insight: **tools are at FEATURE granularity for services** → L3 service granularity is right; deep specialization = feature layer; the 96 tools are the ready feature vocabulary. Only fix: de-catch-all'd **IT Operations** (dropped "Managed IT" → +Server & Infrastructure Mgmt, +ITSM).
+
+### State (parkit-28)
+- **App repo:** HEAD `a5b93945`, ZERO app commits. Big parkit-22..26 uncommitted planning pile STILL uncommitted (untouched). Plus this resume edit.
+- **Segment fork (NEW)** `~/Projects/w3geekery/zb-forks/org/segment`: origin `w3geekery/segment` (HTTPS), upstream `zerobias-org/segment`, `zb-upstream-local`→`~/Projects/zb/zerobias-org/segment`. Branch **`feat/service-segments`** — 165 untracked dirs under `package/zerobias/{d_svc,c_*,s_*}`. NOT committed/gated/pushed. [parkit-29: now committed as `69c600e`, count 169.]
+- **MCP:** `ci-ui-dev`, lock FREE. [parkit-29: switched to `prod-zb`.]
+- **OTHER workstream (matchmaking, parkit-27):** schema published **2.0.5** (base-3.0.1 fixed by Daniel #59→base 3.0.2; 2.0.3/4/5 = same #58 content re-released + stamp/desc — verified no class changes). Classes live in CI GQL. Phase 33 (profile re-home) gate effectively cleared — SEPARATE from this segment PR, still pending.
+
+### How to author segment packages (Training expansion + additions)
+`package/zerobias/<code>/` = `index.yml` (id[fresh lowercased uuid]/name/description/segmentType[domain|category|service]/imageUrl/code/externalId/status:published/parents:[parentcode]/tags:[]/aliases:[]) + `package.json` (name `@zerobias-org/segment-zerobias-<code>`, `auditmation.dataloader-version 3.29.26`, deps = vendor + segment_type + parent) + `build.gradle.kts` (`plugins { id("zb.content") }`) + `.npmrc` (copy from `s_phs`). **DON'T use `createNewSegment.sh`** (GNU `sed -i`, breaks on macOS). Use the in-session `gen()` bash fn (in this session's JSONL). Prefixes: `d_`=domain, `c_`=category, `s_`=service. Model on `package/zerobias/s_phs/`. `gate` writes `gate-stamp.json`; npm writes `npm-shrinkwrap.json`. PR base = `main`.
+
+### Key docs (parkit-28)
+- **Memex (canonical, NEEDS UPDATE):** `memex/zerobias/sme-mart/sme-mart-service-classification-catalog-service-type-segments-not-tags-or-shadow`.
+- Superseded shadow doc (mark dead): `.planning/director/service-segment-taxonomy-2026-06-11.md`.
+- Matchmaking-side gap (now resolved by this contribution): `.planning/director/profile-migration-mapping-2026-06-08.md` §7.1.
+
+### Quick-start prompt (parkit-28)
+You're Director Parks for SME Mart. NEW workstream: you built the **Services segment taxonomy** — 1 domain + 37 L2 + 127 L3 = **165 npm packages** — on fork branch `feat/service-segments` in `~/Projects/w3geekery/zb-forks/org/segment` (origin `w3geekery/segment`, upstream `zerobias-org/segment`). It's a Catalog content contribution that fixes the `ProviderServiceSegment` build-breaker (provider service-lines were hand-rolled hydra tags → now real Catalog **service-type Segments**). **DO FIRST: revisit Training granularity** [DONE in parkit-29 → 7 L3]. THEN commit → gate → update memex → push → cross-fork PR to `zerobias-org/segment` (base `main`), telling Daniel it's deliberately over-broad for moderation. **Model:** L1 Services → L2 "things people buy" (NOT SCF — gap-finder only) → L3 service (comparison unit) → Features (future; 96 catalog tool-segments are the ready feature vocab). Brian: requirement = "any hoop to get paid/approved"; taxonomy = net for **iron-clad promises (offering) tied to verifiable data (Boundary)**; offered-segment → Engagement vetting-task → Boundary proof. Rules: segment/content PRs are Clark+Director hands-on (agents author + local-commit; push/PR walked together); use `gen()` not `createNewSegment.sh`; LOOK FIRST. OTHER workstream (matchmaking Phase 33 profile re-home) is separate + pending; schema published 2.0.5, classes live.
+
+### Pinned moments (parkit-28)
+| Pin | What it marks |
+|---|---|
+| `[service-classification-catalog-segments]` | decision: service lines = Catalog service-type segments, not tags/shadow |
+| `[service-taxonomy-and-vetting-vision]` | the full arc + Brian's vision (iron-clad promises tied to verifiable data; offered→vetting-task→boundary) |
+
+Drill in: `/pins service-taxonomy-and-vetting-vision`.
+
+---

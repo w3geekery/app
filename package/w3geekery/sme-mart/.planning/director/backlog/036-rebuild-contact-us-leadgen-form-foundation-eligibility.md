@@ -21,7 +21,7 @@ Brian directive. Rebuild/replace the lead-generation form on https://zerobias.co
      - **Number of employees** (size signal; threshold = 100; bands TBD pending Brian).
    - **Design stance:** capture type + size as neutral business-profile questions; compute eligibility downstream (Chris at the approval gate / classify op). Do NOT surface "eligibility" to the applicant.
    - **NOT a repurpose:** the existing "Organization Type" field is almost certainly the Auditor/Auditee axis (invitation model) — a different axis than business classification. Confirm its current options on inspection.
-   - **4 confirmations sent to Brian (2026-06-15), non-blocking:** (1) size band granularity, (2) self-attested vs proof, (3) silent-capture vs explicit eligibility framing, (4) edge case: large (>100) nonprofit/gov — eligible or capped? Form base/build can proceed with provisional defaults while these settle.
+   - **Brian confirmed all 4 (2026-06-15), LOCKED:** (1) employee bands = 1-10/11-50/51-100/101-500/500+; (2) self-attested at form, Chris verifies; (3) silent capture (eligibility not shown to applicant); (4) large nonprofit/gov >100 = still eligible (type-based eligibility wins; <100 cap applies only to private for-profits). See field spec for the locked formula.
 2. **Re-own the form under the Org.** Current form is owned by user **`evaughn`** (departed employee) — see permalink owner segment. New form must be owned by the **Org**, not a single user, so it survives staff changes.
 
 Then **replace** the existing form on the contact-us page with the new Org-owned form.
@@ -64,4 +64,4 @@ Splits along CRM vs Forms:
 **Decision:** Do NOT stand up a Zoho MCP just for this form. The form build is manual Zoho UI work (no automation lever). For the CRM half, Clark hands over the Lead field schema directly (he has CRM access) — faster/safer than wiring an OAuth MCP into prod CRM. Revisit the **official** Zoho MCP only if ongoing CRM automation becomes a need. → confirms the "manual step-by-step" approach.
 
 **Why now:** Brian directive (2026-06-15); current form is orphaned under a departed employee and misses the Foundation-eligibility signal the platform needs from inbound leads.
-**Blocked by:** Nothing hard-blocking. Eligibility criteria are known; 4 minor confirmations are out to Brian (band granularity, attest-vs-verify, visibility, large-nonprofit edge) but the field spec, current-form inspection, CRM-schema gathering, base rebuild, and Org-ownership migration all proceed in parallel. Final field options + the site swap (needs site edit access) are the only true gates.
+**Blocked by:** Nothing outstanding on spec/decisions — criteria locked, Brian confirmed all 4 (2026-06-15), live form + CRM schema captured, field spec fully build-ready. **Gate = Zoho admin access: Chris makes Clark admin 2026-06-16** → then build per the field-spec build checklist. Site swap may need site edit access (Chris).
