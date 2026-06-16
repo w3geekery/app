@@ -14,28 +14,27 @@
 
 ## Field list (in display order)
 
-Legend: **KEEP** = exists today, carry over · **NEW** = add · **CONFIRM** = verify against live form when Clark inspects in chrome-devtools.
+**Verified against the LIVE form 2026-06-15 (screenshot).** The current form is dumb-simple — 5 inputs + a privacy notice + T&C. All the cloud/infra/org-type/attribution fields in the raw form *definition* are **NOT presented** to the user (vestigial or hidden). The new form keeps the simple presented set and adds the 2 eligibility fields.
+
+Legend: **KEEP** = presented today, carry over · **NEW** = add · **HIDDEN** = not user-facing (auto-populated; keep only if CRM uses it).
 
 | # | Field | Type | Req | Options / notes | CRM Lead mapping | Status |
 |---|---|---|---|---|---|---|
-| 1 | Your Name (First & Last) | text | ✓ | | First/Last Name | KEEP |
-| 2 | Phone | text | ✓ | | Phone | KEEP |
+| 1 | Your Name (First & Last) | text (2-part) | ✓ | | First/Last Name | KEEP |
+| 2 | Phone | phone (+country code) | ✓ | | Phone | KEEP |
 | 3 | Company Name | text | ✓ | | Company | KEEP |
 | 4 | Company Website | text | ✓ | drives `getOrgByEmailDomain` pairing downstream | Website | KEEP |
-| 5 | Work Email | email | ✓ | email-verified before submit (Zoho feature) | Email | KEEP |
-| 6 | Organization Type | dropdown | ✓ | **CONFIRM current options** — believed to be Auditor/Auditee (invitation axis). Distinct from #7. | (existing mapping) | KEEP / CONFIRM |
-| 7 | **Business classification** | dropdown | ✓ | nonprofit · government · hospital/healthcare institution · not-for-profit · publicly-traded company · PE-backed company · privately-held company | **NEW custom field** (TBD) | **NEW** |
-| 8 | **Number of employees** | dropdown | ✓ | threshold = 100. Provisional bands (pending Brian Q1): 1-10 / 11-50 / 51-100 / 101-500 / 500+ | **NEW custom field** (TBD) | **NEW** |
-| 9 | Cloud Version | checkbox group | — | Public/Private/Hybrid/Unknown/Other — **CONFIRM still used** (may be gated/unused) | (existing) | KEEP / CONFIRM |
-| 10 | Cloud Provider | checkbox group | — | AWS/Azure/Google/Unknown/Other — **CONFIRM still used** | (existing) | KEEP / CONFIRM |
-| 11 | Hypervisor | checkbox group | — | **CONFIRM still used** | (existing) | KEEP / CONFIRM |
-| 12 | Secrets Manager | checkbox group | — | **CONFIRM still used** | (existing) | KEEP / CONFIRM |
-| 13 | Privacy Policy Consent | checkbox | ✓ | | (existing) | KEEP |
-| 14 | Terms & Conditions | checkbox | ✓ | | (existing) | KEEP |
-| 15 | Lead Source | dropdown | — | attribution | Lead Source | KEEP |
-| 16 | Channel Source | text | — | attribution | (existing) | KEEP |
+| 5 | Work Email | email | ✓ | | Email | KEEP |
+| 6 | **Business classification** | dropdown | ✓ | nonprofit · government · hospital/healthcare institution · not-for-profit · publicly-traded company · PE-backed company · privately-held company | **NEW custom field** (TBD) | **NEW** |
+| 7 | **Number of employees** | dropdown | ✓ | threshold = 100. Provisional bands (pending Brian Q1): 1-10 / 11-50 / 51-100 / 101-500 / 500+ | **NEW custom field** (TBD) | **NEW** |
+| — | Privacy policy notice | static text + link | — | "By submitting this form, I consent…" — **notice text, NOT a checkbox** | — | KEEP |
+| 8 | Terms & Conditions | checkbox | ✓ | "I accept the Terms and Conditions." | (existing) | KEEP |
 
-> Fields 9-12 came from the raw form *definition*; Clark noted some may be **hidden/gated** (not shown when he filled it). Confirm presented-vs-gated in chrome-devtools before deciding keep/drop.
+**Placement:** insert the 2 new fields (#6, #7) after Work Email and before the privacy notice — i.e. company-profile questions grouped together.
+
+**Dropped from the raw definition (not presented on the live form, do NOT carry over unless CRM explicitly needs them):** Organization Type (Auditor/Auditee), Cloud Version, Cloud Provider, Hypervisor, Secrets Manager.
+
+**Possible hidden attribution fields:** Lead Source, Channel Source may be hidden fields auto-populated for CRM attribution — confirm in CRM mapping; keep as hidden if the CRM workflow uses them, otherwise drop.
 
 ---
 
@@ -56,14 +55,14 @@ Computed at the classify/approval step from fields #7 + #8. The form only captur
 3. **Visibility:** provisional = silent capture (no eligibility shown to user).
 4. **Large nonprofit/gov (>100) edge:** affects downstream computation only, not the form fields — no form change either way.
 
-None block building fields #1-8 + #13-16. Only #8's final band list and #9-12's keep/drop are soft-pending.
+None block building the form. Only #7's final employee-band list is soft-pending Brian (provisional bands stand in the meantime).
 
 ---
 
 ## What Clark can do now (parallel, non-blocked)
 
-1. **Inspect the live form** (chrome-devtools) → confirm which fields are actually *presented* (resolve #9-12) and the current **Organization Type** options (#6).
-2. **Export the Zoho CRM Lead field schema** → fill the "CRM Lead mapping" column; identify whether `Business classification` / `Number of employees` need **new custom Lead fields** (likely yes).
+1. ~~Inspect the live form~~ **DONE 2026-06-15** (screenshot) — presented set confirmed; table above is reality.
+2. **Export the Zoho CRM Lead field schema** → fill the "CRM Lead mapping" column; confirm `Business classification` / `Number of employees` need **new custom Lead fields** (likely yes); confirm whether Lead Source / Channel Source hidden fields are in use.
 3. **Org-ownership prep:** confirm in Zoho how to create the new form under the Org (not a user) — admin/ownership settings.
 
 ## Then (gated)
