@@ -20,27 +20,6 @@
           <textarea matInput formControlName="about" rows="5"></textarea>
         </mat-form-field>
 
-        <div class="form-row">
-          <mat-form-field appearance="outline">
-            <mat-label>Hourly Rate ($)</mat-label>
-            <input matInput formControlName="hourly_rate" type="number" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Availability</mat-label>
-            <mat-select formControlName="availability_status">
-              <mat-option value="available">Available</mat-option>
-              <mat-option value="busy">Busy</mat-option>
-              <mat-option value="unavailable">Unavailable</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Response Time</mat-label>
-            <input matInput formControlName="response_time" placeholder="e.g., Within 24 hours" />
-          </mat-form-field>
-        </div>
-
         <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving()">
           @if (saving()) {
             Saving...
