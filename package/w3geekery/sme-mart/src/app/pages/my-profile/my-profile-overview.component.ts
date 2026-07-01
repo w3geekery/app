@@ -9,7 +9,6 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ProviderProfilesService } from '../../core/services/provider-profiles.service';
 import { ImpersonationService } from '../../core/services/impersonation.service';
-import { StarRating } from '../../shared/components/star-rating/star-rating.component';
 import type { ProviderDetailView, OrgProfile } from '../../core/models';
 
 @Component({
@@ -24,7 +23,6 @@ import type { ProviderDetailView, OrgProfile } from '../../core/models';
     MatCardModule,
     MatSelectModule,
     MatSnackBarModule,
-    StarRating,
   ],
   templateUrl: './my-profile-overview.component.html',
   styleUrl: './my-profile-overview.component.scss',

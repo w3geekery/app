@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
 import { ExecuteRawGraphqlQuery } from '@zerobias-com/graphql-sdk';
 import { UUID, PagedResults } from '@zerobias-org/types-core-js';
@@ -16,6 +17,7 @@ import type {
   ExpertiseItem,
 } from '../models';
 import { CatalogService } from './catalog.service';
+import { PipelineWriteService } from './pipeline-write.service';
 
 /**
  * Provider CRUD operations.
@@ -35,6 +37,8 @@ import { CatalogService } from './catalog.service';
 export class ProviderProfilesService {
   private readonly clientApi = inject(ZerobiasClientApi);
   private readonly catalog = inject(CatalogService);
+  private readonly pipelineWrite = inject(PipelineWriteService);
+  private readonly snackBar = inject(MatSnackBar);
 
   readonly providers = signal<ProviderDirectoryView[]>([]);
   readonly loading = signal(false);
@@ -307,65 +311,374 @@ export class ProviderProfilesService {
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
-   * NOTE: These are placeholder stubs. Wave 2 does not rewrite CRUD methods.
-   * They still require SmeMartDbService which is out of scope for 26-03.
-   * Future phase (cleanup) will implement via PipelineWriteService after Neon->GQL migration.
-   * Unused parameters are suppressed with underscore prefix to suppress TS6133 warnings.
+   * Update OrgProfile + optional HQ Address via Pipeline.
+   * Both writes scoped to orgId FK (not provider_id).
+   * Defaults verified=false / verificationSource=null per D-53.
+   * Pipeline.receive is full-replace — send complete object to avoid nulling unmapped fields.
    */
-  async updateProfile(_id: string, _data: Partial<OrgProfile>): Promise<OrgProfile> {
-    throw new Error('updateProfile not yet implemented for GQL-backed providers');
+  async updateProfile(orgId: string, profileData: Partial<OrgProfile>): Promise<OrgProfile> {
+    const payload: Record<string, unknown> = {
+      id: `orgprofile-${orgId}`,
+      name: `OrgProfile-${orgId}`,
+      orgId,
+      legalName: profileData.legalName ?? undefined,
+      dba: profileData.dba ?? undefined,
+      tagline: profileData.tagline ?? undefined,
+      shortDescription: profileData.shortDescription ?? undefined,
+      longDescription: profileData.longDescription ?? undefined,
+      website: profileData.website ?? undefined,
+      logoUrl: profileData.logoUrl ?? undefined,
+      employeeCount: profileData.employeeCount ?? undefined,
+      businessClassification: profileData.businessClassification ?? undefined,
+      foundedYear: profileData.foundedYear ?? undefined,
+      primaryContactUserId: profileData.primaryContactUserId ?? undefined,
+      verified: profileData.verified ?? false,
+      verificationSource: profileData.verificationSource ?? null,
+    };
+
+    try {
+      await this.pipelineWrite.pushEntity('OrgProfile', payload, [], 'provider-profiles.service:updateProfile.OrgProfile');
+    } catch (err) {
+      this.snackBar.open(
+        `Failed to update profile: ${(err as Error).message}`,
+        'Dismiss',
+        { duration: 5000 },
+      );
+      throw err;
+    }
+
+    // If hqLocation provided, write Address (1:1, owner-generic)
+    const hqLocation = (profileData as unknown as Record<string, unknown>)['hqLocation'];
+    if (hqLocation && typeof hqLocation === 'object') {
+      const hqLoc = hqLocation as Record<string, unknown>;
+      const addressPayload: Record<string, unknown> = {
+        id: `address-${orgId}-hq`,
+        name: `HQ Address - ${orgId}`,
+        ownerType: 'org',
+        ownerId: orgId,
+        addressType: 'registered',
+        isPrimary: true,
+        street1: hqLoc['street1'] ?? undefined,
+        street2: hqLoc['street2'] ?? undefined,
+        city: hqLoc['city'] ?? undefined,
+        region: hqLoc['region'] ?? undefined,
+        postalCode: hqLoc['postalCode'] ?? undefined,
+        country: hqLoc['country'] ?? undefined,
+        userLabel: 'Headquarters',
+        verified: profileData.verified ?? false,
+        verificationSource: profileData.verificationSource ?? null,
+      };
+
+      try {
+        await this.pipelineWrite.pushEntity('Address', addressPayload, [], 'provider-profiles.service:updateProfile.Address');
+      } catch (err) {
+        this.snackBar.open(
+          `Failed to update address: ${(err as Error).message}`,
+          'Dismiss',
+          { duration: 5000 },
+        );
+        throw err;
+      }
+    }
+
+    return payload as unknown as OrgProfile;
   }
 
   // ─────────────────────────────────────────────────────────────────────────
   // Expertise CRUD — 6 relation tables — UNCHANGED from pre-26-03
   // ─────────────────────────────────────────────────────────────────────────
 
-  async addSkill(_orgId: string, _data: Omit<ProviderSkill, 'id' | 'created_at'>): Promise<ProviderSkill> {
-    throw new Error('Half-B (33-03): not yet implemented');
+  /**
+   * Add skill expertise junction for org.
+   * Org-scoped via orgId FK. Defaults verified=false / verificationSource=null per D-53.
+   */
+  async addSkill(orgId: string, data: Omit<ProviderSkill, 'id' | 'created_at'>): Promise<ProviderSkill> {
+    const id = crypto.randomUUID();
+    const payload: Record<string, unknown> = {
+      id,
+      name: `${orgId}-skill-${data.skillId}`,
+      orgId,
+      skillId: data.skillId,
+      proficiencyLevel: data.proficiencyLevel ?? undefined,
+      yearsExperience: data.yearsExperience ?? undefined,
+      verified: data.verified ?? false,
+      verificationSource: data.verificationSource ?? null,
+    };
+
+    try {
+      await this.pipelineWrite.pushEntity('ProviderSkill', payload, [], 'provider-profiles.service:addSkill');
+    } catch (err) {
+      this.snackBar.open(
+        `Failed to add skill: ${(err as Error).message}`,
+        'Dismiss',
+        { duration: 5000 },
+      );
+      throw err;
+    }
+
+    return payload as unknown as ProviderSkill;
   }
 
-  async deleteSkill(_skillId: string): Promise<void> {
-    throw new Error('deleteSkill not yet implemented for GQL-backed providers');
+  /**
+   * Delete skill expertise junction by record ID.
+   * recordId is the auto-generated junction row ID (not skillId).
+   */
+  async deleteSkill(recordId: string): Promise<void> {
+    try {
+      await this.pipelineWrite.deleteEntity('ProviderSkill', recordId, 'provider-profiles.service:deleteSkill');
+    } catch (err) {
+      this.snackBar.open(
+        `Failed to delete skill: ${(err as Error).message}`,
+        'Dismiss',
+        { duration: 5000 },
+      );
+      throw err;
+    }
   }
 
-  async addRole(_orgId: string, _data: Omit<ProviderRole, 'id' | 'created_at'>): Promise<ProviderRole> {
-    throw new Error('Half-B (33-03): not yet implemented');
+  /**
+   * Add role expertise junction for org.
+   * Org-scoped via orgId FK. Defaults verified=false / verificationSource=null per D-53.
+   */
+  async addRole(orgId: string, data: Omit<ProviderRole, 'id' | 'created_at'>): Promise<ProviderRole> {
+    const id = crypto.randomUUID();
+    const payload: Record<string, unknown> = {
+      id,
+      name: `${orgId}-role-${data.roleId}`,
+      orgId,
+      roleId: data.roleId,
+      isPrimary: data.isPrimary ?? false,
+      yearsInRole: data.yearsInRole ?? undefined,
+      verified: data.verified ?? false,
+      verificationSource: data.verificationSource ?? null,
+    };
+
+    try {
+      await this.pipelineWrite.pushEntity('ProviderRole', payload, [], 'provider-profiles.service:addRole');
+    } catch (err) {
+      this.snackBar.open(
+        `Failed to add role: ${(err as Error).message}`,
+        'Dismiss',
+        { duration: 5000 },
+      );
+      throw err;
+    }
+
+    return payload as unknown as ProviderRole;
   }
 
-  async deleteRole(_roleId: string): Promise<void> {
-    throw new Error('deleteRole not yet implemented for GQL-backed providers');
+  /**
+   * Delete role expertise junction by record ID.
+   * recordId is the auto-generated junction row ID (not roleId).
+   */
+  async deleteRole(recordId: string): Promise<void> {
+    try {
+      await this.pipelineWrite.deleteEntity('ProviderRole', recordId, 'provider-profiles.service:deleteRole');
+    } catch (err) {
+      this.snackBar.open(
+        `Failed to delete role: ${(err as Error).message}`,
+        'Dismiss',
+        { duration: 5000 },
+      );
+      throw err;
+    }
   }
 
-  async addProduct(_orgId: string, _data: Omit<ProviderProduct, 'id' | 'created_at'>): Promise<ProviderProduct> {
-    throw new Error('Half-B (33-03): not yet implemented');
+  /**
+   * Add product expertise junction for org.
+   * Org-scoped via orgId FK. Defaults verified=false / verificationSource=null per D-53.
+   */
+  async addProduct(orgId: string, data: Omit<ProviderProduct, 'id' | 'created_at'>): Promise<ProviderProduct> {
+    const id = crypto.randomUUID();
+    const payload: Record<string, unknown> = {
+      id,
+      name: `${orgId}-product-${data.productId}`,
+      orgId,
+      productId: data.productId,
+      proficiencyLevel: data.proficiencyLevel ?? undefined,
+      yearsExperience: data.yearsExperience ?? undefined,
+      certified: data.certified ?? false,
+      certificationDetails: data.certificationDetails ?? undefined,
+      verified: data.verified ?? false,
+      verificationSource: data.verificationSource ?? null,
+    };
+
+    try {
+      await this.pipelineWrite.pushEntity('ProviderProduct', payload, [], 'provider-profiles.service:addProduct');
+    } catch (err) {
+      this.snackBar.open(
+        `Failed to add product: ${(err as Error).message}`,
+        'Dismiss',
+        { duration: 5000 },
+      );
+      throw err;
+    }
+
+    return payload as unknown as ProviderProduct;
   }
 
-  async deleteProduct(_productId: string): Promise<void> {
-    throw new Error('deleteProduct not yet implemented for GQL-backed providers');
+  /**
+   * Delete product expertise junction by record ID.
+   * recordId is the auto-generated junction row ID (not productId).
+   */
+  async deleteProduct(recordId: string): Promise<void> {
+    try {
+      await this.pipelineWrite.deleteEntity('ProviderProduct', recordId, 'provider-profiles.service:deleteProduct');
+    } catch (err) {
+      this.snackBar.open(
+        `Failed to delete product: ${(err as Error).message}`,
+        'Dismiss',
+        { duration: 5000 },
+      );
+      throw err;
+    }
   }
 
-  async addFramework(_orgId: string, _data: Omit<ProviderFramework, 'id' | 'created_at'>): Promise<ProviderFramework> {
-    throw new Error('Half-B (33-03): not yet implemented');
+  /**
+   * Add framework expertise junction for org.
+   * Org-scoped via orgId FK. Defaults verified=false / verificationSource=null per D-53.
+   */
+  async addFramework(orgId: string, data: Omit<ProviderFramework, 'id' | 'created_at'>): Promise<ProviderFramework> {
+    const id = crypto.randomUUID();
+    const payload: Record<string, unknown> = {
+      id,
+      name: `${orgId}-framework-${data.frameworkId}`,
+      orgId,
+      frameworkId: data.frameworkId,
+      proficiencyLevel: data.proficiencyLevel ?? undefined,
+      yearsExperience: data.yearsExperience ?? undefined,
+      assessorCertified: data.assessorCertified ?? false,
+      implementationExperience: data.implementationExperience ?? false,
+      auditExperience: data.auditExperience ?? false,
+      verified: data.verified ?? false,
+      verificationSource: data.verificationSource ?? null,
+    };
+
+    try {
+      await this.pipelineWrite.pushEntity('ProviderFramework', payload, [], 'provider-profiles.service:addFramework');
+    } catch (err) {
+      this.snackBar.open(
+        `Failed to add framework: ${(err as Error).message}`,
+        'Dismiss',
+        { duration: 5000 },
+      );
+      throw err;
+    }
+
+    return payload as unknown as ProviderFramework;
   }
 
-  async deleteFramework(_frameworkId: string): Promise<void> {
-    throw new Error('deleteFramework not yet implemented for GQL-backed providers');
+  /**
+   * Delete framework expertise junction by record ID.
+   * recordId is the auto-generated junction row ID (not frameworkId).
+   */
+  async deleteFramework(recordId: string): Promise<void> {
+    try {
+      await this.pipelineWrite.deleteEntity('ProviderFramework', recordId, 'provider-profiles.service:deleteFramework');
+    } catch (err) {
+      this.snackBar.open(
+        `Failed to delete framework: ${(err as Error).message}`,
+        'Dismiss',
+        { duration: 5000 },
+      );
+      throw err;
+    }
   }
 
-  async addSegment(_orgId: string, _data: Omit<ProviderSegment, 'id' | 'created_at'>): Promise<ProviderSegment> {
-    throw new Error('Half-B (33-03): not yet implemented');
+  /**
+   * Add capability segment expertise junction for org.
+   * Org-scoped via orgId FK. Defaults verified=false / verificationSource=null per D-53.
+   */
+  async addSegment(orgId: string, data: Omit<ProviderSegment, 'id' | 'created_at'>): Promise<ProviderSegment> {
+    const id = crypto.randomUUID();
+    const payload: Record<string, unknown> = {
+      id,
+      name: `${orgId}-segment-${data.segmentId}`,
+      orgId,
+      segmentId: data.segmentId,
+      isPrimary: data.isPrimary ?? false,
+      verified: data.verified ?? false,
+      verificationSource: data.verificationSource ?? null,
+    };
+
+    try {
+      await this.pipelineWrite.pushEntity('ProviderSegment', payload, [], 'provider-profiles.service:addSegment');
+    } catch (err) {
+      this.snackBar.open(
+        `Failed to add segment: ${(err as Error).message}`,
+        'Dismiss',
+        { duration: 5000 },
+      );
+      throw err;
+    }
+
+    return payload as unknown as ProviderSegment;
   }
 
-  async deleteSegment(_segmentId: string): Promise<void> {
-    throw new Error('deleteSegment not yet implemented for GQL-backed providers');
+  /**
+   * Delete capability segment expertise junction by record ID.
+   * recordId is the auto-generated junction row ID (not segmentId).
+   */
+  async deleteSegment(recordId: string): Promise<void> {
+    try {
+      await this.pipelineWrite.deleteEntity('ProviderSegment', recordId, 'provider-profiles.service:deleteSegment');
+    } catch (err) {
+      this.snackBar.open(
+        `Failed to delete segment: ${(err as Error).message}`,
+        'Dismiss',
+        { duration: 5000 },
+      );
+      throw err;
+    }
   }
 
-  async addServiceSegment(_orgId: string, _data: Omit<ProviderServiceSegment, 'id' | 'created_at'>): Promise<ProviderServiceSegment> {
-    throw new Error('Half-B (33-03): not yet implemented');
+  /**
+   * Add service segment expertise junction for org (D-56 Option B).
+   * serviceSegmentId is a Catalog Service-segment UUID (133 leaf nodes under Services domain).
+   * NOT a hydra tag ID — the retired 9 hardcoded service-segment tags are no longer used.
+   * Org-scoped via orgId FK. Defaults verified=false / verificationSource=null per D-53.
+   */
+  async addServiceSegment(orgId: string, data: Omit<ProviderServiceSegment, 'id' | 'created_at'>): Promise<ProviderServiceSegment> {
+    const id = crypto.randomUUID();
+    const payload: Record<string, unknown> = {
+      id,
+      name: `${orgId}-service-segment-${data.serviceSegmentId}`,
+      orgId,
+      serviceSegmentId: data.serviceSegmentId,
+      isPrimary: data.isPrimary ?? false,
+      verified: data.verified ?? false,
+      verificationSource: data.verificationSource ?? null,
+    };
+
+    try {
+      await this.pipelineWrite.pushEntity('ProviderServiceSegment', payload, [], 'provider-profiles.service:addServiceSegment');
+    } catch (err) {
+      this.snackBar.open(
+        `Failed to add service segment: ${(err as Error).message}`,
+        'Dismiss',
+        { duration: 5000 },
+      );
+      throw err;
+    }
+
+    return payload as unknown as ProviderServiceSegment;
   }
 
-  async deleteServiceSegment(_segmentId: string): Promise<void> {
-    throw new Error('deleteServiceSegment not yet implemented for GQL-backed providers');
+  /**
+   * Delete service segment expertise junction by record ID.
+   * recordId is the auto-generated junction row ID (not serviceSegmentId).
+   */
+  async deleteServiceSegment(recordId: string): Promise<void> {
+    try {
+      await this.pipelineWrite.deleteEntity('ProviderServiceSegment', recordId, 'provider-profiles.service:deleteServiceSegment');
+    } catch (err) {
+      this.snackBar.open(
+        `Failed to delete service segment: ${(err as Error).message}`,
+        'Dismiss',
+        { duration: 5000 },
+      );
+      throw err;
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
