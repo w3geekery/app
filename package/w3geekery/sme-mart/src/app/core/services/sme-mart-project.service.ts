@@ -7,10 +7,10 @@ import { SmeMartTagService } from './sme-mart-tag.service';
 import { SmeMartResourceService } from './sme-mart-resource.service';
 import { Memoize } from '../../shared/utils/memoize.decorator';
 import { SME_MART_PROJECT_FIELD_MAPPING, SME_MART_BOARD_FIELD_MAPPING, mapGqlToNeon, mapNeonToGql } from '../field-mappings';
-import { SME_MART_TIER_PROJECT_TAG_ID } from '../constants/tier-tags';
+import { PROJECT_TYPE_ID } from '../constants/project-types';
 import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
 import { ZerobiasClientOrgIdService } from '@zerobias-com/zerobias-angular-client';
-import type { ProjectExtended, Tag } from '@zerobias-com/platform-sdk';
+import type { ProjectExtended } from '@zerobias-com/platform-sdk';
 import type { QueryOptions } from '@zerobias-org/data-utils';
 import { PagedResults, UUID } from '@zerobias-org/types-core-js';
 import type {
@@ -126,7 +126,12 @@ export class SmeMartProjectService {
       const projectIdUuid = new UUID(id);
       const platformProject = await projectApi.get(projectIdUuid);
       if (platformProject) {
-        return this.transformPlatformProjectToSmeMartProject(platformProject as ProjectExtended);
+        // RECONCILE-FR-014: SDK 2.x dropped inline Project tags — fetch for demo-visibility parity.
+        const getTagsById = await this.fetchProjectTagsMap([String((platformProject as ProjectExtended).id)]);
+        return this.transformPlatformProjectToSmeMartProject(
+          platformProject as ProjectExtended,
+          getTagsById.get(String((platformProject as ProjectExtended).id)),
+        );
       }
     } catch (err) {
       // 404 / not-found on platform path → try GQL fallback. Other errors also
@@ -178,16 +183,21 @@ export class SmeMartProjectService {
       ]);
 
       if (platformProjects) {
-        // Tier filter: keep only depth-2 Project-tier rows (tagId === sme-mart.tier.project).
-        // platform.Project.list has no server-side tagId filter (parkit-10 SDK shape note),
-        // so we filter client-side. Engagement-tier (depth-1) rows are listed at /engagements,
-        // and untagged or other-tier rows belong elsewhere.
+        // Tier filter: keep only Project-tier rows (projectTypeId === project-type 'project').
+        // platform.Project.list has no server-side projectType filter, so we filter client-side.
+        // Engagement-tier rows are listed at /engagements; other-type rows belong elsewhere.
+        // (SDK 2.x: tier is now Project.projectTypeId, not the old marketplace tagId — Nic 2026-07-01.)
         const projectTier = platformProjects.items.filter(
-          proj => String((proj as ProjectExtended).tagId ?? '') === SME_MART_TIER_PROJECT_TAG_ID,
+          proj => String((proj as ProjectExtended).projectTypeId ?? '') === PROJECT_TYPE_ID.project,
         );
 
         // Transform platform.Project[] to SmeMartProject[]
-        const transformed = projectTier.map(proj => this.transformPlatformProjectToSmeMartProject(proj as ProjectExtended));
+        // RECONCILE-FR-014: SDK 2.x dropped inline Project tags — fetch for demo-visibility.
+        const tagsById = await this.fetchProjectTagsMap(projectTier.map(p => String((p as ProjectExtended).id)));
+        const transformed = projectTier.map(proj => this.transformPlatformProjectToSmeMartProject(
+          proj as ProjectExtended,
+          tagsById.get(String((proj as ProjectExtended).id)),
+        ));
 
         // DG-02/DG-03: Client-side demo-visibility post-filter
         const filtered = this.demoVisibility.applyVisibility(transformed) as SmeMartProject[];
@@ -390,16 +400,21 @@ export class SmeMartProjectService {
 
       if (platformList) {
         // Children of the requested engagement Project, tier=Project (D-50).
-        // platform.Project.list has no server-side parentId or tagId filter
-        // (parkit-10 SDK note), so we filter client-side.
+        // platform.Project.list has no server-side parentId/projectType filter,
+        // so we filter client-side. (SDK 2.x: tier = projectTypeId, not old tagId.)
         const children = platformList.items.filter(p => {
           const proj = p as ProjectExtended;
           return String(proj.parentId ?? '') === engagementId
-            && String(proj.tagId ?? '') === SME_MART_TIER_PROJECT_TAG_ID;
+            && String(proj.projectTypeId ?? '') === PROJECT_TYPE_ID.project;
         });
 
         if (children.length > 0) {
-          const transformed = children.map(p => this.transformPlatformProjectToSmeMartProject(p as ProjectExtended));
+          // RECONCILE-FR-014: SDK 2.x dropped inline Project tags — fetch for demo-visibility.
+          const childTagsById = await this.fetchProjectTagsMap(children.map(p => String((p as ProjectExtended).id)));
+          const transformed = children.map(p => this.transformPlatformProjectToSmeMartProject(
+            p as ProjectExtended,
+            childTagsById.get(String((p as ProjectExtended).id)),
+          ));
           const filtered = this.demoVisibility.applyVisibility(transformed) as SmeMartProject[];
           const paged = new PagedResults<SmeMartProject>();
           paged.items = filtered;
@@ -488,7 +503,34 @@ export class SmeMartProjectService {
    * Transform platform.Project (ProjectExtended) to SmeMartProject.
    * Maps platform project shape to legacy SmeMartProject fields.
    */
-  private transformPlatformProjectToSmeMartProject(proj: ProjectExtended): SmeMartProject & { tag?: Tag } {
+  /**
+   * RECONCILE-FR-014 (interim). SDK 2.x `platform.Project.list` no longer returns a project's
+   * resource-tags inline, but demo-visibility (DG-02/03) filters by tag. Batch-fetch each
+   * project's resource-tags via hydra `getTagsForResource`, shaped as the GQL `[{value}]` array
+   * `DemoVisibilityService.isLocalDemoTagged` consumes. DELETE once backend FR-014 (task-71)
+   * ships — or entirely if backlog 041 (tombstone demo-data) lands first.
+   */
+  private async fetchProjectTagsMap(projectIds: string[]): Promise<Map<string, Array<{ value: string }>>> {
+    const resourceApi = this.clientApi.hydraClient.getResourceApi();
+    const entries = await Promise.all(
+      projectIds.map(async (id) => {
+        try {
+          const tags = await resourceApi.getTagsForResource(new UUID(id));
+          return [id, (tags ?? []).map(t => ({ value: String(t.id) }))] as const;
+        } catch {
+          // Tag fetch failed for this project — treat as untagged (visible). A transient
+          // hydra error must not hide real projects.
+          return [id, [] as Array<{ value: string }>] as const;
+        }
+      }),
+    );
+    return new Map(entries);
+  }
+
+  private transformPlatformProjectToSmeMartProject(
+    proj: ProjectExtended,
+    resourceTags?: Array<{ value: string }>,
+  ): SmeMartProject & { tag?: Array<{ value: string }> | null } {
     return {
       id: String(proj.id),
       name: proj.name ?? '',
@@ -500,7 +542,7 @@ export class SmeMartProjectService {
       // engagement-name breadcrumb crumb via EngagementsService.getEngagement.
       engagementId: proj.parentId ? String(proj.parentId) : null,
       projectType: 'project', // Default to 'project' until further distinction in platform schema
-      startDate: proj.created?.toISOString() ?? new Date().toISOString(),
+      startDate: proj.created?.toDate().toISOString() ?? new Date().toISOString(),
       targetEndDate: null, // Not available in platform.Project shape
       category: null, // Not available in platform.Project shape
       budgetType: null, // Not available in platform.Project shape
@@ -512,10 +554,11 @@ export class SmeMartProjectService {
       evaluationCriteria: null, // Not available in platform.Project shape
       wizardStep: null, // Not available in platform.Project shape
       wizardData: null, // Not available in platform.Project shape
-      createdAt: proj.created?.toISOString() ?? new Date().toISOString(),
-      updatedAt: proj.updated?.toISOString() ?? new Date().toISOString(),
-      // D-24: Preserve tag field for polymorphic demo-visibility post-filter
-      tag: proj.tag,
+      createdAt: proj.created?.toDate().toISOString() ?? new Date().toISOString(),
+      updatedAt: proj.updated?.toDate().toISOString() ?? new Date().toISOString(),
+      // D-24 demo-visibility. RECONCILE-FR-014: was proj.tag (gone in SDK 2.x);
+      // resource-tags fetched separately and passed in, shaped as the GQL [{value}] array.
+      tag: resourceTags ?? null,
     };
   }
 

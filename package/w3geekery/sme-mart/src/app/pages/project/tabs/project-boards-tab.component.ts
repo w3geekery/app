@@ -157,7 +157,7 @@ export class ProjectBoardsTabComponent implements OnInit {
           isDefault: Boolean(raw.isDefault),
           boardType: String(raw.boardType ?? ''),
           status: String(raw.status ?? ''),
-          created: raw.created ? raw.created.toISOString() : null,
+          created: raw.created ? raw.created.toDate().toISOString() : null,
         };
       });
       this.boards.set(items);

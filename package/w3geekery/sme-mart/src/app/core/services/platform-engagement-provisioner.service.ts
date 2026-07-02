@@ -2,33 +2,18 @@ import { Injectable, inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
 import { ZerobiasClientOrgIdService } from '@zerobias-com/zerobias-angular-client';
-import { CreateTagBody, TagSearchBody } from '@zerobias-com/hydra-sdk';
 import { NewProject } from '@zerobias-com/platform-sdk';
-import { Nmtoken } from '@zerobias-org/types-core-js';
-import { slugify } from '../utils/slug';
+import { PROJECT_TYPE_ID } from '../constants/project-types';
 
-// Step A: engagement-tag values (D-25, D-26, D-27)
-const TAG_TYPE = 'marketplace';
-const PLATFORM_SUPPLY_SLUG = 'zerobias';
-const MARKETPLACE_OPERATOR_ORG_ID = 'cd7105df-523d-5392-9f9a-3f83d3f30107'; // W3Geekery; TODO: externalize to env
-
-// D-49 namespace migration (errata 030 + 036): probes scan BOTH namespaces;
-// creation uses NEW exclusively going forward. Legacy tags coexist per D-43 (d)
-// (no UUID-churn renames).
-const ENGAGEMENT_TAG_NAMESPACE_NEW = 'sme-mart.engagement.';
-const ENGAGEMENT_TAG_NAMESPACE_LEGACY = 'sme-mart.eng.';
-const buildEngagementTagName = (namespace: string, slug: string): string =>
-  `${namespace}${PLATFORM_SUPPLY_SLUG}-to-${slug}`;
+// SDK 2.x (Nic 2026-07-01): a project's tier IS its projectType. The old marketplace
+// engagement-identity tag machinery (Step A: TAG_TYPE / MARKETPLACE_OPERATOR_ORG_ID /
+// buildEngagementTagName / SME_MART_TIER_PROJECT_TAG_ID) is retired — engagement identity
+// is now projectType==engagement + ownerId, and the project tier is projectType==project.
 
 // Project.list() probe page-size. Covers single-engagement orgs (v1.4 norm).
 // When D-46 multi-engagement future state lands, switch to pagination loop —
 // see BACKLOG PROVISIONER-PROBE-PAGINATION-1.
 const PROBE_PAGE_SIZE = 100;
-
-// Tier-identity tag bootstrap UUIDs (created once per env; cached as constants).
-// UAT values validated empirically 2026-05-12. ci/prod: TBD — see BACKLOG TIER-TAG-ENV-BOOTSTRAP-1.
-// Per D-50 canonical tier mapping: depth 2 = Project tier (FIXED), tag = sme-mart.tier.project.
-const SME_MART_TIER_PROJECT_TAG_ID = '420b0753-e72c-4b81-8929-70508a119bf0'; // UAT
 
 // Step C: engagement-project values (D-32 superseded 2026-05-15, D-33 superseded 2026-05-15)
 // New convention: customer-org is the implicit context (engagement card always rendered in owner-org
@@ -136,45 +121,20 @@ export class PlatformEngagementProvisioner {
    * Used by `onboardingGuard` to decide whether the user can use the app.
    * NEVER triggers any create — pure read.
    */
-  async isOrgProvisioned(orgId: string, orgName: string, orgSlug?: string): Promise<boolean> {
+  async isOrgProvisioned(orgId: string, orgName: string, _orgSlug?: string): Promise<boolean> {
     if (!orgId || !orgName) return false;
-    const slug = orgSlug || slugify(orgName);
-    const candidateTagNames = [
-      buildEngagementTagName(ENGAGEMENT_TAG_NAMESPACE_NEW, slug),
-      buildEngagementTagName(ENGAGEMENT_TAG_NAMESPACE_LEGACY, slug),
-    ];
     const startingScope = this.orgIdService.getCurrentOrgId();
     try {
-      // Step 1: find candidate tag IDs in OPERATOR scope.
-      // Tags are operator-owned per D-50; hydra's searchTags applies an implicit
-      // session-scope visibility filter that AND's with any explicit ownerIds.
-      // From a non-operator session the operator-owned tag is invisible
-      // regardless of body filters (errata 041 empirical verification). So we
-      // switch to operator session before the tag probe.
-      await this.setScope(MARKETPLACE_OPERATOR_ORG_ID);
-      const tagIds: string[] = [];
-      for (const tagName of candidateTagNames) {
-        const body = new TagSearchBody();
-        body.name = tagName;
-        const result = await this.clientApi.hydraClient
-          .getTagApi()
-          .searchTags(1, 1, undefined, body);
-        if (result && result.items && result.items.length > 0) {
-          tagIds.push(String(result.items[0].id));
-        }
-      }
-      if (tagIds.length === 0) return false;
-
-      // Step 2: find target-owned Engagement Project in TARGET scope.
-      // platform.Project.list applies session-scope visibility too — operator
-      // session cannot see target-owned projects even with ownerId=target
-      // query param. Switch to target before the Project probe.
+      // Authoritative signal: an Engagement Project (parentId==null, projectType==engagement)
+      // owned by the org. SDK 2.x identity = projectType + ownerId; the retired marketplace
+      // tag and its errata-041 operator-scope probe are gone. platform.Project.list applies
+      // session-scope visibility, so probe in TARGET scope.
       await this.setScope(orgId);
       const projects = await this.clientApi.platformClient
         .getProjectApi()
         .list(undefined, PROBE_PAGE_SIZE, undefined, orgId as never);
       const engagementProject = projects?.items?.find(
-        (p) => p.parentId == null && p.tagId != null && tagIds.includes(String(p.tagId)),
+        (p) => p.parentId == null && String(p.projectTypeId) === PROJECT_TYPE_ID.engagement,
       );
       return !!engagementProject;
     } catch (err) {
@@ -211,8 +171,7 @@ export class PlatformEngagementProvisioner {
     currentOrgName: string;
     currentOrgSlug?: string;
   }): Promise<{ engagementProjectId: string; projectTierProjectId: string; created: boolean }> {
-    const { currentOrgId, currentOrgName, currentOrgSlug } = input;
-    const orgSlug = currentOrgSlug || slugify(currentOrgName);
+    const { currentOrgId, currentOrgName } = input;
     const startingScope = this.orgIdService.getCurrentOrgId();
 
     try {
@@ -220,30 +179,22 @@ export class PlatformEngagementProvisioner {
       // isOrgProvisioned manages its own scope flips internally and restores
       // the starting scope before returning, so the next setScope call below
       // is required (not redundant).
-      const isProvisioned = await this.isOrgProvisioned(currentOrgId, currentOrgName, orgSlug);
+      const isProvisioned = await this.isOrgProvisioned(currentOrgId, currentOrgName);
 
       if (isProvisioned) {
         return { engagementProjectId: '', projectTierProjectId: '', created: false };
       }
 
-      // Step A: ensure hydra tag — must run in OPERATOR scope.
-      // Tag ownerId is payload-driven (MARKETPLACE_OPERATOR_ORG_ID) but hydra's
-      // visibility filter on the idempotency probe inside ensureTag requires
-      // operator session to see operator-owned tags (errata 041). Create also
-      // runs cleanly from operator scope.
-      await this.setScope(MARKETPLACE_OPERATOR_ORG_ID);
-      const tagId = await this.ensureTag(orgSlug, currentOrgId, currentOrgName);
-
       // Steps C + D: create Engagement Project + Project tier in TARGET scope.
-      // platform.Project.create has no payload ownerId field; server derives
-      // ownership from session (errata 040). Target scope ensures correct
-      // ownerId attribution. Auto-Board + auto-Lead inherit target ownership.
+      // SDK 2.x: engagement identity is projectType==engagement + ownerId; the marketplace
+      // identity tag (old Step A) is retired — no tag creation / operator-scope hop needed.
+      // platform.Project.create has no payload ownerId field; server derives ownership from
+      // session (errata 040). Target scope ensures correct ownerId attribution.
       await this.setScope(currentOrgId);
 
       const engagementProjectId = await this.ensureEngagementProject(
         currentOrgName,
         currentOrgId,
-        tagId,
       );
 
       const projectTierProjectId = await this.ensureProjectTier(
@@ -267,62 +218,9 @@ export class PlatformEngagementProvisioner {
   }
 
   /**
-   * Step A: Create or reuse a hydra Tag for the engagement (NEW namespace only).
-   *
-   * Probe scans NEW namespace only — legacy tags coexist harmlessly per D-43 (d).
-   * Re-provisioning an org with an orphan legacy tag creates a fresh NEW-namespace
-   * tag; the orphan stays put with its UUID stable.
-   *
-   * Tag ownerId is the marketplace operator org (W3Geekery today) so that probes
-   * from any operator-admin session resolve correctly across customers.
-   */
-  private async ensureTag(orgSlug: string, _orgId: string, orgName: string): Promise<string> {
-    const tagName = buildEngagementTagName(ENGAGEMENT_TAG_NAMESPACE_NEW, orgSlug);
-    try {
-      // Probe: does tag already exist (NEW namespace)?
-      // MUST be called in OPERATOR scope — hydra's session-scope visibility
-      // filter blocks operator-owned tags from non-operator sessions (errata
-      // 041). The caller (ensurePlatformEngagement) sets that scope before
-      // calling here; this method does not manage scope itself.
-      const body = new TagSearchBody();
-      body.name = tagName;
-      const existing = await this.clientApi.hydraClient
-        .getTagApi()
-        .searchTags(1, 1, undefined, body);
-
-      if (existing && existing.items && existing.items.length > 0) {
-        return String(existing.items[0].id);
-      }
-
-      // Create — per DECISIONS.md "Marketplace tagType Is Preferred" + 2026-05-07 ownership rule.
-      const createBody = new CreateTagBody(
-        tagName,
-        undefined, // id — auto-generated
-        `Marketplace tag for the platform-services engagement: ZeroBias ➡️ ${orgName}.`,
-        MARKETPLACE_OPERATOR_ORG_ID as never,
-        new Nmtoken(TAG_TYPE),
-      );
-
-      const created = await this.clientApi.hydraClient.getTagApi().createTag(createBody);
-
-      return String(created.id);
-    } catch (err) {
-      console.warn('[PLATFORM_ENGAGEMENT_FAILURE]', {
-        step: 'A',
-        callSiteTag: 'platform-engagement:ensure-tag',
-        error: err,
-      });
-      this.snackBar.open('Setup in progress — please retry in a moment.', 'Dismiss', {
-        duration: 5000,
-      });
-      throw err;
-    }
-  }
-
-  /**
    * Step C: Create Engagement Project (depth 1; FIXED tier per D-50).
    *
-   * Top-level Project, tagged with the engagement-identity tag from Step A.
+   * Top-level Project, projectType==engagement (SDK 2.x identity — no marketplace tag).
    * boundaryId is intentionally omitted — Engagement is org-level scope per
    * ENGAGEMENT-BOUNDARY-SCOPE-REVISIT-1 (and D-47 boundary subset chain bug
    * means we cannot rely on boundary inheritance today).
@@ -332,20 +230,20 @@ export class PlatformEngagementProvisioner {
    *   - creator auto-assigned as Project Lead
    *
    * Idempotent: server-filters Projects by ownerId; client-filters by parentId==null
-   * + tagId==<engagement tagId>. See errata 036 (a) for why .list({tagId, parentId})
-   * was previously silently ignored.
+   * + projectType==engagement.
    */
   private async ensureEngagementProject(
     orgName: string,
     buyerOrgId: string,
-    tagId: string,
   ): Promise<string> {
     try {
       const all = await this.clientApi.platformClient
         .getProjectApi()
         .list(undefined, PROBE_PAGE_SIZE, undefined, buyerOrgId as never);
+      // SDK 2.x: identity = projectType==engagement + ownerId (list is ownerId-scoped);
+      // the retired marketplace tagId is gone (Nic 2026-07-01).
       const existing = all?.items?.find(
-        (p) => p.parentId == null && p.tagId != null && String(p.tagId) === tagId,
+        (p) => p.parentId == null && String(p.projectTypeId) === PROJECT_TYPE_ID.engagement,
       );
       if (existing) {
         return String(existing.id);
@@ -361,7 +259,7 @@ export class PlatformEngagementProvisioner {
         ENGAGEMENT_PROJECT_DESCRIPTION_TEMPLATE(orgName),
       );
       newProject.parentId = null;
-      newProject.tagId = tagId as never;
+      newProject.projectTypeId = PROJECT_TYPE_ID.engagement as never;
 
       const created = await this.clientApi.platformClient
         .getProjectApi()
@@ -423,7 +321,7 @@ export class PlatformEngagementProvisioner {
         PROJECT_TIER_DESCRIPTION_TEMPLATE(orgName),
       );
       newProject.parentId = engagementProjectId as never;
-      newProject.tagId = SME_MART_TIER_PROJECT_TAG_ID as never;
+      newProject.projectTypeId = PROJECT_TYPE_ID.project as never;
 
       const created = await this.clientApi.platformClient
         .getProjectApi()

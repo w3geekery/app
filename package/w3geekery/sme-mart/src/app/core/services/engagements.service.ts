@@ -6,7 +6,7 @@ import { DemoVisibilityService } from './demo-visibility.service';
 import { Memoize } from '../../shared/utils/memoize.decorator';
 import { ENGAGEMENT_FIELD_MAPPING, mapNeonToGql, mapGqlToNeon } from '../field-mappings';
 import { ZerobiasClientApi } from '@zerobias-com/zerobias-client';
-import type { ProjectExtended, Tag } from '@zerobias-com/platform-sdk';
+import type { ProjectExtended } from '@zerobias-com/platform-sdk';
 import type { QueryOptions } from '@zerobias-org/data-utils';
 import { PagedResults, UUID } from '@zerobias-org/types-core-js';
 import type {
@@ -16,7 +16,7 @@ import type {
 } from '../models';
 import type { RequestStatus } from '../models/enums';
 import type { GqlEngagementResponse } from '../gql-types';
-import { SME_MART_TIER_PROJECT_TAG_ID } from '../constants/tier-tags';
+import { PROJECT_TYPE_ID } from '../constants/project-types';
 
 // D-15: Dual-read window timeout values (primary 5s, fallback 5s)
 const PRIMARY_READ_TIMEOUT_MS = 5000;
@@ -84,8 +84,14 @@ export class EngagementsService {
             proj => !(proj as ProjectExtended).parentId,
           );
 
+          // RECONCILE-FR-014: SDK 2.x dropped inline Project tags — fetch them for demo-visibility.
+          const tagsById = await this.fetchProjectTagsMap(depth1.map(p => String((p as ProjectExtended).id)));
+
           // Transform platform.Project[] to EngagementSummaryRow[]
-          const transformed = depth1.map(proj => this.transformPlatformProjectToEngagementSummary(proj as ProjectExtended));
+          const transformed = depth1.map(proj => this.transformPlatformProjectToEngagementSummary(
+            proj as ProjectExtended,
+            tagsById.get(String((proj as ProjectExtended).id)),
+          ));
 
           // DG-02/DG-03: Client-side demo-visibility post-filter
           // Note: applyVisibility handles both GQL Engagement and platform.Project shapes (D-24)
@@ -224,18 +230,19 @@ export class EngagementsService {
         return null;
       }
 
-      // Find the project-tier child: parentId = engagementId AND tagId = SME_MART_TIER_PROJECT_TAG_ID
+      // Find the project-tier child: parentId = engagementId AND projectType = 'project'
+      // (SDK 2.x: tier is Project.projectTypeId, not the old marketplace tagId — Nic 2026-07-01.)
       const projectTier = projects.items.find(
         (p) =>
           String(p.parentId) === engagementId &&
-          String(p.tagId) === SME_MART_TIER_PROJECT_TAG_ID
+          String((p as ProjectExtended).projectTypeId) === PROJECT_TYPE_ID.project
       ) as ProjectExtended | undefined;
 
       if (!projectTier) {
         console.warn('[ENGAGEMENTS:GET_PROJECT_TIER_PROJECT]', {
           engagementId,
           reason: 'project_tier_not_found',
-          expectedTagId: SME_MART_TIER_PROJECT_TAG_ID,
+          expectedProjectTypeId: PROJECT_TYPE_ID.project,
         });
         return null;
       }
@@ -299,7 +306,12 @@ export class EngagementsService {
       const projectIdUuid = new UUID(id);
       const platformProject = await projectApi.get(projectIdUuid);
       if (platformProject) {
-        const summary = this.transformPlatformProjectToEngagementSummary(platformProject as ProjectExtended);
+        // RECONCILE-FR-014: SDK 2.x dropped inline Project tags — fetch for demo-visibility parity.
+        const tagsById = await this.fetchProjectTagsMap([String((platformProject as ProjectExtended).id)]);
+        const summary = this.transformPlatformProjectToEngagementSummary(
+          platformProject as ProjectExtended,
+          tagsById.get(String((platformProject as ProjectExtended).id)),
+        );
         return {
           ...summary,
           buyer_email: null,
@@ -440,11 +452,41 @@ export class EngagementsService {
   }
 
   /**
+   * RECONCILE-FR-014 (interim). SDK 2.x `platform.Project.list` no longer returns a
+   * project's resource-tags inline, but demo-visibility (DG-02/03) filters engagements
+   * by tag. Batch-fetch each project's resource-tags via hydra `getTagsForResource` and
+   * shape them as the GQL `[{value}]` array `DemoVisibilityService.isLocalDemoTagged`
+   * consumes. DELETE this and read the inline tags field once backend FR-014 (task-71)
+   * ships — or entirely if backlog 041 (tombstone demo-data) lands first.
+   */
+  private async fetchProjectTagsMap(projectIds: string[]): Promise<Map<string, Array<{ value: string }>>> {
+    const resourceApi = this.clientApi.hydraClient.getResourceApi();
+    const entries = await Promise.all(
+      projectIds.map(async (id) => {
+        try {
+          const tags = await resourceApi.getTagsForResource(new UUID(id));
+          return [id, (tags ?? []).map(t => ({ value: String(t.id) }))] as const;
+        } catch {
+          // Tag fetch failed for this project — treat as untagged (i.e. visible).
+          // Non-fatal: a transient hydra error must not hide real engagements.
+          return [id, [] as Array<{ value: string }>] as const;
+        }
+      }),
+    );
+    return new Map(entries);
+  }
+
+  /**
    * Transform platform.Project to EngagementSummaryRow (D-15 migration).
-   * Platform.Project shape: { id, name, description, ownerId, status, visibility, tagId, boardCount, memberCount, creator, tag, ... }
+   * SDK 2.x: Project.tag/tagId are gone. Tier is now Project.projectTypeId, and a
+   * project's resource-tags are fetched separately (RECONCILE-FR-014) and passed in as
+   * `resourceTags` (shaped as the GQL `[{value}]` array demo-visibility consumes).
    * Engagement shape: { id, title, description, buyer_zerobias_org_id, status, engagement_tag, ... }
    */
-  private transformPlatformProjectToEngagementSummary(proj: ProjectExtended): EngagementSummaryRow & { tag?: Tag } {
+  private transformPlatformProjectToEngagementSummary(
+    proj: ProjectExtended,
+    resourceTags?: Array<{ value: string }>,
+  ): EngagementSummaryRow & { tag?: Array<{ value: string }> | null } {
     return {
       id: String(proj.id),
       buyer_user_id: null, // Not available on platform.Project
@@ -458,20 +500,21 @@ export class EngagementsService {
       budget_max: null,
       timeline: null,
       status: 'in_progress' as unknown as RequestStatus, // Map platform.Project.status ('active'|'archived'|'closed') to engagement status
-      engagement_tag: proj.tag?.name ?? '',
-      zerobias_tag_id: proj.tagId ? String(proj.tagId) : null,
+      engagement_tag: '', // RECONCILE-FR-014: per-org marketplace tag retired; engagement identity is now projectType==engagement + ownerId
+      zerobias_tag_id: null, // RECONCILE-FR-014: marketplace tag id retired (was proj.tagId, gone in SDK 2.x)
       zerobias_boundary_id: proj.boundaryId ? String(proj.boundaryId) : null,
       zerobias_task_id: null,
-      created_at: proj.created?.toISOString() ?? new Date().toISOString(),
-      updated_at: proj.updated?.toISOString() ?? new Date().toISOString(),
+      created_at: proj.created?.toDate().toISOString() ?? new Date().toISOString(),
+      updated_at: proj.updated?.toDate().toISOString() ?? new Date().toISOString(),
       buyer_display_name: null,
       buyer_avatar_url: null,
       bid_count: 0,
       pending_bid_count: 0,
       accepted_provider_name: null,
       accepted_provider_id: null,
-      // D-24: Preserve tag field for polymorphic demo-visibility post-filter
-      tag: proj.tag,
+      // D-24 demo-visibility. RECONCILE-FR-014: was proj.tag (gone in SDK 2.x);
+      // resource-tags fetched separately and passed in, shaped as the GQL [{value}] array.
+      tag: resourceTags ?? null,
     };
   }
 
