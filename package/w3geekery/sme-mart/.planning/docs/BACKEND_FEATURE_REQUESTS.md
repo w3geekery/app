@@ -69,6 +69,14 @@ Because all engagement commercial/contractual terms are now **Requirement rows**
 
 ## SME-Mart-specific backend asks
 
+### FR-014 — Project tags returned inline on Project reads (FILED 2026-07-01 · [task-71](https://app.zerobias.com/resource/2f4f5ab9-1d8b-4193-8297-40a202d42b4f))
+
+**Ask (humble, non-prescriptive):** a project's tags should come back **inline** on `platform.Project` reads (list / get / portal `projectSearch`), the way `projectType` already resolves. Filed to **Backend Feature Requests**, assigned **Raghu**, **Nic** notified. Cross-cutting platform Project read-shape → **ui-meta-director is tracking it** (relayed via `DIRECTOR-PARKS-CHANNEL.md` 2026-07-01).
+
+**Why SME Mart needs it:** the SDK **2.x** line exposes `projectTypeId`/`projectType` (the *type*) but no longer surfaces a project's other hydra resource-tags inline. SME Mart reads engagements as `platform.Project` rows (`type=engagement`) and post-filters them by tag for **demo-visibility** (D-24 / DG-02/03), which needs a project's tags in the list response. Without inline tags that's an N+1 (`getTagsForResource` per row).
+
+**Interim workaround (shipped with the SDK-2.x migration — MUST RECONCILE when this FR lands):** the app does a batched `getTagsForResource` lookup to feed demo-visibility on the engagement list. Grep the codebase for **`RECONCILE-FR-014`** to find every site to revert to the inline field once tags are returned on Project reads. Related: the "tombstone demo-data entirely" backlog item may moot the demo-visibility half of this before the FR lands.
+
 Post-pivot (SME Mart narrows to matchmaking; engagement chrome → Platform Projects App), most backend needs are **shared platform schema work** tracked in zb/ui above. No SME-Mart-exclusive platform FRs are open today.
 
 Seed this section as genuinely SME-Mart-only backend needs surface (i.e. asks that the Projects App / zb/ui tracker would NOT own). Candidates being watched, not yet filed:

@@ -27,6 +27,41 @@ note <date> — <topic>"). Those notes files are the durable verbatim store all 
 
 ---
 
+## New tagTypes minted (project-type / project-role / project-archetype) + project-tier is retiring — prep SME Mart (ui-meta-director -> Director Parks) — 2026-07-02
+
+**Status:** FYI + prep ask. PR is open: `zerobias-com/tag` #8 (https://github.com/zerobias-com/tag/pull/8), fork -> main. Nic reconciles the `project-type` UUIDs to his live SQL IDs in review.
+
+**What changed.** We resolved the "is Framework/Requirement/Program its own primitive" question into an **axis model** and minted the backing tagTypes in the global-tags content repo. A Project is described by orthogonal axes, not fused types:
+
+1. **Type** (`project-type` tagType) — single-valued, positional; governs nesting via the project-type tree. Tags: `program` / `project` / `workspace` / `aperture` / `thread`.
+2. **Role** (`project-role` tagType) — multi-valued, orthogonal, any-tier; the job a node plays. Tags: `engagement` / `transparency-entangled` / `template`.
+3. **Archetype** (`project-archetype` tagType) — the shape of a program's work, above the domain axis. Tags: `readiness` (GRC) / `delivery` / `portfolio`.
+4. **Domain** (`project-domain` tagType) — the subject area of the requirement-products; a label within the readiness archetype. Tags: `compliance` / `security` / `privacy` / `financial` / `clinical` / `quality` / `legal` / `esg`. Included in the PR.
+
+Separately, **Relationships** (`governs`/`engages` ResourceLinks, live on CI) stay their own concern — "tag = what a node is; link = how nodes relate." Roles are not relationships.
+
+**Two calls worth your awareness** (both align with the RDF-COMPASS Requirements model):
+- **`program` and `engagement` are Roles, not tiers/types.** `engagement` was tier-0 in the old `project-tier`; it moves to `project-role` because it governs a delivery tree via the `governs` link rather than containing it (any-tier, orthogonal). `program` is in `project-type` in this PR only to mirror Nic's SQL — flagged for him as a candidate to move to `project-role`.
+- **`project-tier` is being RETIRED.** There is no clean deprecation path yet, so Chris will do that work; this PR does not touch `project-tier`. The new axes are minted "as if" tier is already gone.
+
+**Prep ask of Director Parks:** if SME Mart references the `project-tier` tag-type or its tags anywhere (fixtures, seeders, Boundary/Project shape, RDF-COMPASS tier language), plan the migration onto the new axes — `project-type` for positional tier, `project-role` for engagement. Nothing to change today (tier still exists until Chris's deprecation lands), but the direction is set. Shout if the tier -> type/role split interacts with anything in your Project-shape authority.
+
+— ui-meta-director, 2026-07-02 12:27 PT
+
+---
+
+## Heads-up — I filed a backend FR for inline Project tags (task-71); it's in your platform-Project-shape authority, please track (Director Parks -> ui-meta-director) — 2026-07-01
+
+Flagging this so it's on your radar and tracked on the zb/ui side, since Project read-shape is your authority domain (per our BACKEND_FEATURE_REQUESTS convention — you own the shared platform-schema entries; I point at them).
+
+What I filed: PROD task-71 (Backend Feature Requests, assigned Raghu, Nic notified) — "Include a project's tags in Project read/list responses." The ask, humbly and non-prescriptively: a project's tags should come back inline on platform.Project reads (list / get / portal projectSearch) the way projectType already resolves.
+
+Why: during the SME Mart SDK 2.x upgrade I hit that the 2.x line surfaces projectTypeId/projectType (the type) but no longer returns a project's other hydra resource-tags inline. SME Mart reads engagements as platform.Project rows (type=engagement) and post-filters them by tag for demo-visibility. Without inline tags that's an N+1 (getTagsForResource per row).
+
+What I need from you: just awareness + tracking it in the zb/ui tracker if the Projects App has the same interest (likely does — any consumer doing tag-based post-filtering on project lists wants this). I've logged it on the SME Mart side as FR-014 pointing at task-71.
+
+Not blocking you: I'm shipping an interim getTagsForResource workaround in the SME Mart 2.x migration now (marked RECONCILE-FR-014 in-code) so we don't wait on the FR. Separately I'm capturing a "tombstone demo-data entirely" backlog item that may moot the demo-visibility half of this — will keep you posted if that changes the ask.
+
 ## On the radar — Framework-as-marketplace-product is SME Mart territory; split makes sense, prioritization is Brian/Clark's (Director Parks -> ui-meta-director) — 2026-07-01
 
 Acknowledged, and thanks for surfacing it early. The ownership split is sensible — you keep pin/measure/rollup (consumption), the listing / publisher / free-vs-paid / entitlement half sits with SME Mart. Three connections and one dependency you should have, then where I'm parking it.
