@@ -3733,3 +3733,21 @@ You're Director Parks for SME Mart. NEW workstream: you built the **Services seg
 Drill in: `/pins service-taxonomy-and-vetting-vision`.
 
 ---
+
+## 📍 2026-06-25 parkit (33) — v1.5 schema critical path DONE (PR #61 merged + verified live UAT); §7 ALL RESOLVED (D-56/D-57); Phase 33 handed to gsd-plan; architect-read hook ported; memex is canonical (file-based memory RETIRED)
+
+**TL;DR.** This session drove **v1.5 Phase 33 from "blocked, no PR" to fully unblocked + handed to gsd-plan.** (1) Verified the schema gate **cleared** — the parkit-31/32 "schema PR, NO PR yet" item was **STALE**: PR #58 merged 2026-06-08. (2) Resolved **§7 #1-#9** — **D-56** (ServiceSegment = real Catalog `segmentType:service` segments, not the 9 hydra tags) + **D-57** (`businessType` → typed `OrgProfile.businessClassification` enum). (3) **Shipped that schema change as PR #61 → MERGED + published 2.0.6 → verified LIVE in UAT GQL.** (4) Ground out `provider-profiles.service.ts`, handed Phase 33 to **gsd-plan** via `GSD-PLAN-CHANNEL.md`; fixed a ROADMAP Phase-33 number-collision (twice — the SDK text-matches the literal heading token). Plus: slimmed `SCHEMA_CHANGE_PROCESS.md`, established **memex-is-canonical** (file-based memory retired), registered **AuditCrowd** (backlog 039), ported the **architect-read hook**.
+
+### RESUME HERE (parkit-33) — SUPERSEDED by parkit-34
+The Phase-33 plan handoff to gsd-plan (this section) is DONE: gsd-plan planned it, plan-checker passed, and parkit-34 covers the EXECUTION that followed. Kept here only for lineage. Key durable facts from this session, still true:
+- Schema critical path DONE: PR #58 (consolidation, MPI retired from profile path) + PR #61 (`OrgProfile.businessClassification` 7-value enum + `employeeCount` re-band to the 100-emp Foundation-eligibility boundary), published `@zerobias-org/schema-w3geekery-smemart@2.0.6`, verified live in UAT GQL 2026-06-25 (and later verified uat==prod in parkit-34).
+- **§7 decisions LOCKED:** **D-56** ServiceSegment Option B = the real Catalog `segmentType:service` segments (133 leaves under `d_svc`; loader = `platform.Segment.list` filtered to `segmentType=service`); the 9 hydra `service-segment` tags retired. **D-57** `businessClassification` = typed `OrgProfile` enum, **7 values** (Nonprofit / Government / Hospital-Healthcare / Publicly-traded / PE-backed / Privately-held / Individual-Sole-Proprietor), shared with the contact-us CRM taxonomy. #2-#9 = drop/retire/clean-cut. Design contract LOCKED in `profile-migration-mapping-2026-06-08.md` + DECISIONS D-54/D-56/D-57.
+- **Architect-read hook** ported from zb/ui: `.claude/hooks/architect-skill-{gate,mark}.sh` (PreToolUse Edit|Write blocks `src/` edits until the agent consumes the `sme-mart-architect` skill), wired in `.claude/settings.local.json` — activates on fresh session load.
+- **memex is CANONICAL; the file-based `~/.claude/.../memory/` is RETIRED** (redirect any "save memory" to memex — routing: ZB facts→`zerobias/<area>/`, Clark prefs→`meta/preferences/`, harness/tool→`meta/tools/`, workflow/git→`meta/workflow/`).
+- **AuditCrowd** = sibling 3P app sharing SME Mart's transparency architecture; individual-vetting substrate = backlog 039.
+- **Carryover still open:** contact-us WP embed swap (blocked on WordPress access); Hugo/WordPress retirement (D-55, epic task-50 tree); pilot T&C first-login accept; onboarding-template backlog 038.
+
+### Pinned moments (parkit-33)
+No new `[[PIN:]]` markers dropped that session.
+
+---
