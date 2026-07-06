@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZeroBias Customer Onboarding — End-to-End Flow & the Provisioning Gate</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0b0e14;
+    --surface: #12161f;
+    --surface2: #1a1f2b;
+    --elevated: #1e2433;
+    --border: rgba(255,255,255,0.07);
+    --border-bright: rgba(255,255,255,0.14);
+    --text: #e6e9f2;
+    --dim: #8c93a8;
+    --blue: #60a5fa;
+    --green: #34d399;
+    --purple: #c084fc;
+    --orange: #fb923c;
+    --red: #f87171;
+    --teal: #2dd4bf;
+    --yellow: #fbbf24;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { color-scheme: dark; }
+  body {
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at 12% -5%, rgba(96,165,250,0.10) 0%, transparent 45%),
+      radial-gradient(ellipse at 90% 105%, rgba(52,211,153,0.08) 0%, transparent 42%);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 17px;
+    line-height: 1.55;
+    padding: 32px 40px 120px;
+    max-width: 1180px;
+    margin: 0 auto;
+    overflow-wrap: break-word;
+  }
+  h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px; }
+  .subtitle { color: var(--dim); font-size: 18px; margin-bottom: 12px; }
+  .meta { color: var(--dim); font-size: 16px; font-family: 'SF Mono', Consolas, monospace; margin-bottom: 28px; }
+  h2 { font-size: 26px; font-weight: 700; margin: 44px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  h2 .num { color: var(--blue); font-family:'SF Mono',monospace; font-size:20px; }
+  h3 { font-size: 20px; font-weight: 600; margin: 22px 0 10px; }
+  p { margin-bottom: 12px; }
+  a { color: var(--blue); }
+  code { font-family:'SF Mono',Consolas,monospace; font-size: 15px; background: var(--surface2); padding: 1px 6px; border-radius: 4px; color:#cdd5e6; }
+  .lead { font-size: 18px; }
+  .toc { position: sticky; top: 0; z-index: 100; background: rgba(11,14,20,0.92); backdrop-filter: blur(8px); display:flex; flex-wrap:wrap; gap:6px; padding: 12px 0; margin: 0 0 8px; border-bottom: 1px solid var(--border); }
+  .toc a { font-size: 15px; color: var(--dim); text-decoration:none; padding: 5px 11px; border-radius: 6px; border:1px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--surface2); border-color: var(--border); }
+
+  .card { background: var(--surface); border:1px solid var(--border); border-radius: 12px; padding: 18px 22px; margin-bottom: 16px; }
+  .card.focus { border-color: var(--blue); box-shadow: 0 0 0 1px rgba(96,165,250,0.25), 0 6px 30px rgba(96,165,250,0.12); background: linear-gradient(180deg, rgba(96,165,250,0.07), var(--surface)); }
+  .card.warn { border-color: rgba(251,146,60,0.5); background: linear-gradient(180deg, rgba(251,146,60,0.06), var(--surface)); }
+  .pill { display:inline-block; font-size: 14px; font-family:'SF Mono',monospace; padding: 2px 9px; border-radius: 20px; border:1px solid var(--border-bright); color: var(--dim); }
+  .tag { display:inline-block; font-size:13px; font-weight:600; padding:2px 9px; border-radius:5px; letter-spacing:.4px; }
+  .tag.auto { background: rgba(52,211,153,0.15); color:#86efac; }
+  .tag.admin { background: rgba(251,146,60,0.15); color:#fdba74; }
+  .tag.tbd { background: rgba(248,113,113,0.15); color:#fca5a5; }
+  .tag.have { background: rgba(52,211,153,0.15); color:#86efac; }
+  .tag.make { background: rgba(248,113,113,0.15); color:#fca5a5; }
+
+  .lifecycle { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin: 14px 0; font-family:'SF Mono',monospace; font-size:15px; }
+  .lifecycle .st { padding:6px 14px; border-radius:8px; background: var(--elevated); border:1px solid var(--border-bright); }
+  .lifecycle .ar { color: var(--blue); font-weight:700; }
+
+  table { width:100%; border-collapse: collapse; margin: 14px 0 8px; font-size: 16px; }
+  th, td { text-align:left; padding: 11px 13px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--dim); font-size: 14px; text-transform: uppercase; letter-spacing: .6px; font-weight:700; background: var(--surface2); }
+  tr:hover td { background: rgba(255,255,255,0.018); }
+  td strong { color: var(--text); }
+  .muted { color: var(--dim); font-size: 15px; }
+
+  ul { margin: 4px 0 14px 22px; }
+  li { margin-bottom: 6px; }
+
+  /* mermaid */
+  .mermaid-wrap { position: relative; background: var(--surface); border:1px solid var(--border); border-radius: 12px; padding: 16px; margin: 14px 0 20px; overflow: auto; resize: both; min-height: 220px; max-height: 78vh; }
+  .mermaid-wrap.is-panning { cursor: grabbing; }
+  .mermaid { transform-origin: top left; transition: transform .08s ease-out; }
+  .mermaid-wrap::after { content:''; position:absolute; right:4px; bottom:4px; width:12px; height:12px; border-right:2px solid var(--border-bright); border-bottom:2px solid var(--border-bright); pointer-events:none; opacity:.6; }
+  .diagram-controls { position: absolute; top: 10px; right: 10px; display:flex; gap:6px; z-index: 5; }
+  .diagram-controls button { width:30px; height:30px; border-radius:7px; border:1px solid var(--border-bright); background: rgba(20,24,32,0.9); color: var(--text); font-size:17px; cursor:pointer; line-height:1; display:flex; align-items:center; justify-content:center; }
+  .diagram-controls button:hover { background: var(--elevated); border-color: var(--blue); }
+  .cap { color: var(--dim); font-size: 15px; margin: -8px 0 18px; }
+
+  .mermaid-fullscreen-overlay { position: fixed; inset:0; background: rgba(6,8,12,0.97); z-index: 1000; display:flex; flex-direction:column; opacity:0; transition: opacity .2s; }
+  .mermaid-fullscreen-overlay.visible { opacity:1; }
+  .fs-toolbar { display:flex; justify-content:space-between; align-items:center; padding: 12px 18px; border-bottom:1px solid var(--border); }
+  .fs-title { font-size:16px; color: var(--dim); font-family:'SF Mono',monospace; }
+  .fs-controls { display:flex; gap:8px; align-items:center; }
+  .fs-controls button { min-width:36px; height:36px; padding:0 10px; border-radius:8px; border:1px solid var(--border-bright); background: var(--surface); color:var(--text); font-size:17px; cursor:pointer; }
+  .fs-controls button:hover { border-color: var(--blue); background: var(--elevated); }
+  .fs-zoom-label { font-family:'SF Mono',monospace; font-size:15px; color:var(--dim); min-width:48px; text-align:center; }
+  .fs-viewport { flex:1; overflow:auto; padding:24px; cursor: grab; }
+  .fs-viewport.is-panning { cursor: grabbing; }
+
+  .legend { display:flex; flex-wrap:wrap; gap:14px; margin: 8px 0 18px; font-size:15px; }
+  .legend span { display:flex; align-items:center; gap:7px; color: var(--dim); }
+  .legend i { width:13px; height:13px; border-radius:3px; display:inline-block; }
+</style>
+</head>
+<body>
+
+<div class="toc" id="toc">
+  <a href="#journey">1 · The Journey</a>
+  <a href="#step5">2 · Step 5 — What Gets Created</a>
+  <a href="#reqsat">3 · The Req / Sat Unlock Model</a>
+  <a href="#cascade">4 · Tasks → Unlocks</a>
+  <a href="#activities">5 · Activities: Have vs Build</a>
+  <a href="#backend">6 · What Backend Builds</a>
+  <a href="#questions">7 · Decisions for Brian</a>
+</div>
+
+<h1>ZeroBias Customer Onboarding — End-to-End Flow</h1>
+<p class="subtitle">From "Contact Us" to an unlocked platform: what happens at each step, where the Engagement + Project + Tasks are born, and how completing a task unlocks the next feature.</p>
+<p class="meta">Director Parks · 2026-06-02 · grounded in zb/ui INVITE_MECHANISM_EXPLAINED + the live Activity registry (prod)</p>
+
+<div class="card">
+  <p class="lead" style="margin-bottom:6px;"><strong>The one-sentence version.</strong></p>
+  <p style="margin-bottom:0;">A prospect contacts us → a ZeroBias employee approves them → they sign in → <strong>the backend creates their default Engagement, Project, Board and onboarding tasks</strong> → and as the customer completes each onboarding task, the platform unlocks the next piece (Catalog, Labs, connectors). <strong>Step 5 — the provisioning moment — is the part we're defining now.</strong></p>
+</div>
+
+<!-- 1 -->
+<h2 id="journey"><span class="num">1</span> The Journey — Contact Us to Unlocked Platform</h2>
+<p>Eight steps. The first four already exist as the ZeroBias <strong>invite mechanism</strong> (org invitation + Zoho CRM lead). Step 5 is the gap we're filling. Steps 6–8 are what the customer experiences afterward.</p>
+
+<div class="legend">
+  <span><i style="background:var(--green)"></i> Prospect / Customer</span>
+  <span><i style="background:var(--yellow)"></i> Zoho CRM (external)</span>
+  <span><i style="background:var(--purple)"></i> ZeroBias employee</span>
+  <span><i style="background:var(--orange)"></i> Platform / Backend</span>
+  <span><i style="background:var(--blue)"></i> The piece we're defining</span>
+</div>
+
+<div class="mermaid-wrap">
+  <div class="diagram-controls">
+    <button onclick="zoomDiagram(this,1.25)" title="Zoom in">+</button>
+    <button onclick="zoomDiagram(this,0.8)" title="Zoom out">&minus;</button>
+    <button onclick="resetZoom(this)" title="Reset">&#8634;</button>
+    <button onclick="openFullscreen(this)" title="Fullscreen">&#x26F6;</button>
+  </div>
+  <div class="mermaid">
+flowchart TB
+  A["1. Prospect fills out the Lead form<br/>zerobias.com/contact-us"]:::prospect
+  B["2. Form submits to Zoho CRM as a Lead"]:::ext
+  C["3. ZeroBias employee reviews the lead<br/>Approves - sends email invitation link"]:::zb
+  D["4. Prospect clicks invite link<br/>Platform login + OAuth sign-in<br/>(EULA accepted here)"]:::platform
+  E["5. Backend provisions the Org record<br/>(today: a black box)"]:::focus
+  E2["5a. Default Engagement + Project + Board created<br/>Onboarding Tasks materialized"]:::focus
+  F["6-8. Customer lands in<br/>Projects App / Engagements / their engagement<br/>then onboarding Task Board"]:::cust
+  G["Completing tasks unlocks more features"]:::cust
+  A --> B --> C --> D --> E --> E2 --> F --> G
+
+  classDef prospect fill:#10261c,stroke:#34d399,color:#e6e9f2;
+  classDef ext fill:#2a2410,stroke:#fbbf24,color:#e6e9f2;
+  classDef zb fill:#241a2e,stroke:#c084fc,color:#e6e9f2;
+  classDef platform fill:#2a1d12,stroke:#fb923c,color:#e6e9f2;
+  classDef cust fill:#10261c,stroke:#34d399,color:#e6e9f2;
+  classDef focus fill:#13243a,stroke:#60a5fa,color:#e6e9f2,stroke-width:2px;
+  </div>
+</div>
+<p class="cap">Drag to pan · scroll+Ctrl to zoom · ⛶ for fullscreen. The two blue boxes are Step 5 — the provisioning moment we're specifying.</p>
+
+<h3>The invitation lifecycle (already built)</h3>
+<p>Behind steps 2–4, the platform tracks an <code>app.organization_invitation</code> record with a Zoho CRM lead link (<code>crm_record_id</code>). Its status walks this path:</p>
+<div class="lifecycle">
+  <span class="st">New</span><span class="ar">→</span>
+  <span class="st">Sent</span><span class="ar">→</span>
+  <span class="st">Approved</span><span class="ar">→</span>
+  <span class="st">Accepted</span>
+</div>
+<p class="muted">New = lead created · Sent = synced to Zoho · Approved = ZeroBias employee green-lights (step 3) · Accepted = prospect signs in and links their principal (step 4). When the org is created, <code>invited_org_id</code> is set — <strong>that's the natural trigger point for Step 5 provisioning</strong> (a <code>PlatformAdminProvisioning</code> event handler already exists to hang it on).</p>
+
+<!-- 2 -->
+<h2 id="step5"><span class="num">2</span> Step 5 — What Provisioning Creates</h2>
+<p>This is the "black box." When the org is born, the backend should materialize the customer's starting point. Per our governance-node model (D-52), the default engagement is <strong>ZeroBias (provider) → Customer (buyer)</strong>:</p>
+
+<div class="card focus">
+  <div class="mermaid-wrap" style="background:transparent;border:none;padding:0;margin:0;resize:none;">
+    <div class="diagram-controls">
+      <button onclick="zoomDiagram(this,1.25)" title="Zoom in">+</button>
+      <button onclick="zoomDiagram(this,0.8)" title="Zoom out">&minus;</button>
+      <button onclick="resetZoom(this)" title="Reset">&#8634;</button>
+      <button onclick="openFullscreen(this)" title="Fullscreen">&#x26F6;</button>
+    </div>
+    <div class="mermaid">
+flowchart TB
+  TRIG["Org created (invitation Accepted)"]:::trig --> PROV{{"Provisioning op OB-001"}}:::op
+  PROV --> PROJECTS
+
+  subgraph PROJECTS ["Provisioned platform.Projects (D-52)"]
+    direction LR
+    ENG["Engagement node<br/>commercial seam:<br/>ZeroBias to Customer"]:::node -. governs .-> PROJ["Delivery Project"]:::node
+  end
+
+  ENG -. candidate owner .-> DECIDE{"OPEN DECISION<br/>which Project owns<br/>the onboarding Board?"}:::q
+  PROJ -. candidate owner .-> DECIDE
+  DECIDE ==> BOARD["Onboarding Board<br/>a Board is a CHILD of a Project"]:::board
+  BOARD ==> TASKS["Onboarding Tasks<br/>Tasks are OWNED by the Board<br/>(Req / Sat pairs)"]:::tasks
+  TASKS --> SEE["Customer sees these in<br/>Projects App / Engagements"]:::see
+
+  classDef trig fill:#2a1d12,stroke:#fb923c,color:#e6e9f2;
+  classDef op fill:#13243a,stroke:#60a5fa,color:#e6e9f2,stroke-width:2px;
+  classDef node fill:#1a1f2b,stroke:#60a5fa,color:#e6e9f2;
+  classDef q fill:#2a2410,stroke:#fbbf24,color:#e6e9f2,stroke-width:2px;
+  classDef board fill:#241a2e,stroke:#c084fc,color:#e6e9f2;
+  classDef tasks fill:#10261c,stroke:#34d399,color:#e6e9f2;
+  classDef see fill:#10261c,stroke:#34d399,color:#e6e9f2;
+    </div>
+  </div>
+</div>
+<p style="margin-top:14px;"><strong>Ownership chain:</strong> <code>Project &gt; Board &gt; Tasks</code>. A <strong>Board is a child of a Project</strong>; <strong>Tasks are owned by a Board</strong>. So the open decision isn't "engagement or project owns the tasks" directly — it's <strong>which Project the onboarding Board hangs off</strong>: the <span style="color:var(--blue)">Engagement node</span> (also a <code>platform.Project</code>) or the <span style="color:var(--blue)">governed Delivery Project</span>. The tasks follow whichever Project owns that Board.</p>
+<p class="cap">The customer initially sees <strong>only</strong> Projects App / Engagements / their engagement, where the onboarding tasks live. Everything else is locked until tasks are completed.</p>
+
+<!-- 3 -->
+<h2 id="reqsat"><span class="num">3</span> The Req / Sat Unlock Model</h2>
+<p class="lead">This is the heart of it. Every onboarding gate is a <strong>pair of linked tasks</strong> that straddle the line between ZeroBias and the customer:</p>
+<ul>
+  <li><strong>Req (Requirement)</strong> — lives on the <strong>ZeroBias platform side</strong>. The assertion: "this customer must sign the EULA / MSA / pay / etc."</li>
+  <li><strong>Sat (Satisfaction)</strong> — lives on the <strong>customer side</strong>, on their onboarding board. The action: "Sign the MSA."</li>
+  <li>When the customer completes the Sat task, it <strong>satisfies the Req</strong>, which <strong>fires a workflow</strong> that either <span class="tag auto">auto-unlocks</span> the feature or <span class="tag admin">notifies an admin</span> to unlock it (depending on the gate).</li>
+</ul>
+
+<div class="mermaid-wrap">
+  <div class="diagram-controls">
+    <button onclick="zoomDiagram(this,1.25)" title="Zoom in">+</button>
+    <button onclick="zoomDiagram(this,0.8)" title="Zoom out">&minus;</button>
+    <button onclick="resetZoom(this)" title="Reset">&#8634;</button>
+    <button onclick="openFullscreen(this)" title="Fullscreen">&#x26F6;</button>
+  </div>
+  <div class="mermaid">
+flowchart LR
+  subgraph ZB["ZeroBias platform side"]
+    R["REQ task<br/>Customer must sign MSA"]:::req
+  end
+  subgraph CUST["Customer side"]
+    S["SAT task<br/>Sign MSA (onboarding board)"]:::sat
+  end
+  R -. entangled pair .- S
+  S ==>|customer completes| CHK{{"Satisfies REQ - fires workflow"}}:::chk
+  CHK -->|simple gate| U1["AUTO unlock<br/>e.g. open Catalog"]:::auto
+  CHK -->|needs review| U2["Notify admin to unlock<br/>e.g. payment / eligibility"]:::adm
+
+  classDef req fill:#2a1d12,stroke:#fb923c,color:#e6e9f2;
+  classDef sat fill:#10261c,stroke:#34d399,color:#e6e9f2;
+  classDef chk fill:#13243a,stroke:#60a5fa,color:#e6e9f2,stroke-width:2px;
+  classDef auto fill:#10261c,stroke:#34d399,color:#e6e9f2;
+  classDef adm fill:#2a1d12,stroke:#fb923c,color:#e6e9f2;
+  </div>
+</div>
+<p class="cap">The Req↔Sat pair is the same entangled-task pattern that powers transparency across parties — the task pair is the only seam where the two sides meet.</p>
+
+<!-- 4 -->
+<h2 id="cascade"><span class="num">4</span> Onboarding Tasks → What Each One Unlocks</h2>
+<p>Proposed sequence. <span class="tag tbd">TBD</span> = Brian needs to confirm exactly which agreement unlocks which feature.</p>
+<table>
+  <thead>
+    <tr><th>#</th><th>Sat task (customer)</th><th>Req (ZeroBias)</th><th>On completion</th><th>Unlocks</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td><strong>Complete company profile</strong><br/><span class="muted">legal name, entity type, size</span></td>
+      <td>Profile + classification on file</td>
+      <td><span class="tag auto">auto</span> compute Guild eligibility → choose which agreements apply</td>
+      <td>Reveals the correct agreement set (the tasks below)</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>Sign EULA</strong></td>
+      <td>EULA executed</td>
+      <td><span class="tag auto">auto</span> <span class="muted">(partly handled today at login)</span></td>
+      <td>Basic platform access</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><strong>Sign Platform MSA</strong></td>
+      <td>MSA executed</td>
+      <td><span class="tag auto">auto</span></td>
+      <td>Engagement/Project access <span class="tag tbd">confirm</span></td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><strong>Sign Guild Membership Agreement</strong></td>
+      <td>Guild membership executed</td>
+      <td><span class="tag admin">admin</span> <span class="muted">eligibility review</span></td>
+      <td>Guild member status</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><strong>Submit membership payment</strong><br/><span class="muted">placeholder for now</span></td>
+      <td>Payment received</td>
+      <td><span class="tag admin">admin</span> / payment webhook</td>
+      <td><strong>Catalog App</strong> (full, paying) <span class="tag tbd">confirm trigger</span></td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><strong>Contributor Agreement</strong><br/><span class="muted">conditional · git-PR measured</span></td>
+      <td>Contributor status verified</td>
+      <td><span class="tag admin">admin</span></td>
+      <td>Connector access &amp; contributor perks <span class="tag tbd">later phase?</span></td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td><strong>Foundation Labs Agreement</strong><br/><span class="muted">conditional · via Guild</span></td>
+      <td>Labs access executed</td>
+      <td><span class="tag auto">auto</span></td>
+      <td>ZeroBias Foundation Labs (build labs) <span class="tag tbd">define</span></td>
+    </tr>
+  </tbody>
+</table>
+<p class="muted">Catalog access also has a "limited vs open" split for non-paying vs paying members — the exact line is a Brian decision (see §7).</p>
+
+<!-- 5 -->
+<h2 id="activities"><span class="num">5</span> Activities: What We Have vs What We Build</h2>
+<p>Tasks are created from <strong>Activities</strong> (task templates). The live registry holds <strong>142</strong> of them. The finding: we have a mature <em>consulting/audit</em> onboarding set, but <strong>none</strong> of the platform/Guild signup gates exist yet.</p>
+<table>
+  <thead><tr><th>Onboarding gate</th><th>Activity today?</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>Complete company profile (signup)</td><td>partial — <code>obaCp01</code> is audit-context</td><td><span class="tag make">create / adapt</span></td></tr>
+    <tr><td>Declare entity type &amp; size</td><td>partial — onboarding survey <code>audSurv1</code></td><td><span class="tag make">create / extend</span></td></tr>
+    <tr><td>Sign EULA</td><td>partly at login (<code>acceptDocument</code>)</td><td><span class="tag make">surface as task</span></td></tr>
+    <tr><td>Sign Platform MSA</td><td>none</td><td><span class="tag make">create</span></td></tr>
+    <tr><td>Sign Guild Membership Agreement</td><td>none</td><td><span class="tag make">create</span></td></tr>
+    <tr><td>Sign Guild Contributor Agreement</td><td>none</td><td><span class="tag make">create</span></td></tr>
+    <tr><td>Sign Foundation Labs Agreement</td><td>none</td><td><span class="tag make">create</span></td></tr>
+    <tr><td>Submit membership payment</td><td>none</td><td><span class="tag make">create</span></td></tr>
+    <tr><td>Grant Catalog access (unlock)</td><td>none</td><td><span class="tag make">create / model as trigger</span></td></tr>
+  </tbody>
+</table>
+<div class="card">
+  <p style="margin-bottom:6px;"><strong>Good news for backend:</strong> the Activity object already carries a name template, built-in RACI roles, links to gated resources, and on-completion triggers. <strong>The gap is content (defining ~9 activities), not capability.</strong> Existing reusable activities also need their roles updated off the legacy consulting org (Engagement Lead / VP Consulting) onto the self-service model (customer Org Admin).</p>
+</div>
+
+<!-- 6 -->
+<h2 id="backend"><span class="num">6</span> What Backend Builds</h2>
+<table>
+  <thead><tr><th>ID</th><th>What</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><strong>OB-001</strong></td><td>Default-engagement provisioning op</td><td>Mint Engagement + Project + Board + tasks. Hook on org-created / <code>PlatformAdminProvisioning</code> event. SME Mart provisioner is the reference impl.</td></tr>
+    <tr><td><strong>OB-002</strong></td><td>Entity classification + Guild eligibility</td><td>Type + employee-band fields; derived <code>guildEligible</code>. Likely extends <code>AppOrgProfile.orgTypes</code>.</td></tr>
+    <tr><td><strong>OB-003</strong></td><td>Onboarding Activity definitions</td><td>Create the ~9 missing gate activities + re-role existing ones (§5).</td></tr>
+    <tr><td><strong>OB-004</strong></td><td>Agreement-as-Requirement model</td><td>Each agreement = a Req row; signature satisfies. Drives the Requirements architecture.</td></tr>
+    <tr><td><strong>OB-005</strong></td><td>App-entitlement / unlock model</td><td>Satisfied Req set → app access (Catalog first). Enforced at the API, not the UI.</td></tr>
+    <tr><td><strong>OB-006</strong></td><td>Eligibility / entitlement rules</td><td>Configurable (the &lt;100 limit + rules will change).</td></tr>
+  </tbody>
+</table>
+
+<!-- 7 -->
+<h2 id="questions"><span class="num">7</span> Decisions for Brian</h2>
+<div class="card warn">
+  <ul style="margin-bottom:0;">
+    <li><strong>Reuse or fork?</strong> Should signup onboarding reuse the consulting flow or be its own lean self-serve sequence? (Lean: separate sequence.)</li>
+    <li><strong>What unlocks Catalog exactly?</strong> Which signature(s) + payment open the Catalog — and what does "limited" Catalog mean for non-payers?</li>
+    <li><strong>Conditional agreements:</strong> going forward, which entity types must sign extra agreements? (Today all current customers are the same.)</li>
+    <li><strong>Non-eligible entities</strong> (public / PE-backed / &gt;100 employees): do they still onboard, and on what path?</li>
+    <li><strong>Contributors &amp; Foundation Labs:</strong> launch now, or a later phase?</li>
+  </ul>
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    darkMode: true,
+    themeVariables: {
+      fontSize: '18px',
+      fontFamily: "'Segoe UI', system-ui, sans-serif",
+      lineColor: '#6b7280',
+      primaryColor: '#1e2433',
+      primaryBorderColor: '#60a5fa',
+      primaryTextColor: '#e6e9f2',
+      clusterBkg: '#12161f',
+      clusterBorder: '#3a4358',
+      edgeLabelBackground: '#12161f',
+    }
+  });
+</script>
+<script>
+  function zoomDiagram(btn, factor) {
+    var wrap = btn.closest('.mermaid-wrap');
+    var t = wrap.querySelector('.mermaid');
+    var cur = parseFloat(t.dataset.zoom || '1');
+    var next = Math.min(Math.max(cur * factor, 0.3), 8);
+    t.dataset.zoom = next; t.style.transform = 'scale(' + next + ')';
+  }
+  function resetZoom(btn) {
+    var t = btn.closest('.mermaid-wrap').querySelector('.mermaid');
+    t.dataset.zoom = '1'; t.style.transform = 'scale(1)';
+  }
+  document.querySelectorAll('.mermaid-wrap').forEach(function(wrap) {
+    wrap.addEventListener('wheel', function(e) {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      var t = wrap.querySelector('.mermaid');
+      var cur = parseFloat(t.dataset.zoom || '1');
+      var next = Math.min(Math.max(cur * (e.deltaY < 0 ? 1.15 : 0.85), 0.3), 8);
+      t.dataset.zoom = next; t.style.transform = 'scale(' + next + ')';
+    }, { passive: false });
+    var sx, sy, sl, st;
+    wrap.addEventListener('mousedown', function(e) {
+      if (e.target.closest('.diagram-controls')) return;
+      var t = wrap.querySelector('.mermaid');
+      if (parseFloat(t.dataset.zoom || '1') <= 1) return;
+      wrap.classList.add('is-panning');
+      sx = e.clientX; sy = e.clientY; sl = wrap.scrollLeft; st = wrap.scrollTop;
+    });
+    window.addEventListener('mousemove', function(e) {
+      if (!wrap.classList.contains('is-panning')) return;
+      wrap.scrollLeft = sl - (e.clientX - sx); wrap.scrollTop = st - (e.clientY - sy);
+    });
+    window.addEventListener('mouseup', function() { wrap.classList.remove('is-panning'); });
+  });
+  function openFullscreen(btn) {
+    var svg = btn.closest('.mermaid-wrap').querySelector('.mermaid svg');
+    if (!svg) return;
+    var overlay = document.createElement('div');
+    overlay.className = 'mermaid-fullscreen-overlay';
+    var zoom = 1;
+    var toolbar = document.createElement('div');
+    toolbar.className = 'fs-toolbar';
+    toolbar.innerHTML = '<span class="fs-title">Diagram — Esc to close</span><div class="fs-controls">' +
+      '<button class="fo">&minus;</button><span class="fs-zoom-label">100%</span>' +
+      '<button class="fi">+</button><button class="ff">Fit</button><button class="fc">&times;</button></div>';
+    var viewport = document.createElement('div');
+    viewport.className = 'fs-viewport';
+    var clone = svg.cloneNode(true);
+    clone.style.transformOrigin = 'top left'; clone.style.maxWidth = 'none'; clone.style.width = 'auto'; clone.style.height = 'auto';
+    viewport.appendChild(clone);
+    overlay.appendChild(toolbar); overlay.appendChild(viewport);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ overlay.classList.add('visible'); }); });
+    function apply(){ clone.style.transform = 'scale(' + zoom + ')'; toolbar.querySelector('.fs-zoom-label').textContent = Math.round(zoom*100)+'%'; }
+    function fit(){ var vw=viewport.clientWidth-48, vh=viewport.clientHeight-48; var r=clone.getBoundingClientRect(); var sw=r.width/zoom, sh=r.height/zoom; if(sw>0&&sh>0){ zoom=Math.max(Math.min(vw/sw,vh/sh,3),0.2);} apply(); }
+    setTimeout(fit, 100);
+    toolbar.querySelector('.fi').onclick=function(){ zoom=Math.min(zoom*1.3,8); apply(); };
+    toolbar.querySelector('.fo').onclick=function(){ zoom=Math.max(zoom*0.7,0.1); apply(); };
+    toolbar.querySelector('.ff').onclick=fit;
+    function close(){ overlay.classList.remove('visible'); setTimeout(function(){ overlay.remove(); }, 200); }
+    toolbar.querySelector('.fc').onclick=close;
+    function onKey(e){ if(e.key==='Escape'){ close(); document.removeEventListener('keydown', onKey); } }
+    document.addEventListener('keydown', onKey);
+    viewport.addEventListener('wheel', function(e){ e.preventDefault(); zoom=Math.min(Math.max(zoom*(e.deltaY<0?1.12:0.88),0.1),8); apply(); }, { passive:false });
+    var px,py,pl,pt;
+    viewport.addEventListener('mousedown', function(e){ if(e.target.closest('button'))return; viewport.classList.add('is-panning'); px=e.clientX;py=e.clientY;pl=viewport.scrollLeft;pt=viewport.scrollTop; });
+    viewport.addEventListener('mousemove', function(e){ if(!viewport.classList.contains('is-panning'))return; viewport.scrollLeft=pl-(e.clientX-px); viewport.scrollTop=pt-(e.clientY-py); });
+    viewport.addEventListener('mouseup', function(){ viewport.classList.remove('is-panning'); });
+    viewport.addEventListener('mouseleave', function(){ viewport.classList.remove('is-panning'); });
+  }
+  document.querySelectorAll('.toc a').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); var el=document.getElementById(a.getAttribute('href').slice(1)); if(el) el.scrollIntoView({behavior:'smooth'}); });
+  });
+</script>
+</body>
+</html>
