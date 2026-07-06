@@ -780,3 +780,59 @@ Task/SubTask (approved/denied)
 5. **This changes the task UI fundamentally** — must show approved/denied runtime status, not just workflow status
 
 *Captured: 2026-03-19 from Clark relaying Brian's directives*
+
+---
+
+## 2026-07-03: Rename the word "Holon" to "System" (word swap only — nothing retired)
+
+### Verbatim (Brian, Slack #product, 12:05 PM)
+
+- "HOLON = System. HOLON is system of systems. And we do system state, stateful assessment"
+- "KILL HOLON"
+- "That is system"
+- "Use System. System state. Stateful assessment"
+
+### Interpretation
+
+A rename of ONE word — nothing is retired, killed, or removed:
+
+- **Holon (the word) -> System** (a System may be a system-of-systems).
+- **"System state"** and **"stateful assessment"** are the terms Brian used — the system's state, and the verb.
+- **Brian said NOTHING about "Hologram."** Hologram is a separate, LIVE RDF-Compass concept (a validated-state
+  projection = Holon × Assessment × time). It is NOT retired, renamed, or touched by this — and must NOT be
+  conflated with "System state."
+- **Aperture UNCHANGED** — the lens (scope x window x frequency) over system state.
+
+Context: same conversation where Brian killed the annual/manual **audit** as a product ("we don't give a shit
+about a traditional audit... continuous assessment via automation. Period.") — a report is "residual exhaust,"
+a windowed projection of system state.
+
+**CORRECTION (2026-07-03):** an earlier version of this note and my Parks channel handoff wrongly bundled
+"Hologram" in as a retired term and asked for a Hologram sweep of RDF-COMPASS.md. **That was my error** — Hologram
+is a distinct, live concept Brian never mentioned. The only change is the word Holon -> System.
+
+*Captured: 2026-07-03 from Clark relaying Brian's Slack #product input*
+
+---
+
+## 2026-07-03: AuditCrowd at scale + the "readiness mesh marketplace" (assessors are themselves assessed)
+
+### Verbatim (Brian, Slack #product, ~12:10–12:14 PM)
+
+- "Our power is we aggregate thousands of specialists and each supplier likely will be assessed by plausibly 500 different assessors on different parts of stack to drive as many variations of assessment possible. This is why DARPA speaks to me and DoW and DHS. We bring unparalleled scale to assessment depth and logic like no one. And this can train AI like none other."
+- "How would you harden the ZB platform if it was critical to DoW's entire supply chain? You would assess it using 100,000 assessors. You would pen test it with 10,000,000 pen testers. Where do you get them and rank them and score them? THE AUDITCROWD."
+- "How do you secure them? Make sure all their workstations are in the boundary and assessed for security as they are part of the ZB platform boundary and marketplace — as all transparency marketplace folks are also assessed entirely all the time. This entire thing is a readiness mesh marketplace."
+- "All secured and hardened continuously by the 1M assessors we mechanize to train our own SLM/LLM using our harness and control plane."
+
+### Interpretation
+
+Sharpens the assessor / marketplace layer. Does NOT change the structural project model (context / lifecycle / types).
+
+- **AuditCrowd = the ranked/scored assessor + pen-tester crowd at extreme scale.** Thousands→millions; each supplier assessed by ~500 assessors on different stack parts. Variation is the value (maximize distinct assessments). ZB's job: source, rank, score them.
+- **Reflexive assessment — the readiness mesh.** The assessors themselves (and ALL transparency-marketplace participants) are inside the ZB platform boundary and continuously assessed — workstations boundary-scoped + hardened. The crowd's security is guaranteed by making the crowd part of the assessed boundary. Fractal / recursive.
+- **"Readiness mesh marketplace"** — Brian's platform-level name: buyers + sellers + assessors, all continuously assessed and meshed.
+- **Scale = the AI moat.** The ~1M mechanized assessors' logic/data trains ZB's own SLM/LLM via ZB's harness + control plane — depth + variation at a scale no one else has. The DARPA / DoW / DHS pitch.
+
+Model-relevant bits folded into `~/Projects/zb/boundary-projects-mocks/MODEL.md` §3 (assessor marketplace + Transparency Center).
+
+*Captured: 2026-07-03 from Clark relaying Brian's Slack input*
