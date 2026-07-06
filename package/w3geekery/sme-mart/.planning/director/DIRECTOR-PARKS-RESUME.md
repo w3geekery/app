@@ -14,7 +14,48 @@
 
 ---
 
-## 📍 LATEST: 2026-07-03 parkit (37) — app repo MOVE executed cleanly (`zerobias-org-forks/app` -> `zb-forks/org/app`); full path-migration sweep DONE (launchd/hooks/zbb/launcher/docs/memex/skills); app-move fixups COMPLETE; the REAL paused work (provisioning rebuild + axis-model + #8) is unchanged and next
+## 📍 LATEST: 2026-07-06 parkit (38) — Marketplace reframe + immutable-species project model landed; RFP grounded in REAL source (built-but-hidden SmeMartProject, mid-migration to platform.Project); BACKLOG-099 SUPERSEDED by 125; 2 Slack Qs to Brian pending (pilot, mocks-vs-3P-POC); next = commit pile -> update docs -> MarketplaceItem discussion
+
+**TL;DR.** Big strategic session, mostly modeling/Director work (no app-feature code beyond a 1-line stale-doc fix). Three things landed:
+
+1. **Monetization triad locked** (Brian: "Roll baby"): **Catalog (platform) + Marketplace + Ledger.** SME Mart **evolves into the Marketplace** storefront; SMEs become one item class among many. Two fulfillment families are **Parks's to model**: **Licensed Goods** (framework / assessor-logic / BOM / feature-pack -> entitlement grant) + **Services** (SME/3PAO -> engagement). **Ledger** (= LG-001, reframed from RC-001 / task-73) owns ALL money (offer / price-model / metering / payouts); Marketplace only *references* it. **Legal** (Brian) is a cross-cutting facet **per item-class AND per price-type** (ODRL/DPV in compass terms).
+
+2. **Project model = a SINGLE axis of immutable SPECIES** (no primary/accessory tier — Kevin's test emptied the accessory bucket): `program / phase / assessment / engagement / rfp` (task-74, extensible). Structural attrs (types + lifecycle) are **immutable** — to "change" one you **convert = create a NEW project**. `template` -> a universal `createProjectFrom()` action; `transparency-entangled` -> a task-level request/accept handshake; `lifecycle` (fixed-term | evergreen) is **decoupled from endDate**. (My independent read — engagement + rfp are load-bearing — converged with umd's; Clark/umd then dropped the accessory tier entirely.)
+
+3. **RFP grounded in REAL source** (after Clark rightly pushed — I'd trusted a stale code comment + a 2026-03-05 doc): **RFP = Request for Project** (NOT Proposal — fixed the `rfp.model.ts` comment). RFP is **already a `SmeMartProject`** (`projectType: 'rfp'|'pilot'|'project'`), **mid-migration to `platform.Project`** (D-15 dual-read), and the **whole RFP/bid subsystem is BUILT but HIDDEN** (routes commented out, `ComingSoon`, pending BACKLOG-099 + errata-039). Publish today only creates a tag + status flip (no Project/tasks yet).
+
+### ⏭️ RESUME HERE (parkit-38)
+
+**Clark's stated next sequence: (a) commit the pile, (b) update docs, (c) begin the MarketplaceItem discussion.**
+
+**1. Commit the 3-file uncommitted pile** (this session's post-9-commit work): `BACKLOG.md` (099 SUPERSEDED + new **125**), `DIRECTOR-PARKS-CHANNEL.md` (umd species thread + marketplace/legal/zb-ui-move threads), `src/app/core/models/rfp.model.ts` (Request-for-Project fix — src edit triggers the one-time architect-skill gate). HEAD `16a331f9`, ahead-26, NOT pushed.
+
+**2. STILL OWED by Parks (the reconciliation):** (a) **MarketplaceItem backlog entry** — a GQL resource extending `Object` (reference pattern = `ServiceOffering` / `MarketplaceProfileItem` in the sme-mart schema package `package/w3geekery/sme-mart/`), item families + offer/price/legal fan-out. (b) **DECISIONS + RDF-COMPASS reconciliation** for the species model (rfp-as-species, immutable-species/convert, lifecycle-decoupled-from-endDate) — umd explicitly handed this to Parks via the channel.
+
+**3. Then the MarketplaceItem DISCUSSION** (Clark wants to talk it through, not just file it). Working shape from this session: `MarketplaceItem` { family: licensed-good|service; catalogRef; fulfillment: entitlement-grant|engagement; offers[] each carrying priceModelRef + legalTermsRef -> Ledger; item-class legal }. Generalizes the existing `ServiceOffering` (which today has `pricingType: fixed|hourly|retainer|variable`).
+
+**4. AWAITING (do NOT block):** Brian on **pilot** (BACKLOG-125 open-Q #1 — species, or a vanilla trial project that graduates to a full project under the same engagement? Clark's lean + mine: NOT a species, just a label/role) + **mocks-vs-3P-POC** direction (mocks-first drives the platform model faster/cheaper; the 3P POC hardens dev paths — Brian picks the priority; **this reshapes whether 125 + MarketplaceItem are Angular build-phases or mock+backend-FR specs**). Both Slack Qs SENT by Clark. Kevin on **single-vs-multi species** (gates whether the engagement is the same node or a linked node).
+
+### State (parkit-38)
+- **HEAD `16a331f9`, ahead of upstream by 26, NOT pushed.** This session committed the prior parkit-37 pile in **9 thematic commits** (meeting notes / phase-33 / planning docs / CEO notes / RDF-COMPASS Hologram-restore / director apparatus / repo re-home path migration / hooks / gitignore).
+- **New uncommitted pile (3 files):** `BACKLOG.md`, `.planning/director/DIRECTOR-PARKS-CHANNEL.md`, `src/app/core/models/rfp.model.ts`.
+- **Also done this session:** RDF-COMPASS **Hologram RESTORE** (corrected my own over-sweep — only Holon->System is lexical, nothing else retired; channel thread closed) · **zb/ui -> zb/com/ui** path sweep (58 refs across 20 live docs — committed) · **BACKLOG-099 superseded -> 125** written · stale "Request for Proposal" -> "Request for Project" fixed.
+- **MCP:** no locks held.
+- **Hygiene debt:** this doc now holds **3 parkit sections** (38/37/36) — demote **parkit-36** to `DIRECTOR-PARKS-LOG-2026-H1.md` during the next doc-update pass (skipped here to avoid risky surgery right before a context clear; git history + DECISIONS/channel already hold its durable content).
+
+### Quick-start prompt (parkit-38)
+You're Director Parks for SME Mart. The whole effort just reframed: **SME Mart -> the Marketplace app** inside the Brian-approved **Catalog + Marketplace + Ledger** monetization triad. The project model settled as **a single axis of immutable species** (program/phase/assessment/engagement/rfp; convert = create-new; template + transparency-entangled left the axis; lifecycle decoupled from endDate). **RFP = Request for Project**, already a built-but-hidden `SmeMartProject` mid-migration to `platform.Project`; **BACKLOG-099 is SUPERSEDED by 125** (RFP-on-project on the species model — the old "sidecar GQL for all rich fields" mostly dissolves into Project custom-fields + Boards + Tasks). **Immediate:** commit the 3-file pile, update docs, then run the **MarketplaceItem discussion** with Clark; you also still OWE the **MarketplaceItem backlog entry** + the **DECISIONS/RDF-COMPASS species reconciliation** (umd handed you the latter). **Pending Brian:** pilot (species or label?) + mocks-vs-3P-POC direction (could turn 125 + MarketplaceItem from build-phases into mock+FR specs). **Pending Kevin:** single-vs-multi species. **Hard-won rules from this session:** verify against REAL source, not stale docs/comments (bit me twice — `rfp.model.ts` said "Proposal", a 2026-03-05 summary was stale) · READ backlog/history before filing (BACKLOG-099 already existed — nearly duplicated it) · editing anything under `src/` fires the one-time architect-skill gate first · coarse commits, NEVER push without Clark's say-so. **Model source-of-truth:** `~/Projects/zb/boundary-projects-mocks/MODEL.md` + `~/Projects/zb/com/ui/.claude/docs/PROJECT_MODEL_REFERENCE.md` + this repo's `DIRECTOR-PARKS-CHANNEL.md`.
+
+### Pinned moments (parkit-38)
+No new `[[PIN:]]` markers dropped this session. Carrying forward parkit-37's pin (its framing is now SUPERSEDED — engagement is a `types` species, not a role-tag):
+
+| Pin | What it marks |
+|---|---|
+| `[[PIN:sme-mart-ahead-of-platform-engagement-is-role-tag]]` | Historical: SME Mart ahead of zb/ui on platform-sdk. The "engagement = role-tag" conclusion is now superseded by the immutable-species model (engagement is a `types` species). |
+
+---
+
+## 📍 2026-07-03 parkit (37) — app repo MOVE executed cleanly (`zerobias-org-forks/app` -> `zb-forks/org/app`); full path-migration sweep DONE (launchd/hooks/zbb/launcher/docs/memex/skills); app-move fixups COMPLETE; the REAL paused work (provisioning rebuild + axis-model + #8) is unchanged and next
 
 **TL;DR.** The app repo move happened and is **clean** — new path confirmed, `git` HEAD `644c3458` + ahead-17 intact, **memory migrated** (`cp -a` of the Claude project dir), and **gsd-plan (`0862a3e4`) + gsd-execute (`0b53dd57`) sessions came along** (they shared the `-sme-mart` project dir, 160/160 JSONLs copied). Then a comprehensive path-migration sweep of everything that hardcoded the old path: **launchd** (2 agents: slack-scorer + slack-scanner WorkingDirectory, reloaded), **`settings.json:279`** (schema-guard hook re-registered — I took ui-gsd's piece; guard is live), **zbb** (3 sme-mart-local stack `source:` lines), the **launcher `~/bin/sme-mart-director.sh`** (`SME_MART` var — was pointing at the dead path), the **`memex-session-start.py`** hook matcher, **`daemon/roster.json`**, the in-repo **`architect-skill-gate.sh`** hook, the **slack-scanner skill**, the **`~/.claude/docs/projects.md`** registry (SME Mart rows + RETIRED marker for the old container), in-repo docs (`SOURCE_PATHS.md`, `SCHEMA_CHANGE_PROCESS.md`, `CLAUDE.md` fork-root directive), and **7 memex notes**. All FUNCTIONAL refs are clean; only intentional retired-markers + historical artifacts (old plans/handoffs/post-mortems/stashes/session logs) keep the old string.
 

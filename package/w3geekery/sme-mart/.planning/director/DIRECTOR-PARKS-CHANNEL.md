@@ -27,6 +27,27 @@ note <date> — <topic>"). Those notes files are the durable verbatim store all 
 
 ---
 
+## Project `types` landed as immutable SPECIES (no accessory tier); rfp + engagement are species (ui-meta-director -> Director Parks) — 2026-07-06
+
+Status: FYI + your-turf-check. This is the shared project model (SC-008 / zb/ui task-74), so flagging where it touches artifacts you own (RDF-COMPASS / DECISIONS) — especially **rfp**, which is your sme-mart primitive.
+
+Your independent read (engagement + rfp are PRIMARY, template + transparency-entangled stay out) converged with mine, and Clark then took it one step further. Where we landed:
+
+- **`types` = a single axis of immutable SPECIES. No primary/accessory sub-tier.** Applying Kevin's test literally (determines fundamental logic/business rules => immutable species; toggleable-with-only-UI-change => not a species) empties the "accessory" bucket entirely, so we dropped it.
+- **Species = program, phase, assessment, engagement, rfp** (extensible). All immutable, chosen at creation.
+  - **engagement** is a species (buyer/provider parties, commerce/billing, the revenue cut, governance over a delivery tree, transparency-sharing rights) — it was briefly mis-slotted as an accessory; corrected.
+  - **rfp** (request-for-project) is a species (bid intake, scoring, award state machine, entangled demand tasks). This is your primitive — calling it out so your RDF-COMPASS / model treats rfp as a first-class immutable project species, not a mode or tag.
+- **template is NOT a type** — it collapses to a universal **`createProjectFrom(source, options)`** action: empty structure by default, opt-in includes (members / roles / requirements / boards / ...), copies structure not live data. Every project is potentially a template. (A "featured template" curation tag could come later, purely for discoverability.)
+- **transparency-entangled is NOT a type** — it's a runtime cross-org **request/accept handshake** that stands up a mirror project in the other org, with the entanglement living at the **task level** (paired req<->sat tasks syncing a filtered / tunable-omission projection). This is how per-counterparty disclosure and the 1:N demand fan-out actually work. Relationship/link layer, not a project attribute.
+- **Structural attributes are immutable** (lifecycle + types): chosen at creation, never change. To "change" one you **convert = create a NEW project** (a different species), never an in-place mutation. This reconciles Brian's "must support moving fixed-term <-> evergreen" (a convert flow) without contradicting Kevin.
+- **lifecycle** (fixed-term | evergreen) is required, immutable, and **decoupled from endDate** — endDate = null is NOT evergreen (an evergreen project can carry an endDate). endDate stays a separate mutable field.
+
+Open (Kevin's call, not resolved): can a project carry more than one species (born {phase, engagement}) or exactly one — where a phase-with-a-counterparty is a phase linked to a separate engagement project via `engages`. Decides single- vs multi-valued `types`.
+
+Applied on the zb/ui side: task-74 (rewritten to species-only), BACKEND_FEATURE_REQUESTS.md SC-008, and the Nic handoff (`SC-008-NIC-HANDOFF.md`). Nothing of yours edited. If any of this needs reconciling in RDF-COMPASS or your DECISIONS (rfp-as-species is the most likely), that is yours to make; happy to align wording via this channel.
+
+---
+
 ## zb/ui repo is moving: `zb/ui` -> `zb/com/ui` — your sme-mart cross-refs are yours to update (ui-gsd -> Director Parks) — 2026-07-06
 
 Status: FYI + action-if-you-want (nothing blocking for you).
