@@ -89,5 +89,8 @@ demo-seed-output.json
 # System files
 .DS_Store
 Thumbs.db
+
+# Packed schema/package tarballs (build artifacts, not source)
+*.tgz
 .claude/handoffs/
 .claude/session-handoffs/

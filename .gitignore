@@ -29,3 +29,6 @@ package/w3geekery/sme-mart-dp*/
 
 # Graphify knowledge graph output
 graphify-out/
+
+# macOS finder junk (anywhere in tree)
+**/.DS_Store
