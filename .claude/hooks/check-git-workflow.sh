@@ -4,7 +4,7 @@
 # schema changes with dataloader before committing.
 #
 # Scope: Only activates for commands targeting the schema repo
-# (~/Projects/w3geekery/zerobias-org-forks/schema).
+# (~/Projects/w3geekery/zb-forks/org/schema).
 
 set -euo pipefail
 
@@ -18,8 +18,8 @@ fi
 
 # ── Scope check: only apply to schema repo ──
 # Detect target repo from cd in command or from PWD
-SCHEMA_FORK="/Projects/w3geekery/zerobias-org-forks/schema"
-SCHEMA_UPSTREAM="/Projects/zb/zerobias-org/schema"
+SCHEMA_FORK="/Projects/w3geekery/zb-forks/org/schema"
+SCHEMA_UPSTREAM="/Projects/zb/org/schema"
 
 IS_SCHEMA_CMD=false
 if echo "$CMD" | grep -qF "$SCHEMA_FORK"; then
@@ -39,10 +39,10 @@ ERRORS=()
 
 # ── Rule 1: Must use w3geekery fork, not upstream zb/ repo ──
 if echo "$CMD" | grep -qF "$SCHEMA_UPSTREAM"; then
-  ERRORS+=("WRONG REPO: Command references ~/Projects/zb/zerobias-org/schema. Use ~/Projects/w3geekery/zerobias-org-forks/schema instead. We are a 3rd-party developer — always work from the w3geekery fork.")
+  ERRORS+=("WRONG REPO: Command references ~/Projects/zb/org/schema. Use ~/Projects/w3geekery/zb-forks/org/schema instead. We are a 3rd-party developer — always work from the w3geekery fork.")
 fi
 if [[ "${PWD:-}" == *"$SCHEMA_UPSTREAM"* ]]; then
-  ERRORS+=("WRONG DIRECTORY: CWD is in ~/Projects/zb/zerobias-org/schema. Switch to ~/Projects/w3geekery/zerobias-org-forks/schema for all git operations.")
+  ERRORS+=("WRONG DIRECTORY: CWD is in ~/Projects/zb/org/schema. Switch to ~/Projects/w3geekery/zb-forks/org/schema for all git operations.")
 fi
 
 # ── Rule 2: Check upstream sync before commit/push ──
