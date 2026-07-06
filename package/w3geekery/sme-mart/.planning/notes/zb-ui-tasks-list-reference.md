@@ -1,7 +1,7 @@
 # zb/ui Tasks-List Reference — for SME Mart Phase 32 board-detail mirror
 
 **Captured:** 2026-05-19
-**Source:** `~/Projects/zb/ui` main @ `91c546c0f`
+**Source:** `~/Projects/zb/com/ui` main @ `91c546c0f`
 **Locked decision:** L-7 (Phase 32 board-detail tasks-list mirrors this shape)
 
 ## Component file paths

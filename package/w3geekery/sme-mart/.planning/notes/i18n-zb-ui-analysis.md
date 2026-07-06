@@ -1,6 +1,6 @@
 # i18n — zb/ui en.json Analysis
 
-> **Source:** `~/Projects/zb/ui/projects/zb-ui-lib/src/lib/assets/i18n/en.json`
+> **Source:** `~/Projects/zb/com/ui/projects/zb-ui-lib/src/lib/assets/i18n/en.json`
 > **Date:** 2026-04-09
 > **Purpose:** Inform SME Mart i18n conventions — what to keep, what to avoid
 > **Stack:** `@ngx-translate/core` ^15, `@ngx-translate/http-loader` ^17 (both already in SME Mart package.json, unused)

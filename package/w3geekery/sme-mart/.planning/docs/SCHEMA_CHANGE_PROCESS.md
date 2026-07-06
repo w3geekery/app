@@ -208,7 +208,7 @@ git commit -m "feat(w3geekery): <description>"
 - **Do NOT auto-append `Session: claude --resume <branch>` lines.** Session names aren't aliased to branches and the resulting `claude --resume` link is broken for anyone who tries it. (Memex: `feedback_no_session_resume_fabrication`.)
 
 The Claude hook lives in the **app** repo (not the schema repo) but guards schema commands:
-`~/Projects/w3geekery/zerobias-org-forks/app/.claude/hooks/check-git-workflow.sh`
+`~/Projects/w3geekery/zb-forks/org/app/.claude/hooks/check-git-workflow.sh`
 
 It verifies:
 - You're in the w3geekery fork at `~/Projects/w3geekery/zb-forks/org/schema` (NOT `~/Projects/zb/`)
@@ -216,7 +216,7 @@ It verifies:
 - Dataloader marker exists and is fresh (< 30 min)
 - New `field:` properties have corresponding field definition YAMLs
 
-> **Hook path note:** the hook may still hardcode the older `zerobias-org-forks/schema` path. Schema-fork-side commits hand-driven by Clark + Director are the canonical workflow per memex `Schema-repo PRs are Clark + Director hands-on`; agents commit locally but never push/PR.
+> **Hook path note:** the hook now points at `zb-forks/org/schema` (fixed 2026-07-03). Schema-fork-side commits hand-driven by Clark + Director are the canonical workflow per memex `Schema-repo PRs are Clark + Director hands-on`; agents commit locally but never push/PR.
 
 ---
 

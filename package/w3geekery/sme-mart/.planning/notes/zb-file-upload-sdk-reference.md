@@ -183,7 +183,7 @@ const paged: PagedResults<TaskAttachment> = await platformClient.getTaskApi().li
 
 ## Reference Implementation: ZB UI neverfail-lib
 
-**Source:** `~/Projects/zb/ui/projects/neverfail-lib/src/lib/`
+**Source:** `~/Projects/zb/com/ui/projects/neverfail-lib/src/lib/`
 
 ### Key Files
 

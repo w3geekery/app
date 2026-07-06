@@ -52,7 +52,7 @@ The schema field `approvers` is **NOT** Accountable. It is **Consulted**. Schema
 
 Verified from:
 - Schema: `platform.Task.create` describe (`approvers`'s description is "must be consulted")
-- UI: `~/Projects/zb/ui/projects/zb-ui-lib/src/lib/components/zerobias-task-components/create-task-dialog/create-task-dialog.component.ts` lines 66–70 enum + 380–393 form-to-NewTask mapping
+- UI: `~/Projects/zb/com/ui/projects/zb-ui-lib/src/lib/components/zerobias-task-components/create-task-dialog/create-task-dialog.component.ts` lines 66–70 enum + 380–393 form-to-NewTask mapping
 
 ## Party UUID — what each field accepts
 

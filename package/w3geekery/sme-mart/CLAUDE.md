@@ -4,7 +4,7 @@
 
 > **UAT Environment:** CI/dev was rebuilt with hydra. UAT (`uat.zerobias.com`) is the active dev environment. Migration complete 2026-03-30 — see [`.planning/notes/uat-migration-tracker.md`](.planning/notes/uat-migration-tracker.md) for ID mapping reference. `npm run dev` targets UAT.
 
-> **⚠️ ALWAYS prefer `~/Projects/w3geekery/zerobias-org-forks/` over `~/Projects/zb/` for every repo that exists in zerobias-org-forks (app, login, module, schema, etc.).** We are a 3rd-party developer — work from the w3geekery fork, push to the fork, and create cross-fork PRs to zerobias-org. Only use `~/Projects/zb/` for read-only reference unless specifically asked otherwise.
+> **⚠️ ALWAYS prefer the w3geekery fork under `~/Projects/w3geekery/zb-forks/{com,org}/` over `~/Projects/zb/` for every repo that has a fork** (app -> `zb-forks/org/app`, login -> `org/login`, module -> `org/module`, schema -> `org/schema`, tag -> `com/tag`, etc.). We are a 3rd-party developer — work from the w3geekery fork, push to the fork, and create cross-fork PRs to the upstream org. Only use `~/Projects/zb/` for read-only reference unless specifically asked otherwise. (The old `zerobias-org-forks/` container was retired 2026-07-03; its `app` fork moved to `zb-forks/org/app`.)
 
 ## Purpose
 
@@ -24,7 +24,7 @@ SME Mart is a **marketplace for Subject Matter Experts** in compliance/cybersecu
 | **📋 Requirements feature architecture (DEFERRED pending Kevin) — READ FIRST before any Requirements/Readiness schema or backend work** | [`.planning/notes/requirements-architecture-2026-05-27-pending-kevin.md`](.planning/notes/requirements-architecture-2026-05-27-pending-kevin.md) — 3-layer model (OrgFrameworkAdoption + ProjectFrameworkTarget + ProjectRequirement), naming-collision finding (use `ProjectRequirement` not `Requirement` — collides with platform `BoundaryRequirement`), proposed schema shapes, carrier-rule application, 7 open questions for Kevin/Daniel/Nic. Tracked as [[BACKLOG-123]]. Don't redo this analysis — read the capture doc and resume from there. |
 | **Angular 21 Docs** | [`AGENTS.md`](AGENTS.md) — local docs index in `.angular-docs/` (refresh: `npx angular-agents-md`) |
 | **Next.js prototype** (archived) | `../sme-mart-nextjs-deprecated/` |
-| **ZeroBias UI** (Angular 21 reference) | `~/Projects/zb/ui` |
+| **ZeroBias UI** (Angular 21 reference) | `~/Projects/zb/com/ui` |
 | **SDK source** | `~/Projects/zb/clients/packages/` |
 | **Neon DB reference** | [`.planning/notes/neon-mcp-reference.md`](.planning/notes/neon-mcp-reference.md) — project ID, tables, common SQL queries |
 | **Hub Connection Setup (Neon)** | [`.planning/docs/HUB_CONNECTION_SETUP_NEON.md`](.planning/docs/HUB_CONNECTION_SETUP_NEON.md) — step-by-step playbook: generic-sql deployment + managed secret + connection via ZB MCP |
@@ -68,7 +68,7 @@ For SCSS:
 - `strictTemplates: true` is already enabled in this repo's `tsconfig.json`, so Angular template intelligence via vscode-mcp works out of the box.
 - vscode-mcp setup (extensions + MCP server registration): see [w3geekery/claude-code-lsps CLAUDE.md](https://github.com/w3geekery/claude-code-lsps/blob/main/CLAUDE.md).
 
-Full routing table, failure-mode anchors, empirical findings, and detailed rationale: `~/.claude/rules/common/lsp-registry.md` (auto-loaded into every Claude Code session). Benchmarks: `~/Projects/zb/ui/.planning/lsp-bench/REPORT.md`.
+Full routing table, failure-mode anchors, empirical findings, and detailed rationale: `~/.claude/rules/common/lsp-registry.md` (auto-loaded into every Claude Code session). Benchmarks: `~/Projects/zb/com/ui/.planning/lsp-bench/REPORT.md`.
 
 ## zb-dx — ZeroBias Developer Experience
 

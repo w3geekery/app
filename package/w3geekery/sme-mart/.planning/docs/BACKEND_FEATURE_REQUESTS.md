@@ -2,7 +2,7 @@
 
 **Status:** Active · created 2026-05-29 · reconciled 2026-06-05 (profile carrier updated to the 2026-06-02 Consolidation Brief — MPI deprecates **entirely**; see the superseded-banner below) · reconciled 2026-06-23 (RL-001 resynced to zb/ui: task-13 expanded to the adopt-now-4 link-types; **`governs`/`engages`/`depends_on` LIVE on CI 2026-06-19**)
 **Owner:** Clark + Director Parks
-**Not a mirror.** Cross-cutting **platform schema** work (Org / Project / Address / core types) is owned and tracked authoritatively by **ui-meta-director** in `~/Projects/zb/ui/.claude/docs/BACKEND_FEATURE_REQUESTS.md`. We **point at** those entries rather than duplicate their field lists. This doc tracks: (a) SME Mart's **stake/dependency** in the shared schema work, (b) **SME-Mart-only** backend asks, (c) SME Mart **local decisions** that resolve "where does X live."
+**Not a mirror.** Cross-cutting **platform schema** work (Org / Project / Address / core types) is owned and tracked authoritatively by **ui-meta-director** in `~/Projects/zb/com/ui/.claude/docs/BACKEND_FEATURE_REQUESTS.md`. We **point at** those entries rather than duplicate their field lists. This doc tracks: (a) SME Mart's **stake/dependency** in the shared schema work, (b) **SME-Mart-only** backend asks, (c) SME Mart **local decisions** that resolve "where does X live."
 
 > The earlier version of this doc was a full field-list "SC-001 — real fields on Org + Project." That has been **superseded** — see Resolution History. The field lists now live in zb/ui's tracker; do not re-author them here.
 
@@ -33,7 +33,7 @@ Three moves in one day, each correcting the last:
 
 ## Shared platform schema work — SME Mart's stake (authority: zb/ui)
 
-Field lists, shapes, and open questions live in `~/Projects/zb/ui/.claude/docs/BACKEND_FEATURE_REQUESTS.md`. SME Mart's interest in each:
+Field lists, shapes, and open questions live in `~/Projects/zb/com/ui/.claude/docs/BACKEND_FEATURE_REQUESTS.md`. SME Mart's interest in each:
 
 | zb/ui ID | What | SME Mart's stake | Status (2026-05-29) |
 |---|---|---|---|
@@ -88,7 +88,7 @@ Seed this section as genuinely SME-Mart-only backend needs surface (i.e. asks th
 
 ## Cross-reference
 
-- **zb/ui tracker (authority for shared schema FRs):** `~/Projects/zb/ui/.claude/docs/BACKEND_FEATURE_REQUESTS.md`
+- **zb/ui tracker (authority for shared schema FRs):** `~/Projects/zb/com/ui/.claude/docs/BACKEND_FEATURE_REQUESTS.md`
 - **Requirements architecture (deferred):** `.planning/notes/requirements-architecture-2026-05-27-pending-kevin.md` ([[BACKLOG-123]])
 - **Engagement-detail design brief:** `.planning/director/engagement-detail-design-brief-for-zb-ui-2026-05-27.md`
 - **Carrier rule:** memex `zerobias/platform/carrier-rule-cardinality-query-shape-not-feature-category`

@@ -1,39 +1,43 @@
 # Source Code Paths
 
+> **Canonical zb/ repo paths live in `~/.claude/docs/projects.md`** (bucketed `com` / `org` / `auditlogic`; tracks the in-flight `~/Projects/zb/` re-home). This doc keeps only **SME-Mart-specific orientation** — fork paths, the SDK dependency chain, npm scopes/registries, Hub-module doc pointers, and sub-app "primary reference" annotations. When you just need "where does zb/ repo X live," defer to that registry instead of duplicating the path here (it only goes stale on the next re-home).
+
 ## SME Mart (W3Geekery)
 
 | Name | Path | Notes |
 |------|------|-------|
-| **SME Mart** (this project) | `~/Projects/w3geekery/zerobias-org-forks/app/package/w3geekery/sme-mart` | Angular 21 — active |
-| **SME Mart Next.js** (deprecated) | `~/Projects/w3geekery/zerobias-org-forks/app/package/w3geekery/sme-mart-nextjs-deprecated` | Archived, gitignored, on disk for reference |
-| **SME Mart Hub Module** | `~/Projects/w3geekery/zerobias-org-forks/module/package/w3geekery/sme-mart` | Custom Hub Module (may not be needed if Generic SQL suffices) |
-| **SME Mart Login** | `~/Projects/w3geekery/zerobias-org-forks/login/package/w3geekery` | Branded login page |
+| **SME Mart** (this project) | `~/Projects/w3geekery/zb-forks/org/app/package/w3geekery/sme-mart` | Angular 21 — active |
+| **SME Mart Next.js** (deprecated) | `~/Projects/w3geekery/zb-forks/org/app/package/w3geekery/sme-mart-nextjs-deprecated` | Archived, gitignored, on disk for reference |
+| **SME Mart Hub Module** | `~/Projects/w3geekery/zb-forks/org/module/package/w3geekery/sme-mart` | Custom Hub Module (may not be needed if Generic SQL suffices). Fork: `origin` w3geekery/module, `upstream` zerobias-org/module |
+| **SME Mart Login** | `~/Projects/w3geekery/zb-forks/org/login/package/w3geekery` | **3PO custom login screens (ours)** — fork `origin` w3geekery/login; deploys uat/qa/prod (not ci). NOT `zb-forks/com/login`: that's the ZB **platform** login (ci/uat/qa/prod), a separate repo forked as `w3geekery/login-1` (GitHub name-collision suffix — both forks wanted "login") |
 | **SME Mart GQL Schema** | `~/Projects/w3geekery/zb-forks/org/schema/package/w3geekery/smemart` | AuditgraphDB schema in the w3geekery fork of `zerobias-org/schema`. `origin` = w3geekery fork, `upstream` = zerobias-org canonical. **See [SCHEMA_CHANGE_PROCESS.md](SCHEMA_CHANGE_PROCESS.md) before any changes** |
 
 ## ZeroBias Platform UI
 
 | Name | Path | Notes |
 |------|------|-------|
-| **UI Workspace** | `~/Projects/zb/ui` | Angular 21 multi-project workspace — **primary reference** for patterns |
-| **Portal App** | `~/Projects/zb/ui/projects/portal` | Main shell app (bootstrap, routing, iframe host) |
-| **Catalog App** | `~/Projects/zb/ui/projects/catalog-app` | Good small-app reference for providers/config |
-| **neverfail-lib** | `~/Projects/zb/ui/projects/neverfail-lib` | Shared component library (services, components, base classes) |
-| **ngx-library** (source) | `~/Projects/zb/zerobias-org/ngx-library` | `@zerobias-org/ngx-library` source — check commit log for changes between versions |
-| **Theme** | `~/Projects/zb/ui/projects/theme` | M3 theme SCSS (`$theme`, `$altTheme`, CSS custom props) |
-| **Governance App** | `~/Projects/zb/ui/projects/governance-app` | Boundary/task patterns |
-| **Boundary Manager** | `~/Projects/zb/ui/projects/boundary-manager-app` | Boundary CRUD patterns |
-| **Learning Center** | `~/Projects/zb/ui/projects/learning-center-app` | Content/catalog patterns |
+| **UI Workspace** | `~/Projects/zb/com/ui` | Angular 21 multi-project workspace — **primary reference** for patterns |
+| **Portal App** | `~/Projects/zb/com/ui/projects/portal` | Main shell app (bootstrap, routing, iframe host) |
+| **Catalog App** | `~/Projects/zb/com/ui/projects/catalog-app` | Good small-app reference for providers/config |
+| **neverfail-lib** | `~/Projects/zb/com/ui/projects/neverfail-lib` | Shared component library (services, components, base classes) |
+| **ngx-library** (source) | see registry (`org/ngx-library`) | `@zerobias-org/ngx-library` source — check commit log for changes between versions |
+| **Theme** | `~/Projects/zb/com/ui/projects/theme` | M3 theme SCSS (`$theme`, `$altTheme`, CSS custom props) |
+| **Governance App** | `~/Projects/zb/com/ui/projects/governance-app` | Boundary/task patterns |
+| **Boundary Manager** | `~/Projects/zb/com/ui/projects/boundary-manager-app` | Boundary CRUD patterns |
+| **Learning Center** | `~/Projects/zb/com/ui/projects/learning-center-app` | Content/catalog patterns |
 
-## ZeroBias Client SDKs (`~/Projects/zb/clients/`)
+## ZeroBias Client SDKs
 
-| Name | Path | npm Package |
+Canonical repo path: **`~/.claude/docs/projects.md`** (`com/clients`). Paths below are **relative to that clients repo** — kept because the package/scope breakdown is sme-mart orientation the registry's single `clients` row doesn't carry.
+
+| Name | Path (under clients repo) | npm Package |
 |------|------|-------------|
-| **Angular Client** | `~/Projects/zb/clients/packages/angular-client` | `@zerobias-com/zerobias-angular-client` |
-| **Client (framework-agnostic)** | `~/Projects/zb/clients/packages/client` | `@zerobias-com/zerobias-client` |
-| **SDK (unified entry-point)** | `~/Projects/zb/clients/packages/sdk` | `@zerobias-com/zerobias-sdk` |
-| **MCP Server** | `~/Projects/zb/clients/packages/mcp` | MCP tool definitions for ZeroBias |
+| **Angular Client** | `packages/angular-client` | `@zerobias-com/zerobias-angular-client` |
+| **Client (framework-agnostic)** | `packages/client` | `@zerobias-com/zerobias-client` |
+| **SDK (unified entry-point)** | `packages/sdk` | `@zerobias-com/zerobias-sdk` |
+| **MCP Server** | `packages/mcp` | MCP tool definitions for ZeroBias |
 
-### Individual Service SDKs (`~/Projects/zb/clients/packages/sdks/`)
+### Individual Service SDKs (`packages/sdks/`)
 
 | SDK | Path | Scope |
 |-----|------|-------|
@@ -53,33 +57,25 @@
 
 ## Hub Module Documentation (Authoritative)
 
-| Doc | Path | What it covers |
-|-----|------|-----------------|
-| **HubModules.md** | `~/Projects/zb/zerobias/HubModules.md` | **Primary authoritative doc** — Connector vs Agent modules, TypeScript vs Docker implementations, consumption patterns, deployment API |
-| **Modules.md** | `~/Projects/zb/zerobias/Modules.md` | Cross-cutting module concepts (Hub + Platform-Service) |
-| **ModuleSDKs.md** | `~/Projects/zb/zerobias/ModuleSDKs.md` | Auto-generated SDKs — consumption patterns, naming (`@auditmation/sdk-<vendor>-<product>`) |
-| **ModuleTooling.md** | `~/Projects/zb/zerobias/ModuleTooling.md` | Code-generation toolchain (OpenAPI → TypeScript) |
-| **ModuleNaming.md** | `~/Projects/zb/zerobias/ModuleNaming.md` | Naming conventions across NPM, Maven, PyPI, Go registries |
-| **ModuleAgents.md** | `~/Projects/zb/zerobias/ModuleAgents.md` | Agent modules (on-node system management, RMM) |
-| **PlatformServiceModules.md** | `~/Projects/zb/zerobias/PlatformServiceModules.md` | Platform-service-flavored modules |
-| **LocalDevelopment.md** | `~/Projects/zb/zerobias/LocalDevelopment.md` | **Cross-package npm link workflow** — essential before local Hub Module iteration |
-| **Hub Architecture** | `~/Projects/zb/hub/Architecture.md` | (reference) Hub-server internals, Node implementation details |
+Docs 1-8 live in the **meta-repo** (registry: `com/zerobias`); `Architecture.md` is in the **hub** repo (registry: `com/hub`). Paths below are doc names relative to those repos — base repo path deferred to `~/.claude/docs/projects.md` so this survives re-homes (both already moved: `zerobias` -> `com/zerobias`, `hub` -> `com/hub`).
 
-> **Freshness note (2026-04-17):** Meta-repo docs are from initial commit 2026-01-24. Re-verify against source code in `~/Projects/zb/hub/` and `~/Projects/zb/zerobias-org/module/` before committing to implementation decisions — docs may lag code.
+| Doc | Repo / file | What it covers |
+|-----|------|-----------------|
+| **HubModules.md** | meta-repo `/HubModules.md` | **Primary authoritative doc** — Connector vs Agent modules, TypeScript vs Docker implementations, consumption patterns, deployment API |
+| **Modules.md** | meta-repo `/Modules.md` | Cross-cutting module concepts (Hub + Platform-Service) |
+| **ModuleSDKs.md** | meta-repo `/ModuleSDKs.md` | Auto-generated SDKs — consumption patterns, naming (`@auditmation/sdk-<vendor>-<product>`) |
+| **ModuleTooling.md** | meta-repo `/ModuleTooling.md` | Code-generation toolchain (OpenAPI → TypeScript) |
+| **ModuleNaming.md** | meta-repo `/ModuleNaming.md` | Naming conventions across NPM, Maven, PyPI, Go registries |
+| **ModuleAgents.md** | meta-repo `/ModuleAgents.md` | Agent modules (on-node system management, RMM) |
+| **PlatformServiceModules.md** | meta-repo `/PlatformServiceModules.md` | Platform-service-flavored modules |
+| **LocalDevelopment.md** | meta-repo `/LocalDevelopment.md` | **Cross-package npm link workflow** — essential before local Hub Module iteration |
+| **Hub Architecture** | hub repo `/Architecture.md` | (reference) Hub-server internals, Node implementation details |
+
+> **Freshness note (2026-04-17):** Meta-repo docs are from initial commit 2026-01-24. Re-verify against source code in the **hub** repo (registry: `com/hub`) and our **module fork** `~/Projects/w3geekery/zb-forks/org/module/` (we work from the fork, not a canonical `zerobias-org/module` clone — none is kept locally) before committing to implementation decisions — docs may lag code.
 
 ## ZeroBias Backend Services
 
-| Name | Path | Notes |
-|------|------|-------|
-| **Hub** | `~/Projects/zb/hub` | Hub server/node — connector debugging, `ConnectedNode.ts`. See `~/Projects/zb/zerobias/HubModules.md` for authoritative module architecture. |
-| **Dana** | `~/Projects/zb/dana` | Auth/identity service |
-| **Platform** | `~/Projects/zb/platform` | Catalog, tags, boundaries, tasks backend |
-| **Login** | `~/Projects/zb/login` | Login page framework |
-| **DevOps** | `~/Projects/zb/devops` | CI/CD, deployment actions |
-| **Util** | `~/Projects/zb/util` | Shared utilities |
-| **Hydra** | `~/Projects/zb/hydra` | OAuth/OIDC provider |
-| **Fileservice** | `~/Projects/zb/fileservice` | File storage service |
-| **ZeroBias (main)** | `~/Projects/zb/zerobias` | Core platform |
+Backend service repo paths (hub, dana, platform, login, devops, util, hydra, fileservice, zerobias) are **deferred to the canonical registry** — see `~/.claude/docs/projects.md`. Duplicating them here just went stale on the `com`/`org` re-home (e.g. `hydra` -> `com/hydra`); the registry tracks each repo's current bucket + move status.
 
 ## SDK Dependency Chain
 

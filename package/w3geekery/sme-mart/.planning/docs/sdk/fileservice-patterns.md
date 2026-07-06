@@ -3,7 +3,7 @@
 Access via `sdk.fileService` (from `@zerobias-com/fileservice-sdk`).
 
 **SDK source:** `~/Projects/zb/clients/packages/sdks/fileservice/generated/`
-**ZB UI reference:** `~/Projects/zb/ui/projects/neverfail-lib/src/lib/`
+**ZB UI reference:** `~/Projects/zb/com/ui/projects/neverfail-lib/src/lib/`
 
 ---
 
@@ -98,7 +98,7 @@ The actual file upload is an **undocumented endpoint** not wrapped by the SDK. F
 ZB UI handles this with raw `HttpClient`:
 
 ```typescript
-// From ~/Projects/zb/ui/.../file-upload/file-upload.component.ts:146-180
+// From ~/Projects/zb/com/ui/.../file-upload/file-upload.component.ts:146-180
 const fileView = await filesService.create({
   name: file.name,
   description: '',
@@ -130,7 +130,7 @@ this.http.post(url, arrayBuffer, {
 - `withCredentials: true` for session cookies
 - ZB UI uses `ts-md5` npm package for client-side MD5
 
-**Source:** [`~/Projects/zb/ui/projects/neverfail-lib/src/lib/components/file-upload/file-upload.component.ts`](file:///Users/cstacer/Projects/zb/ui/projects/neverfail-lib/src/lib/components/file-upload/file-upload.component.ts)
+**Source:** [`~/Projects/zb/com/ui/projects/neverfail-lib/src/lib/components/file-upload/file-upload.component.ts`](file:///Users/cstacer/Projects/zb/com/ui/projects/neverfail-lib/src/lib/components/file-upload/file-upload.component.ts)
 
 ---
 
@@ -195,7 +195,7 @@ This is **idempotent**: if an attachment already exists for the same `fileVersio
 
 ### File Upload Component
 
-**Path:** `~/Projects/zb/ui/projects/neverfail-lib/src/lib/components/file-upload/`
+**Path:** `~/Projects/zb/com/ui/projects/neverfail-lib/src/lib/components/file-upload/`
 
 - `file-upload.component.ts` — drag-drop, FileReader, MD5 checksum, raw HTTP upload with progress
 - `file-upload.component.html` — drop zone + file list with progress bars
@@ -209,11 +209,11 @@ This is **idempotent**: if an attachment already exists for the same `fileVersio
 - Cancel: `Subscription.unsubscribe()` on in-flight upload
 - MIME detection: browser `File.type` with extension-based fallback
 
-**Source:** [`~/Projects/zb/ui/projects/neverfail-lib/src/lib/components/file-upload/file-upload.component.ts`](file:///Users/cstacer/Projects/zb/ui/projects/neverfail-lib/src/lib/components/file-upload/file-upload.component.ts)
+**Source:** [`~/Projects/zb/com/ui/projects/neverfail-lib/src/lib/components/file-upload/file-upload.component.ts`](file:///Users/cstacer/Projects/zb/com/ui/projects/neverfail-lib/src/lib/components/file-upload/file-upload.component.ts)
 
 ### Task Attachments Panel
 
-**Path:** `~/Projects/zb/ui/projects/neverfail-lib/src/lib/components/auditmation-task-components/task-panel/task-attachements-panel/`
+**Path:** `~/Projects/zb/com/ui/projects/neverfail-lib/src/lib/components/auditmation-task-components/task-panel/task-attachements-panel/`
 
 - Lists attachments with file icons by MIME type
 - Preview via iframe (`/file-service/files/{fvId}/view`)
@@ -223,11 +223,11 @@ This is **idempotent**: if an attachment already exists for the same `fileVersio
 **Previewable types (browser-native):** `image/*`, `video/*`, `audio/*`, `application/pdf`, `text/*`
 **Previewable types (file-service beautified):** JSON, YAML, XML, Excel (`.xlsx`)
 
-**Source:** [`~/Projects/zb/ui/projects/neverfail-lib/src/lib/components/auditmation-task-components/task-panel/task-attachements-panel/task-attachements-panel.component.ts`](file:///Users/cstacer/Projects/zb/ui/projects/neverfail-lib/src/lib/components/auditmation-task-components/task-panel/task-attachements-panel/task-attachements-panel.component.ts)
+**Source:** [`~/Projects/zb/com/ui/projects/neverfail-lib/src/lib/components/auditmation-task-components/task-panel/task-attachements-panel/task-attachements-panel.component.ts`](file:///Users/cstacer/Projects/zb/com/ui/projects/neverfail-lib/src/lib/components/auditmation-task-components/task-panel/task-attachements-panel/task-attachements-panel.component.ts)
 
 ### FilesService (UI wrapper)
 
-**Path:** `~/Projects/zb/ui/projects/neverfail-lib/src/lib/auditmation-services/files/files.service.ts`
+**Path:** `~/Projects/zb/com/ui/projects/neverfail-lib/src/lib/auditmation-services/files/files.service.ts`
 
 Wraps `ZbClientApiService.fileClient` (same SDK we have access to). Key methods:
 - `create(createFile)` — file metadata
@@ -236,7 +236,7 @@ Wraps `ZbClientApiService.fileClient` (same SDK we have access to). Key methods:
 - `getViewUrl(fileVersionId)` — construct view URL
 - `getFileServiceEnvironmentUrl()` — base URL for raw upload endpoint
 
-**Source:** [`~/Projects/zb/ui/projects/neverfail-lib/src/lib/auditmation-services/files/files.service.ts`](file:///Users/cstacer/Projects/zb/ui/projects/neverfail-lib/src/lib/auditmation-services/files/files.service.ts)
+**Source:** [`~/Projects/zb/com/ui/projects/neverfail-lib/src/lib/auditmation-services/files/files.service.ts`](file:///Users/cstacer/Projects/zb/com/ui/projects/neverfail-lib/src/lib/auditmation-services/files/files.service.ts)
 
 ---
 

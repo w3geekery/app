@@ -228,7 +228,7 @@
 
 **Effort**: 4–8 hours (Plan 01: 3h 5m, Plan 02: 45m, Plan 03: ~30m, Plan 04: 45m, Plan 05: 12m)
 **Tech Stack**: Angular 21 + ZeroBias SDK (no new dependencies)
-**References**: `~/Projects/zb/ui/` portal user-menu component (read, don't copy)
+**References**: `~/Projects/zb/com/ui/` portal user-menu component (read, don't copy)
 **Status**: Complete 2026-04-16. Director UAT-approved — W3Geekery switch confirmed real org-context swap (AuditgraphDB empty-data response pattern proved header actually changed). Errata 013/014/016 all resolved in-phase; errata 015 (credential rotation) left for follow-up.
 
 ---
@@ -262,7 +262,7 @@
 
 **Effort**: 10–14 hours (Wave 1: 3–4h, Wave 2: 4–5h parallel, Wave 3: 2–3h)
 **Tech Stack**: `zbb` CLI + Docker + nginx (cloudfront-sim) + minio (static serving) + Angular + Metalsmith (login)
-**Architecture**: Unified-origin reverse-proxy pattern (reference: `~/Projects/zb/ui/scripts/gateway.js`). Single nginx at localhost:15002 serves SPA + login from minio buckets, proxies /api/, /dana/, /app/session to uat.zerobias.com with cookie rewriting (Domain: uat.zerobias.com → Domain: localhost).
+**Architecture**: Unified-origin reverse-proxy pattern (reference: `~/Projects/zb/com/ui/scripts/gateway.js`). Single nginx at localhost:15002 serves SPA + login from minio buckets, proxies /api/, /dana/, /app/session to uat.zerobias.com with cookie rewriting (Domain: uat.zerobias.com → Domain: localhost).
 **Key Decisions** (locked in brief):
   - D-01: Reverse-proxy + unified origin (not static-only serving)
   - D-02: Critical nginx directives (proxy_cookie_domain, proxy_cookie_flags, ws upgrade)

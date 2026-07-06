@@ -262,7 +262,7 @@ When Kevin's input lands and we're ready to resume:
 
 - **2026-05-27 huddle notes** — [`meetings/2026-05-27-slack-huddle-requirements-readiness-reframe.md`](meetings/2026-05-27-slack-huddle-requirements-readiness-reframe.md) — Brian's reframe of Requirements/Readiness/Boundary
 - **Carrier rule memex note** — `memex/zerobias/platform/carrier-rule-cardinality-query-shape-not-feature-category`
-- **zb/ui Projects App INTENT.md** — `~/Projects/zb/ui/.claude/plans/public/projects-app-mocks/INTENT.md` (§2.8 Requirements/Readiness, §5 Q6 satisfies/satisfiedBy)
+- **zb/ui Projects App INTENT.md** — `~/Projects/zb/com/ui/.claude/plans/public/projects-app-mocks/INTENT.md` (§2.8 Requirements/Readiness, §5 Q6 satisfies/satisfiedBy)
 - **SME Mart scope-reduction pivot brief** — [`../director/sme-mart-scope-reduction-pivot-2026-05-27.md`](../director/sme-mart-scope-reduction-pivot-2026-05-27.md)
 - **Schema change process (refreshed 2026-05-27)** — [`../docs/SCHEMA_CHANGE_PROCESS.md`](../docs/SCHEMA_CHANGE_PROCESS.md)
 - **Source paths** — [`../docs/SOURCE_PATHS.md`](../docs/SOURCE_PATHS.md)

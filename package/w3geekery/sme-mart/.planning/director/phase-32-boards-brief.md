@@ -56,7 +56,7 @@ Replace the engagement-detail **Tasks** tab with a **Boards** tab (card grid, pi
 ## Pre-Discuss-Phase Captures (DO before discuss runs)
 
 1. **`zerobias_describe platform.Board.list`** (and `Board.search` if separate) — verify `orgIds`, `projectId`, `userId`, `boardType` filter capabilities. Capture in `.planning/notes/board-api-shape.md`.
-2. **`.planning/notes/zb-ui-tasks-list-reference.md`** — read zb/ui's tasks-list component (`~/Projects/zb/ui/...`) and capture column shapes + row actions + filter UX to mirror on board-detail.
+2. **`.planning/notes/zb-ui-tasks-list-reference.md`** — read zb/ui's tasks-list component (`~/Projects/zb/com/ui/...`) and capture column shapes + row actions + filter UX to mirror on board-detail.
 3. **`.planning/notes/board-switcher-reference.md`** — pull latest from `zb/ui:feat/board-context-selector-mvp` and capture switcher's input/output + UX behaviors.
 4. **`.planning/notes/vetting-current-shape.md`** — inventory current `vetting-tab.component.*` + underlying data shape (Task records? separate schema?). Required for Q-4 + Q-5.
 

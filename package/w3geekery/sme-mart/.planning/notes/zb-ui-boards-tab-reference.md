@@ -1,8 +1,8 @@
 # zb/ui Boards-tab + Tasks-tab mock reference (for SME Mart Boards)
 
 **Source mocks (zb/ui — HTML mockups, NOT built there yet; aspirational design):**
-- `~/Projects/zb/ui/.claude/plans/public/projects-app-mocks/html/s5-boards-tab-composite.html`
-- `~/Projects/zb/ui/.claude/plans/public/projects-app-mocks/html/s4-tasks-tab-composite.html`
+- `~/Projects/zb/com/ui/.claude/plans/public/projects-app-mocks/html/s5-boards-tab-composite.html`
+- `~/Projects/zb/com/ui/.claude/plans/public/projects-app-mocks/html/s4-tasks-tab-composite.html`
 - Screenshots: `~/Pictures/Screenshots/Screenshot 2026-05-22 at 11.52.13 AM.png` (boards), `... 11.58.12 AM.png` (tasks)
 
 **Implementation note:** these are static HTML mocks. SME Mart implements with the REAL ngx-library components (`zb-remote-table`, `zb-resource-status`, avatar, chip-colors directive, theme tokens) — the mock markup is for layout/pattern reference only, not copy-paste.

@@ -1,6 +1,6 @@
 # Playwright E2E Learnings from zb/ui
 
-> Source: Claude instance working on Boundary Manager E2E tests in `~/Projects/zb/ui`
+> Source: Claude instance working on Boundary Manager E2E tests in `~/Projects/zb/com/ui`
 > Date: 2026-04-08
 > Purpose: Foundation for SME Mart Plan 052 (Playwright E2E Smoke Tests)
 
@@ -35,8 +35,8 @@ Use `ng.getComponent()` (Angular's dev-mode debug API) to:
 3. Patch the dialog's `onAction` method to read from the stored objects
 
 **Reference files (zb/ui):**
-- Page object: `~/Projects/zb/ui/e2e/page-objects/boundary-manager.page.ts` — `selectStandard()` method (~line 258)
-- Spec: `~/Projects/zb/ui/e2e/boundary-manager/boundary-add-standard.spec.ts`
+- Page object: `~/Projects/zb/com/ui/e2e/page-objects/boundary-manager.page.ts` — `selectStandard()` method (~line 258)
+- Spec: `~/Projects/zb/com/ui/e2e/boundary-manager/boundary-add-standard.spec.ts`
 
 This is the pattern the SME Mart helper was modeled on, but the helper uses the newer `selectValue()` API so it's dramatically simpler.
 
@@ -79,16 +79,16 @@ test.beforeEach(async ({ request }) => {
 
 - Auth via env vars/API keys (not login flow)
 - `dana-org-id` cookie injection
-- Auth fixture at: `~/Projects/zb/ui/e2e/fixtures/auth.fixture.ts`
+- Auth fixture at: `~/Projects/zb/com/ui/e2e/fixtures/auth.fixture.ts`
 
 ## Playwright Config
 
-- Config: `~/Projects/zb/ui/e2e/playwright.config.ts`
+- Config: `~/Projects/zb/com/ui/e2e/playwright.config.ts`
 - Run: `npx playwright test --config=e2e/playwright.config.ts <spec-path> --project=<project-name> --reporter=list`
 
 ## Working Patterns
 
-- Page objects in `~/Projects/zb/ui/e2e/page-objects/` — read for patterns
+- Page objects in `~/Projects/zb/com/ui/e2e/page-objects/` — read for patterns
 - `getByTestId` for custom ZB components with `data-testid` attributes
 - `getByRole` for standard Material components (buttons, comboboxes, checkboxes)
 - `toBeChecked`/`toBeEnabled` for state assertions before clicking

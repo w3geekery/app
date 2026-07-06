@@ -34,7 +34,7 @@ Total: 12 findings.
 **Phase:** 19 (revert + replan)
 
 **What happened:**
-Phase 19 goal is "bring SME Mart SPA + login online locally, serving from a CloudFront-shaped URL, with session handoff verified." Planner, researcher, and director all read `~/Projects/zb/zerobias-org/util/packages/zbb/design/{stacks-guide,stacks-spec,registry-spec}.md` and concluded: two independent static-serving stacks + reusable nginx (`cloudfront-sim`). Shipped 12 files. During execution verification, gsd-execute discovered `~/Projects/zb/ui/scripts/gateway.js` — a node/http-proxy that unifies ALL zb/ui apps under one origin with cookie-domain rewriting for real auth. That pattern is the actual correct answer. Phase 19 reverted; replan underway.
+Phase 19 goal is "bring SME Mart SPA + login online locally, serving from a CloudFront-shaped URL, with session handoff verified." Planner, researcher, and director all read `~/Projects/zb/zerobias-org/util/packages/zbb/design/{stacks-guide,stacks-spec,registry-spec}.md` and concluded: two independent static-serving stacks + reusable nginx (`cloudfront-sim`). Shipped 12 files. During execution verification, gsd-execute discovered `~/Projects/zb/com/ui/scripts/gateway.js` — a node/http-proxy that unifies ALL zb/ui apps under one origin with cookie-domain rewriting for real auth. That pattern is the actual correct answer. Phase 19 reverted; replan underway.
 
 **Impact:**
 - ~1 day of planning + execution work reverted.

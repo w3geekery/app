@@ -1,7 +1,7 @@
 # Board Switcher Reference — for SME Mart Phase 32 board-detail page
 
 **Captured:** 2026-05-19
-**Source branch:** `~/Projects/zb/ui:feat/board-context-selector-mvp` @ `77444a82d`
+**Source branch:** `~/Projects/zb/com/ui:feat/board-context-selector-mvp` @ `77444a82d`
 **Locked decision:** L-13 (mirror this switcher's shape)
 
 ## Component file paths

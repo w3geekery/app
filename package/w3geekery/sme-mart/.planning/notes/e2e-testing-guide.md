@@ -338,7 +338,7 @@ Tests occasionally fail on the first run after a dev server restart and pass imm
 `workers: 1` + no browser context isolation beyond Playwright defaults. Tests run serially in ID order. If test N leaves app state that breaks test N+1, it's an inter-test pollution issue — don't chase it in the spec, fix the upstream cleanup. Dev-server sessionStorage persists across tests in some edge cases.
 
 ### 13. The `zb/ui` repo also runs Playwright
-`~/Projects/zb/ui/e2e/` has its own Playwright suite for the portal + iframed apps (boundary-manager, catalog, etc.). Clark sometimes runs both concurrently. They don't conflict (separate user-data-dirs) but the `ps aux` output will show unrelated Playwright processes. Don't confuse them with SME Mart's suite.
+`~/Projects/zb/com/ui/e2e/` has its own Playwright suite for the portal + iframed apps (boundary-manager, catalog, etc.). Clark sometimes runs both concurrently. They don't conflict (separate user-data-dirs) but the `ps aux` output will show unrelated Playwright processes. Don't confuse them with SME Mart's suite.
 
 ---
 
@@ -687,5 +687,5 @@ Plan 052 deferred CI integration. Future work:
 ## Further Reading
 
 - `.planning/notes/playwright-e2e-learnings-from-zb-ui.md` — original learnings dump from `zb/ui` (autocomplete workaround details, CDK overlay cleanup)
-- `~/Projects/zb/ui/e2e/` — reference implementation, different stack (iframed gateway) but same Angular/Material patterns
+- `~/Projects/zb/com/ui/e2e/` — reference implementation, different stack (iframed gateway) but same Angular/Material patterns
 - `e2e/README.md` — user-facing quick start
