@@ -72,7 +72,9 @@ src/environments/environment.neon.ts
 .claude/plans-archive/
 .claude/scripts/node_modules/
 .claude/scripts/.stitch-project-id
+.claude/settings.local.json*
 .claude/plans/
+.claude/ui-specs/
 .planning/notes/plans/
 .planning/notes/meetings/**/*.docx
 .planning/notes/meetings/**/*.txt

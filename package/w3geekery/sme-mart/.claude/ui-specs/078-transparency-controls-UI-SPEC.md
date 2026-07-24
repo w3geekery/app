@@ -13,7 +13,7 @@ source_artifacts:
   - .planning/notes/questions-for-brian-miro-reconciliation.md
   - .planning/notes/CEO_NOTES.md (2026-02-06 Transparency Center Vision)
   - .planning/notes/ceo-notes-2026-03-27.md (Brian — Transparency Bridge UI request)
-  - .planning/notes/meetings/2026-04-07-marketplace.md (Brian — boundary types insight)
+  - ~/Projects/zb-mesh/_coord/meetings/summaries/2026-04-07-marketplace.md (Brian — boundary types insight)
   - ~/Projects/w3geekery/zb-poc-devs/brian-directives/2026-04-06-boundary-components-transparency.md
   - Brian's Miro board: https://miro.com/app/board/uXjVGm64Grw=/
   - Clark's Miro board: https://miro.com/app/board/uXjVGm52yII=/
