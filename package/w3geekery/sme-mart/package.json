@@ -83,7 +83,7 @@
     "@neondatabase/serverless": "^1.0.2",
     "@ngx-translate/core": "^15.0.0",
     "@ngx-translate/http-loader": "^17.0.0",
-    "@zerobias-com/zerobias-angular-client": "^2.0.18",
+    "@zerobias-com/zerobias-angular-client": "^2.0.13",
     "@zerobias-org/data-utils": "^2.1.7",
     "@zerobias-org/ngx-library": "^0.2.43",
     "@zerobias-org/types-core-js": "^2.0.4",
