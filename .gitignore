@@ -10,13 +10,17 @@ vercel.env
 **/.claude/plans/local/
 **/.claude/plans-archive/
 **/.claude/settings.local.json
+# Personal per-developer skill-gate hooks (depend on a user-level Claude skill; not for customer clones)
+**/.claude/hooks/architect-skill-*.sh
 **/.claude/ideas/
 **/.claude/scheduled_tasks.lock
 **/.claude/worktrees/
 **/.claude/.obsidian/
 **/.claude/.DS_Store
 **/.claude/scripts/node_modules/
-# **/.planning/
+
+# Director resume/planning scratch (local, not shared)
+.planning/
 
 # Deprecated Next.js prototype (archived, kept on disk for reference)
 package/w3geekery/sme-mart-nextjs-deprecated/

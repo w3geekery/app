@@ -1,0 +1,471 @@
+// Tables, cards, buttons, forms, chips — matched to the portal (zb-ui / ngx-library).
+
+// ---------- Home intro + session card (twin of example-angular-v2's Home) ----------
+.intro {
+  max-width: 900px;
+}
+.intro h1 {
+  margin: 0 0 var(--zb-space-sm);
+}
+.lead {
+  color: var(--zb-secondary-text);
+  font-size: var(--zb-font-size-lg);
+  line-height: 1.5;
+  margin: 0;
+}
+.session-card {
+  max-width: 900px;
+  margin-top: var(--zb-space-lg);
+  background: var(--zb-background-card);
+  border: 1px solid var(--zb-divider);
+  border-radius: var(--zb-radius-md);
+  overflow: hidden;
+}
+.session-card-head {
+  padding: var(--zb-space-sm) var(--zb-space-md);
+  border-bottom: 1px solid var(--zb-divider);
+}
+.session-card-head h2 {
+  margin: 0;
+  font-size: var(--zb-font-size-md);
+}
+.session-card-body {
+  padding: var(--zb-space-md);
+}
+.session-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--zb-space-md);
+  margin: 0;
+}
+.session-grid dt {
+  color: var(--zb-secondary-text);
+  font-size: var(--zb-font-size-sm);
+}
+.session-grid dd {
+  margin: 4px 0 0;
+  font-weight: 500;
+}
+.session-hint {
+  margin: var(--zb-space-md) 0 0;
+  color: var(--zb-secondary-text);
+  font-size: var(--zb-font-size-sm);
+  line-height: 1.5;
+}
+.session-hint code,
+.lead code {
+  font-family: var(--zb-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  color: var(--zb-primary);
+}
+
+// ---------- App cards (home) — matches the portal home "My Apps" cards ----------
+.app-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+  gap: var(--zb-space-md);
+  margin-top: var(--zb-space-lg);
+}
+.app-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--zb-space-sm);
+  min-height: 174px; // portal card height
+  padding: var(--zb-space-md);
+  background: var(--zb-background-card);
+  border: 1px solid var(--zb-divider);
+  border-radius: var(--zb-radius-md);
+  color: var(--zb-text);
+  box-shadow: 4px 4px 12px -4px rgba(0, 0, 0, 0.6); // portal card shadow
+  transition: transform 0.13s linear, box-shadow 0.13s linear;
+}
+.app-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--zb-card-shadow-hover);
+  text-decoration: none;
+}
+.app-card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--zb-space-sm);
+}
+.app-card-head h3 {
+  margin: 0;
+  font-size: 22px; // portal card title
+  font-weight: 500;
+  color: var(--zb-text);
+}
+.app-card-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--zb-radius-sm);
+  background: rgba(var(--zb-primary-rgb), 0.15);
+  color: var(--zb-primary);
+  flex-shrink: 0;
+}
+.app-card-desc {
+  color: var(--zb-secondary-text);
+  font-size: var(--zb-font-size-md); // 16px, like the portal descriptions
+  margin: 0;
+  flex-grow: 1;
+}
+.app-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--zb-space-sm);
+  padding-top: var(--zb-space-sm);
+  border-top: 1px solid var(--zb-divider);
+}
+.app-card-foot code {
+  background: transparent;
+  padding: 0;
+  overflow-wrap: anywhere;
+  color: var(--zb-primary-300);
+  font-size: var(--zb-font-size-xs);
+}
+.app-card-foot .launch {
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--zb-primary);
+}
+
+// ---------- Table (portal projects-list style) ----------
+.table-scroll {
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--zb-font-body);
+  font-size: var(--zb-font-size-sm);
+}
+.table th,
+.table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--zb-divider);
+  vertical-align: middle;
+}
+.table th {
+  color: var(--zb-secondary-text);
+  font-weight: 500;
+}
+.table tbody tr:hover {
+  background: var(--zb-table-row-hover);
+}
+.table td {
+  color: var(--zb-text);
+}
+
+// ---------- Chips / status pills (from ngx-library .zb-chip) ----------
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--zb-space-xs);
+  height: 20px;
+  line-height: 20px;
+  padding: 0 var(--zb-space-sm);
+  border-radius: 20px;
+  font-size: var(--zb-font-size-sm);
+  background: var(--zb-background-elevated);
+  color: var(--zb-text);
+  white-space: nowrap;
+}
+.chip.success {
+  background: var(--zb-status-success);
+  color: #fff;
+}
+.chip.info {
+  background: var(--zb-status-info);
+  color: #fff;
+}
+.chip.neutral {
+  background: var(--zb-status-neutral);
+  color: #fff;
+}
+
+// ---------- Resource status dots (modeled on ngx-library zb-resource-status showDot) ----------
+// A small colored circle: SOLID fill = terminal state, OUTLINED (transparent
+// fill + colored ring) = transitional state such as `standby` — the same
+// solid-vs-outlined distinction ngx-library's dot makes, so `up` and `standby`
+// (both green) stay distinguishable. Colors are ngx-library's `--zb-color-*`
+// tokens, compiled from it into _tokens.generated.scss, theme-invariant like the portal.
+.status-dot {
+  display: inline-block;
+  flex: none;
+  // content-box + 14px + 3px border = ngx-library's size-default circle exactly
+  // (14px hole, 3px ring, 20px total). border-box would shrink the hole and make
+  // the outlined ring read ~2x too thick.
+  box-sizing: content-box;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid var(--zb-color-gray); // neutral / unknown
+  background: var(--zb-color-gray);
+}
+.status-dot.up {
+  background: var(--zb-color-success);
+  border-color: var(--zb-color-success);
+}
+.status-dot.down {
+  background: var(--zb-color-error);
+  border-color: var(--zb-color-error);
+}
+.status-dot.warn {
+  background: var(--zb-color-warning);
+  border-color: var(--zb-color-warning);
+}
+.status-dot.info {
+  background: var(--zb-color-info);
+  border-color: var(--zb-color-info);
+}
+.status-dot.neutral {
+  background: var(--zb-color-gray);
+  border-color: var(--zb-color-gray);
+}
+// Transitional (e.g. standby) — colored ring, hollow centre.
+.status-dot.outlined {
+  background: transparent;
+}
+
+// ---------- In-place loading: spinner (mat-spinner equivalent) + skeletons ----------
+// The <Spinner> SVG; the arc is currentColor, so it recolors with the text color
+// (default cyan). Rotation reuses the shared `zb-spin` keyframes (_layout.scss).
+.spinner-svg {
+  display: inline-block;
+  vertical-align: middle;
+  color: var(--zb-primary);
+  animation: zb-spin 0.9s linear infinite;
+}
+// Inside a button (ButtonLabel), the spinner inherits the button's text color so
+// it reads correctly on the fill — white on a primary `.btn`, cyan on `.btn-ghost`
+// — instead of the standalone cyan default (which would vanish on the cyan fill).
+.btn .spinner-svg,
+.btn-ghost .spinner-svg {
+  color: inherit;
+}
+// Spinner + label on one line (e.g. "⟳ Loading products…").
+.loading-line {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--zb-space-sm);
+}
+// Skeleton placeholders — a token-colored block that pulses while data loads.
+.skeleton {
+  display: inline-block;
+  background: var(--zb-divider);
+  border-radius: var(--zb-radius-sm);
+  animation: zb-pulse 1.4s ease-in-out infinite;
+}
+.skeleton-bar {
+  width: 80%;
+  height: 12px;
+}
+.skeleton-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+@keyframes zb-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+// ---------- Connection picker (accessible listbox with status chips) ----------
+// A WAI-ARIA listbox that replaces a native <select> so each row can carry a
+// StatusDot. Mirrors the OrgSwitcher dropdown tokens so it flips with the theme.
+.conn-picker {
+  position: relative;
+}
+.conn-picker-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--zb-space-sm);
+  width: 100%;
+  background: var(--zb-background-input);
+  color: var(--zb-text);
+  border: 1px solid var(--zb-divider);
+  border-radius: var(--zb-radius-sm);
+  padding: 8px 10px;
+  font: inherit;
+  font-family: var(--zb-font-body);
+  text-align: left;
+  cursor: pointer;
+}
+.conn-picker-trigger:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.conn-picker-trigger:focus-visible {
+  outline: none;
+  border-color: var(--zb-primary);
+  box-shadow: 0 0 0 3px var(--zb-focus-ring);
+}
+.conn-picker-trigger .material-symbols-outlined {
+  font-size: 20px;
+  color: var(--zb-secondary-text);
+}
+.conn-picker-value {
+  display: flex;
+  align-items: center;
+  gap: var(--zb-space-sm);
+  min-width: 0;
+}
+.conn-picker-placeholder {
+  color: var(--zb-secondary-text);
+}
+.conn-picker-list {
+  position: absolute;
+  top: calc(100% + var(--zb-space-xs));
+  left: 0;
+  right: 0;
+  z-index: 10;
+  list-style: none;
+  margin: 0;
+  padding: var(--zb-space-xs) 0;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--zb-background-card);
+  border: 1px solid var(--zb-divider);
+  border-radius: var(--zb-radius-sm);
+  box-shadow: 1px 1px 8px 2px rgba(0, 0, 0, 0.4);
+}
+.conn-picker-list:focus {
+  outline: none;
+}
+.conn-picker-item {
+  display: flex;
+  align-items: center;
+  gap: var(--zb-space-sm);
+  padding: 8px 10px;
+  cursor: pointer;
+  color: var(--zb-text);
+}
+.conn-picker-item:hover,
+.conn-picker-item.active {
+  background: var(--zb-menu-hover);
+}
+.conn-picker-item.selected {
+  font-weight: 600;
+}
+.conn-picker-item.disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.conn-picker-item.disabled:hover {
+  background: transparent;
+}
+
+// ---------- Buttons ----------
+.btn,
+.btn-ghost,
+.btn-stroked {
+  font: inherit;
+  font-family: var(--zb-font-body);
+  cursor: pointer;
+  border-radius: var(--zb-radius-sm);
+  height: 36px;
+  padding: 0 var(--zb-space-md);
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--zb-space-xs);
+}
+.btn {
+  background: var(--zb-primary);
+  color: var(--zb-primary-contrast);
+  font-weight: 600;
+}
+.btn:hover:not(:disabled) {
+  background: var(--zb-primary-300);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+// Outlined (portal "Create Project": dark bg, cyan text + border)
+.btn-ghost {
+  background: transparent;
+  color: var(--zb-primary);
+  border-color: var(--zb-divider);
+}
+.btn-ghost:hover:not(:disabled) {
+  border-color: var(--zb-primary);
+}
+.btn-ghost:disabled {
+  opacity: 0.4;
+  cursor: default;
+  color: var(--zb-secondary-text);
+}
+
+// Stroked / outlined (mirrors Angular Material's mat-stroked-button): transparent fill, themed
+// border + text, faint overlay on hover.
+.btn-stroked {
+  background: transparent;
+  color: var(--zb-primary);
+  border-color: var(--zb-primary);
+  font-weight: 600;
+}
+.btn-stroked:hover:not(:disabled) {
+  background: var(--zb-hover-overlay);
+}
+.btn-stroked:disabled {
+  opacity: 0.45;
+  cursor: default;
+  color: var(--zb-secondary-text);
+  border-color: var(--zb-divider);
+}
+
+.toolbar {
+  display: flex;
+  gap: var(--zb-space-sm);
+  align-items: center;
+  margin-top: var(--zb-space-md);
+}
+
+// ---------- Forms ----------
+.form-card {
+  background: var(--zb-background-card);
+  border: 1px solid var(--zb-divider);
+  border-radius: var(--zb-radius-md);
+  padding: var(--zb-space-md);
+  margin: var(--zb-space-lg) 0;
+  max-width: 560px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--zb-space-xs);
+  margin-bottom: var(--zb-space-md);
+}
+.field label {
+  font-size: var(--zb-font-size-sm);
+  color: var(--zb-secondary-text);
+}
+
+input,
+textarea,
+select {
+  background: var(--zb-background-input);
+  color: var(--zb-text);
+  border: 1px solid var(--zb-divider);
+  border-radius: var(--zb-radius-sm);
+  padding: 8px 10px;
+  font: inherit;
+  font-family: var(--zb-font-body);
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--zb-primary);
+  box-shadow: 0 0 0 3px var(--zb-focus-ring);
+}
